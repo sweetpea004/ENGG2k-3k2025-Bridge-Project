@@ -1,0 +1,221 @@
+/* Variables */
+:root {
+  /* Colours */
+  --green: #4ca626;
+  --red: #ff3131;
+  --orange: #ff751f;
+  --yellow: #cca300;
+  --light-grey: #d9d9d9;
+  --grey: #737373;
+  --dark-grey: #545454;
+
+  /* Spacing */
+  --margin: 2rem;
+  --top-margin: 1rem;
+  --side-margin: 3rem;
+  --content-width: 80ch;
+  --padding: 1rem;
+  --button-padding: 1.75rem;
+
+  /* content radii */
+  --radius: 2rem;
+  --small-radius: 1rem;
+}
+
+* {
+  font-family: Verdana, sans-serif;
+  font-size: 1rem;
+  color: black;
+  text-align: left;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h3, p, .info, a, button, ul, ul > li, th, td, span {
+  font-size: 1.25rem;
+}
+
+body {
+  background-color: white;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+section {
+  float: left;
+}
+
+aside {
+  float: right;
+}
+
+.content-box {
+  margin: var(--margin);
+  padding: var(--padding);
+  background-color: var(--light-grey);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-main);
+  min-height: 50rem;
+}
+
+.red-button {
+  background-color: var(--red);
+  border-radius: var(--radius);
+  color: white;
+  padding: var(--button-padding);
+  border: none;
+  text-decoration: none;
+  transition: 0.25s;
+}
+
+.red-button:hover{
+  background-color: lightcoral;
+}
+
+.grey-button {
+  background-color: var(--dark-grey);
+  border-radius: var(--radius);
+  color: white;
+  padding: var(--button-padding);
+  border: none;
+  text-decoration: none;
+  transition: 0.25s;
+  width: 10rem;
+  text-align: center;
+}
+
+.grey-button:hover{
+  background-color: var(--green);
+}
+
+.push {
+  justify-self: right;
+}
+
+.green-text {
+  color: var(--green)
+}
+
+.red-text {
+  color: var(--red)
+}
+
+.orange-text {
+  color: var(--orange)
+}
+
+.yellow-text {
+  color: var(--yellow)
+}
+
+/* Hide default button */
+input[type="radio"] {
+  display: none;
+}
+
+.mode-buttons, .emer-button {
+  position: relative;
+  justify-self: center;  
+  text-align: center;  
+}
+
+.radio {
+  display: inline-block;
+  background-color: var(--dark-grey);
+  padding: var(--padding);
+  margin-inline: var(--margin);
+  color: white;
+  text-align: center;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: 0.25s;
+}
+
+.radio span {
+  color: white;
+}
+
+.big-radio {
+  padding: var(--button-padding);
+  width: 25rem;
+}
+
+input[type="radio"]:checked + .radio{
+  background-color: var(--green);
+}
+
+input[type="radio"]:disabled {
+  color: var(--grey);
+}
+
+.radio:hover {
+  background-color: var(--grey);
+}
+
+/* The switch - the box around the slider */
+/* Taken from W3Schools */
+.switch {
+  position: relative;
+  display: inline-block;
+  text-align: center;
+  width: 60px;
+  height: 34px;
+  margin-inline: var(--side-margin);
+}
+
+/* Hide default HTML checkbox */
+.switch input[type="checkbox"] {
+  opacity: 0;
+  width: 60px;
+  height: 34px;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--dark-grey);
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:disabled {
+    background-color: var(--grey);
+}
+
+input[type="checkbox"]:checked + .slider {
+  background-color: var(--green);
+}
+
+input[type="checkbox"]:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
