@@ -16,12 +16,15 @@ class Status:
     def __init__(self, array):
 
         self.bridge_status = array[1].upper()
-        self.front_us = array[2].upper()
-        self.under_us = array[3].upper()
-        self.back_us = array[4].upper()
-        self.road_traf = array[5].upper()
-        self.road_lights = array[6].upper()
-        self.waterway_lights = array[7].upper()
+        self.gate_status = array[2].upper()
+        self.north_us = array[3].upper()
+        self.under_us = array[4].upper()
+        self.south_us = array[5].upper()
+        self.road_load = array[6].upper()
+        self.road_lights = array[7].upper()
+        self.waterway_lights = array[8].upper()
+        self.speaker = array[9].upper()
+        self.error_code = array[10].upper()
 
 def receive() -> str:
 
@@ -55,7 +58,7 @@ if __name__ == "__main__":
     sock = socket.socket()
     #sock.connect(("localhost", ESP_PORT))
 
-    default_status = "STAT CLOS NONE NONE NONE TRAF GO STOP"
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF GO STOP NONE 1"
     status = Status(default_status.split(" "))
     
     # Thread 1: Running App

@@ -18,18 +18,11 @@
         {% elif status.bridge_status == "MOVN" %}
             <h1>Bridge Status: <span class="orange-text">MOVING</span></h1>
         {% elif status.bridge_status == "CLOS" %}
-            <h1>Bridge Status: <span class="red-text">CLOSED</span></h1>
+            <h1>Bridge Status: <span class="green-text">CLOSED</span></h1>
         {% elif status.bridge_status == "EMER" %}
             <h1>Bridge Status: <span class="yellow-text">EMERGENCY</span></h1>
         {% endif %}
 
-        <!-- Connection status -->
-        {% if conn == True %}
-            <h3>Connection Status: <span class="green-text">STABLE</span></h3>
-        {% elif conn == False %}
-            <h3>Connection Status: <span class="red-text">DISCONNECTED</span></h3>
-        {% endif %}
-        
         <!-- Error Messages / info messages-->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -39,35 +32,46 @@
             {% endif %}
         {% endwith %}
 
+        <!-- Connection status -->
+        {% if conn == True %}
+            <h3>Connection Status: <span class="green-text">STABLE</span></h3>
+        {% elif conn == False %}
+            <h3>Connection Status: <span class="red-text">DISCONNECTED</span></h3>
+        {% endif %}
+        
+        <!-- Error Code -->
+        {% if status.error_code == "1" %}
+            <h3>Error Code: <span class="green-text">1 - NO ERRORS</span></h3>
+        {% elif status.error_code == "2" %}
+            <h3>Error Code: <span class="red-text">2 - </span></h3>
+        {% elif status.error_code == "3" %}
+            <h3>Error Code: <span class="red-text">3 - </span></h3>
+        {% elif status.error_code == "4" %}
+            <h3>Error Code: <span class="red-text">4 - </span></h3>
+        {% elif status.error_code == "5" %}
+            <h3>Error Code: <span class="red-text">5 - </span></h3>
+        {% elif status.error_code == "6" %}
+            <h3>Error Code: <span class="red-text">6 - </span></h3>
+        {% elif status.error_code == "7" %}
+            <h3>Error Code: <span class="red-text">7 - </span></h3>
+        {% elif status.error_code == "8" %}
+            <h3>Error Code: <span class="red-text">8 - </span></h3>
+        {% endif %}
+
         <!-- INSERT BRIDGE IMAGE/GRAPHIC -->
 
         <!-- SENSOR STATUS SECTION -->
         <h1>Sensor Statuses:</h1>
 
-        <!-- Ultrasonic Sensors -->
-        {% if status.front_us == "SHIP" %}
-            <h3>Front Ultrasonic: <span class="green-text">SHIP DETECTED</span></h3>
-        {% elif status.front_us == "NONE" %}
-            <h3>Front Ultrasonic: <span class="red-text">NOTHING DETECTED</span></h3>
-        {% endif %}
-
-        {% if status.under_us == "SHIP" %}
-            <h3>Underside Ultrasonic: <span class="green-text">SHIP DETECTED</span></h3>
-        {% elif status.under_us == "NONE" %}
-            <h3>Underside Ultrasonic: <span class="red-text">NOTHING DETECTED</span></h3>
-        {% endif %}
-
-        {% if status.back_us == "SHIP" %}
-            <h3>Back Ultrasonic: <span class="green-text">SHIP DETECTED</span></h3>
-        {% elif status.back_us == "NONE" %}
-            <h3>Back Ultrasonic: <span class="red-text">NOTHING DETECTED</span></h3>
-        {% endif %}
-
-        <!-- Roadway traffic Status-->
-        {% if status.road_traf == "TRAF" %}
-            <h3>Roadway Traffic: <span class="green-text">TRAFFIC DETECTED</span></h3>
-        {% elif status.road_traf == "NONE" %}
-            <h3>Roadway Traffic: <span class="red-text">NOTHING DETECTED</span></h3>
+        <!-- Gates -->
+        {% if status.gate_status == "OPEN" %}
+            <h3>Gate Status: <span class="green-text">OPEN</span></h3>
+        {% elif status.gate_status == "MOVN" %}
+            <h3>Gate Status: <span class="orange-text">MOVING</span></h3>
+        {% elif status.gate_status == "CLOS" %}
+            <h3>Gate Status: <span class="green-text">CLOSED</span></h3>
+        {% elif status.gate_status == "EMER" %}
+            <h3>Gate Status: <span class="yellow-text">EMERGENCY</span></h3>
         {% endif %}
 
         <!--Traffic Lights-->
@@ -91,8 +95,45 @@
             <h3>Waterway Traffic Lights: <span class="yellow-text">EMERGENCY</span></h3>
         {% endif %}
 
+        <!-- Speaker -->
+         {% if status.speaker == "OPEN" %}
+            <h3>Speaker Audio: <span class="orange-text">OPEN</span></h3>
+        {% elif status.speaker == "CLOS" %}
+            <h3>Speaker Audio: <span class="orange-text">CLOSED</span></h3>
+        {% elif status.speaker == "EMER" %}
+            <h3>Speaker Audio: <span class="yellow-text">EMERGENCY</span></h3>
+        {% elif status.speaker == "NONE" %}
+            <h3>Speaker Audio: <span class="green-text">NONE</span></h3>
+        {% endif %}
+
+        <!-- Ultrasonic Sensors -->
+        {% if status.north_us == "SHIP" %}
+            <h3>North Ultrasonic: <span class="orange-text">SHIP DETECTED</span></h3>
+        {% elif status.north_us == "NONE" %}
+            <h3>North Ultrasonic: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
+        {% if status.under_us == "SHIP" %}
+            <h3>Underside Ultrasonic: <span class="orange-text">SHIP DETECTED</span></h3>
+        {% elif status.under_us == "NONE" %}
+            <h3>Underside Ultrasonic: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
+        {% if status.south_us == "SHIP" %}
+            <h3>South Ultrasonic: <span class="orange-text">SHIP DETECTED</span></h3>
+        {% elif status.south_us == "NONE" %}
+            <h3>South Ultrasonic: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
+        <!-- Roadway traffic Status-->
+        {% if status.road_load == "TRAF" %}
+            <h3>Roadway LoadCell Detected: <span class="orange-text">TRAFFIC DETECTED</span></h3>
+        {% elif status.road_load == "NONE" %}
+            <h3>Roadway LoadCell Detected: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
         <!-- Emergency E-STOP -->
-         <div class="emer-button">
+         <div class="emergency-button">
             <button type="button" id="emergency" class="button red-button">EMERGENCY E-STOP</button>
          </div>
 
@@ -110,66 +151,98 @@
 
         <!-- traffic light controls -->
         <div>
-            <p>Traffic Light Override</p>
+            <p>Traffic Light Override *</p>
             <label class="switch">
-                <input type="checkbox" id="road-lights" name="traffic-lights" value="road-lights">
+                <input type="radio" id="road-lights" name="traffic-lights" value="road-lights">
                 <span class="slider round"></span>
-                Halt Roadway
+                <br><br>Halt Roadway
             </label>
 
             <label class="switch">
-                <input type="checkbox" id="waterway-lights" name="traffic-lights" value="waterway-lights">
+                <input type="radio" id="waterway-lights" name="traffic-lights" value="waterway-lights">
                 <span class="slider round"></span>
-                Halt Waterway
+                <br><br>Halt Waterway
             </label>
 
             <label class="switch">
-                <input type="checkbox" id="emergency-lights" name="traffic-lights" value="emergency-lights">
+                <input type="radio" id="emergency-lights" name="traffic-lights" value="emergency-lights">
                 <span class="slider round"></span>
-                Emergency Lights
+                <br><br>Emergency Lights
+            </label>
+        </div>
+
+        <div>
+            <p>Announcement Override</p>
+            <label class="switch">
+                <input type="radio" id="open-audio" name="speaker" value="open-audio">
+                <span class="slider round"></span>
+                <br><br>Openning Audio
+            </label>
+
+            <label class="switch">
+                <input type="radio" id="close-audio" name="speaker" value="close-audio">
+                <span class="slider round"></span>
+                <br><br>Closing Audio
+            </label>
+
+            <label class="switch">
+                <input type="radio" id="emergency-audio" name="speaker" value="emergency-audio">
+                <span class="slider round"></span>
+                <br><br>Emergency Audio
             </label>
         </div>
 
         <!-- control ulrasonic readings -->
         <div>
-            <p>Manual Ship Detection Override</p>
+            <p>Ship Detection Override (Ultrasonics)</p>
             <label class="switch">
-                <input type="checkbox" id="front-us" name="ultrasonics" value="front-us">
-                <span class="slider round"></span>
-                Front Detected
+                <input type="checkbox" id="north-us" name="ultrasonics" value="front-us">
+                <span class="slider"></span>
+                North Detected
             </label>
 
             <label class="switch">
                 <input type="checkbox" id="under-us" name="ultrasonics" value="under-us">
-                <span class="slider round"></span>
+                <span class="slider"></span>
                 Underside Detected
             </label>
 
             <label class="switch">
-                <input type="checkbox" id="back-us" name="ultrasonics" value="back-us">
-                <span class="slider round"></span>
-                Back Detected
+                <input type="checkbox" id="south-us" name="ultrasonics" value="back-us">
+                <span class="slider"></span>
+                South Detected
             </label>
         </div>
 
         <!-- control load cell readings -->
         <div>
-            <p>Manual Roadway Detection Override</p>
+            <p>Roadway Detection Override (LoadCell)</p>
             <label class="switch">
                 <input type="checkbox" id="loadcell" name="loadcell" value="loadcell">
-                <span class="slider round"></span>
-                Roadway Detected 
+                <span class="slider"></span>
+                Load Detected 
             </label>
+        </div>
+
+        <!-- control gates-->
+         <div>
+            <p>Roadway Gate Control Override *</p>
+            <div class="radio-container">
+                <input type="radio" id="open-gates" name="gates" value="open-gates">
+                <label for="open-gates" class="radio">Open Gates</label>
+                <input type="radio" id="close-gates" name="gates" value="close-gates">
+                <label for="close-gates" class="radio">Close Gates</label>
+            </div>
         </div>
 
         <!-- control bridge -->
         <div>
-            <p>Manual Bridge Control Override</p>
+            <p>Bridge Control Override *</p>
             <div class="radio-container">
-                <input type="radio" id="open" name="bridge" value="open">
-                <label for="open" class="radio">Open Bridge</label>
-                <input type="radio" id="close" name="bridge" value="close">
-                <label for="close" class="radio">Close Bridge</label>
+                <input type="radio" id="open-bridge" name="bridge" value="open-bridge">
+                <label for="open-bridge" class="radio">Open Bridge</label>
+                <input type="radio" id="close-bridge" name="bridge" value="close-bridge">
+                <label for="close-bridge" class="radio">Close Bridge</label>
             </div>
         </div>
 
