@@ -133,13 +133,13 @@
         {% endif %}
 
         <!-- Emergency E-STOP -->
-         <div class="emergency-button">
-            <button type="button" id="emergency" class="button red-button">EMERGENCY E-STOP</button>
-         </div>
+        <form class="emergency-button" method="POST">
+            <button type="submit" value="emergency" name="action" class="button red-button">EMERGENCY STOP</button>
+        </form>
 
     </section>
 
-    <aside class="content-box">
+    <form class="content-box" method="POST">
         <!-- Control mode controls -->
         <div class="mode-buttons">
             <input type="radio" id="auto" name="mode" value="auto" checked>
@@ -152,26 +152,32 @@
         <!-- traffic light controls -->
         <div>
             <p>Traffic Light Override *</p>
-            <label class="switch">
-                <input type="radio" id="road-lights" name="traffic-lights" value="road-lights">
-                <span class="slider round"></span>
-                <br><br>Halt Roadway
-            </label>
+            <!-- error message -->
+            <small class="hidden error" id="traf-lights-error-text">Please Select Traffic Light Settings.</small>
 
-            <label class="switch">
-                <input type="radio" id="waterway-lights" name="traffic-lights" value="waterway-lights">
-                <span class="slider round"></span>
-                <br><br>Halt Waterway
-            </label>
+            <div>
+                <label class="switch">
+                    <input type="radio" id="road-lights" name="traffic-lights" value="road-lights">
+                    <span class="slider round"></span>
+                    <br><br>Halt Roadway
+                </label>
 
-            <label class="switch">
-                <input type="radio" id="emergency-lights" name="traffic-lights" value="emergency-lights">
-                <span class="slider round"></span>
-                <br><br>Emergency Lights
-            </label>
+                <label class="switch">
+                    <input type="radio" id="waterway-lights" name="traffic-lights" value="waterway-lights">
+                    <span class="slider round"></span>
+                    <br><br>Halt Waterway
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="emergency-lights" name="traffic-lights" value="emergency-lights">
+                    <span class="slider round"></span>
+                    <br><br>Emergency Lights
+                </label>
+            </div>
         </div>
 
-        <div>
+        <!-- Speaker Audio -->
+        <div id="speaker">
             <p>Announcement Override</p>
             <label class="switch">
                 <input type="radio" id="open-audio" name="speaker" value="open-audio">
@@ -227,6 +233,9 @@
         <!-- control gates-->
          <div>
             <p>Roadway Gate Control Override *</p>
+            <!-- error message -->
+            <small class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</small>
+
             <div class="radio-container">
                 <input type="radio" id="open-gates" name="gates" value="open-gates">
                 <label for="open-gates" class="radio">Open Gates</label>
@@ -238,6 +247,9 @@
         <!-- control bridge -->
         <div>
             <p>Bridge Control Override *</p>
+            <!-- error message -->
+            <small class="hidden error" id="bridge-error-text">Please Select an Instruction for the Bridge.</small>
+
             <div class="radio-container">
                 <input type="radio" id="open-bridge" name="bridge" value="open-bridge">
                 <label for="open-bridge" class="radio">Open Bridge</label>
@@ -248,10 +260,9 @@
 
         <!-- Push Button-->
         <div class="push">
-            <button type="button" id="push" class="button grey-button">Push</button>
+            <button type="submit" id="push" value="push" name="action" class="button grey-button">Push</button>
         </div>
-        
-    </aside>
+    </form>
 </body>
 
 

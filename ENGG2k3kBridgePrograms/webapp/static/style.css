@@ -60,6 +60,14 @@ aside {
   min-height: 50rem;
 }
 
+.hidden {
+  display: none;
+}
+
+.error {
+  color: red;
+}
+
 .red-button {
   background-color: var(--red);
   border-radius: var(--radius);
@@ -86,7 +94,7 @@ aside {
   text-align: center;
 }
 
-.grey-button:hover{
+.grey-button:not(:disabled):hover{
   background-color: var(--green);
 }
 
@@ -146,11 +154,7 @@ input[type="radio"]:checked + .radio{
   background-color: var(--green);
 }
 
-input[type="radio"]:disabled {
-  color: var(--grey);
-}
-
-.radio:hover {
+.radio:not(:disabled):hover {
   background-color: var(--grey);
 }
 

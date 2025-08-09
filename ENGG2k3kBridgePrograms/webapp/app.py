@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash
+from flask import Flask, render_template, request, flash, redirect
 import multiprocessing
 import socket
 
@@ -24,7 +24,16 @@ class Status:
         self.road_lights = array[7].upper()
         self.waterway_lights = array[8].upper()
         self.speaker = array[9].upper()
-        self.error_code = array[10].upper()
+
+        if (array[0] == "STAT"):
+            self.error_code = array[10].upper()
+    
+    def toString(self):
+        message = ""
+
+        #TODO - get string
+
+        return message
 
 def receive() -> str:
 
@@ -48,8 +57,23 @@ def send(message: str):
         print("Sent:", message)
     sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
 
-@app.get('/')
+@app.route("/", methods=['GET', 'POST'])
 def redirect_home():
+
+    # if POST
+    if request.method == 'POST':
+        # Save message to be sent
+
+        if request.form.get('action') == 'emergency':
+            # TODO - Send: EMER
+            value = "EMER"
+            
+        elif request.form.get('action') == 'push':
+            # TODO - Send: "PUSH [bridge] [gate] [northUS] [underUS] [southUS] [loadcell] [roadlights] [waterlights] [speaker]""
+            value = "PUSH"
+            print(value)
+
+    # Load page
     return render_template("dashboard.html", status=status, conn=conn)
 
 if __name__ == "__main__":
