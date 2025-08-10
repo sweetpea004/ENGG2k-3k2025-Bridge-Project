@@ -1,8 +1,9 @@
 // set global querie variables
-const mode = document.getElementsByName('mode')
-const trafficLightInputs = document.getElementsByName('traffic-lights')
+const mode = document.getElementsByName('mode');
+const trafficLightInputs = document.getElementsByName('traffic-lights');
 const trafficLightsError = document.querySelector("#traf-lights-error-text");
-const speaker = document.getElementsByName('speaker')
+const speaker = document.getElementsByName('speaker');
+const speakerError = document.querySelector("#speaker-error-text");
 const northUS = document.querySelector("#north-us");
 const underUS = document.querySelector("#under-us");
 const southUS = document.querySelector("#south-us");
@@ -12,7 +13,7 @@ const gatesError = document.querySelector("#gate-error-text");
 const bridge = document.getElementsByName('bridge');
 const bridgeError = document.querySelector("#bridge-error-text");
 const push = document.querySelector("#push");
-const emergencyButton = document.querySelector("#emergency")
+const emergencyButton = document.querySelector("#emergency");
 
 // AUTOMATIC VS MANUAL MODE
 // When Automatic, disable form input
@@ -30,6 +31,11 @@ mode.forEach(input => {
 // checks if traffic lights have been inputted
 trafficLightInputs.forEach(input => {
     input.addEventListener("click", validateTrafficLights)
+});
+
+// checks if speaker has been inputted
+speaker.forEach(input => {
+    input.addEventListener("click", validateSpeaker)
 });
 
 // checks if gates have been inputted
@@ -67,6 +73,17 @@ function validateTrafficLights() {
     }
 }
 
+function validateSpeaker() {
+    let selected = document.querySelector('input[name="speaker"]:checked');
+    if (selected || isAuto) {
+        speakerError.classList.add("hidden");
+        return true;
+    } else {
+        speakerError.classList.remove("hidden");
+        return false;
+    }
+}
+
 function validateGates() {
     let selected = document.querySelector('input[name="gates"]:checked');
     if (selected || isAuto) {
@@ -92,10 +109,11 @@ function validateBridge() {
 function validateAll(event) {
     // calls each validation functions
     let validTrafficLights = validateTrafficLights();
+    let validSpeaker = validateSpeaker();
     let validGates = validateGates();
     let validBridge = validateBridge();
 
-    allValid = validTrafficLights && validGates && validBridge;
+    allValid = validTrafficLights && validSpeaker && validGates && validBridge;
 
     if (!allValid) {
         // stops the form from submitting

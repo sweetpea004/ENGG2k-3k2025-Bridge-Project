@@ -12,6 +12,15 @@
 <body>
     <section class="content-box">
 
+        <!-- Error Messages / info messages-->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <h1 class="{{ category }}">{{ message }}</h1>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <!-- Bridge Status Text -->
         {% if status.bridge_status == "OPEN" %}
             <h1>Bridge Status: <span class="green-text">OPEN</span></h1>
@@ -22,15 +31,6 @@
         {% elif status.bridge_status == "EMER" %}
             <h1>Bridge Status: <span class="yellow-text">EMERGENCY</span></h1>
         {% endif %}
-
-        <!-- Error Messages / info messages-->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <p class="{{ category }}">{{ message }}</p>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
 
         <!-- Connection status -->
         {% if conn == True %}
@@ -151,21 +151,19 @@
 
         <!-- traffic light controls -->
         <div>
-            <p>Traffic Light Override *</p>
-            <!-- error message -->
-            <small class="hidden error" id="traf-lights-error-text">Please Select Traffic Light Settings.</small>
+            <p>Traffic Light Override * <span class="hidden error" id="traf-lights-error-text">Please Select Traffic Light Settings.</span></p>
 
             <div>
                 <label class="switch">
                     <input type="radio" id="road-lights" name="traffic-lights" value="road-lights">
                     <span class="slider round"></span>
-                    <br><br>Halt Roadway
+                    <br><br>Start Roadway
                 </label>
 
                 <label class="switch">
                     <input type="radio" id="waterway-lights" name="traffic-lights" value="waterway-lights">
                     <span class="slider round"></span>
-                    <br><br>Halt Waterway
+                    <br><br>Start Waterway
                 </label>
 
                 <label class="switch">
@@ -178,31 +176,40 @@
 
         <!-- Speaker Audio -->
         <div id="speaker">
-            <p>Announcement Override</p>
-            <label class="switch">
-                <input type="radio" id="open-audio" name="speaker" value="open-audio">
-                <span class="slider round"></span>
-                <br><br>Openning Audio
-            </label>
+            <p>Announcement Override * <span class="hidden error" id="speaker-error-text">Please Select Announcement.</span></p>
 
-            <label class="switch">
-                <input type="radio" id="close-audio" name="speaker" value="close-audio">
-                <span class="slider round"></span>
-                <br><br>Closing Audio
-            </label>
+            <div>
+                <label class="switch">
+                    <input type="radio" id="open-audio" name="speaker" value="OPEN">
+                    <span class="slider round"></span>
+                    <br><br>Openning Bridge
+                </label>
 
-            <label class="switch">
-                <input type="radio" id="emergency-audio" name="speaker" value="emergency-audio">
-                <span class="slider round"></span>
-                <br><br>Emergency Audio
-            </label>
+                <label class="switch">
+                    <input type="radio" id="close-audio" name="speaker" value="CLOS">
+                    <span class="slider round"></span>
+                    <br><br>Closing Bridge
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="emergency-audio" name="speaker" value="EMER">
+                    <span class="slider round"></span>
+                    <br><br>Emergency Announcement
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="no-audio" name="speaker" value="NONE">
+                    <span class="slider round"></span>
+                    <br><br>No Announcement
+                </label>
+            </div>
         </div>
 
         <!-- control ulrasonic readings -->
         <div>
             <p>Ship Detection Override (Ultrasonics)</p>
             <label class="switch">
-                <input type="checkbox" id="north-us" name="ultrasonics" value="front-us">
+                <input type="checkbox" id="north-us" name="ultrasonics" value="north-us">
                 <span class="slider"></span>
                 North Detected
             </label>
@@ -214,7 +221,7 @@
             </label>
 
             <label class="switch">
-                <input type="checkbox" id="south-us" name="ultrasonics" value="back-us">
+                <input type="checkbox" id="south-us" name="ultrasonics" value="south-us">
                 <span class="slider"></span>
                 South Detected
             </label>
@@ -232,28 +239,24 @@
 
         <!-- control gates-->
          <div>
-            <p>Roadway Gate Control Override *</p>
-            <!-- error message -->
-            <small class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</small>
+            <p>Roadway Gate Control Override *<span class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</span></p>
 
             <div class="radio-container">
-                <input type="radio" id="open-gates" name="gates" value="open-gates">
+                <input type="radio" id="open-gates" name="gates" value="OPEN">
                 <label for="open-gates" class="radio">Open Gates</label>
-                <input type="radio" id="close-gates" name="gates" value="close-gates">
+                <input type="radio" id="close-gates" name="gates" value="CLOS">
                 <label for="close-gates" class="radio">Close Gates</label>
             </div>
         </div>
 
         <!-- control bridge -->
         <div>
-            <p>Bridge Control Override *</p>
-            <!-- error message -->
-            <small class="hidden error" id="bridge-error-text">Please Select an Instruction for the Bridge.</small>
+            <p>Bridge Control Override * <span class="hidden error" id="bridge-error-text">Please Select an Instruction for the Bridge.</span></p>
 
             <div class="radio-container">
-                <input type="radio" id="open-bridge" name="bridge" value="open-bridge">
+                <input type="radio" id="open-bridge" name="bridge" value="OPEN">
                 <label for="open-bridge" class="radio">Open Bridge</label>
-                <input type="radio" id="close-bridge" name="bridge" value="close-bridge">
+                <input type="radio" id="close-bridge" name="bridge" value="CLOS">
                 <label for="close-bridge" class="radio">Close Bridge</label>
             </div>
         </div>

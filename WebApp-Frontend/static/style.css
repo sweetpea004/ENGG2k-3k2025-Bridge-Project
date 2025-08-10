@@ -33,7 +33,7 @@ h1 {
   font-size: 2rem;
 }
 
-h3, p, .info, a, button, ul, ul > li, th, td, span {
+h3, p, a, button, ul, ul > li, th, td, span {
   font-size: 1.25rem;
 }
 
@@ -66,6 +66,10 @@ aside {
 
 .error {
   color: red;
+}
+
+.info {
+  color: var(--green);
 }
 
 .red-button {
