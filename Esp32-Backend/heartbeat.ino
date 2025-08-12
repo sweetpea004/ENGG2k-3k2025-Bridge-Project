@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <WiFiServer.h>
+#include <stdio.h>
 
 // Network Configuration
 const char* ssid = "YOUR_WIFI_SSID";
@@ -11,7 +12,7 @@ WiFiServer server(serverPort);
 WiFiClient client;
 bool clientConnected = false;
 unsigned long lastHeartbeat = 0;
-const unsigned long heartbeatInterval = 1000; // 1 second
+const unsigned long heartbeatInterval = 2000; // 2 seconds
 
 // Bridge State Structure
 struct BridgeState {
@@ -23,7 +24,6 @@ struct BridgeState {
   String roadLoad = "NONE";
   String roadLights = "GO";
   String waterwayLights = "STOP";
-  String speaker = "NONE";
   int errorCode = 1;
 };
 // error codes:
@@ -35,6 +35,22 @@ struct BridgeState {
 // 6:
 // 7:
 // 8:
+
+//String interpretation
+BridgeState readMssg(String mssg) {
+  // TODO: split up a string by spaces
+  String arr[12];
+  int strt = 0;
+  int word = 0;
+  for (int pos = 0 ; pos < mssg.length() ; pos++) {
+    if (mssg[i] == ' ') {
+      for (int k = strt; k < i; k++) {
+
+      }
+    }
+  }
+  return NULL;
+}
 
 BridgeState currentState;
 bool autoMode = true;
@@ -107,11 +123,11 @@ void sendHeartbeat() {
 }
 
 String buildStatusMessage() {
-  // Format: STAT [bridge] [gate] [northUS] [underUS] [southUS] [roadLoad] [roadLights] [waterwayLights] [speaker] [errorCode]
+  // Format: STAT [bridge] [gate] [northUS] [underUS] [southUS] [roadLoad] [roadLights] [waterwayLights] [errorCode]
   return "STAT " + currentState.bridgeStatus + " " + currentState.gateStatus + " " + 
          currentState.northUS + " " + currentState.underUS + " " + currentState.southUS + " " +
-         currentState.roadLoad + " " + currentState.roadLights + " " + currentState.waterwayLights + " " +
-         currentState.speaker + " " + String(currentState.errorCode);
+         currentState.roadLoad + " " + currentState.roadLights + " " + currentState.waterwayLights + " " + 
+         String(currentState.errorCode);
 }
 
 void updateSensors() {
@@ -135,4 +151,3 @@ void emergencyStop() {
   currentState.waterwayLights = "EMER";
   currentState.speaker = "EMER";
 }
-
