@@ -26,14 +26,13 @@ class Status:
         self.road_load = array[6].upper()
         self.road_lights = array[7].upper()
         self.waterway_lights = array[8].upper()
-        self.speaker = array[9].upper()
 
         if self.message_code == "STAT":
-            self.error_code = array[10].upper()
+            self.error_code = array[9].upper()
     
     def toString(self):
 
-        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_lights} {self.waterway_lights} {self.speaker}"
+        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_lights} {self.waterway_lights}"
 
         if self.message_code == "STAT":
             message += f" {self.error_code}"
@@ -73,6 +72,8 @@ def redirect_home():
         if request.form.get('action') == 'emergency':
             # Send EMER 
             new_message = "EMER"
+
+            # flash confirmation message
             flash('Stopping Bridge Processes for Emergency', 'error')
             
         elif request.form.get('action') == 'push':
@@ -85,9 +86,11 @@ def redirect_home():
                 # create array in order to make a new status obj
                 push = ["PUSH"]
 
+                # determine selected inputs for bridge and gates
                 push.append(request.form['bridge'])
                 push.append(request.form['gates'])
 
+                # determine selected inputs for ultrasonics
                 ultrasonics = request.form.getlist('ultrasonics')
                 if "north-us" in ultrasonics:
                     push.append("SHIP")
@@ -101,34 +104,32 @@ def redirect_home():
                     push.append("SHIP")
                 else:
                     push.append("NONE")
-
+                
+                # determine selected settings for loadcell
                 loadcell = request.form.getlist('loadcell')
                 if "loadcell" in loadcell:
                     push.append("TRAF")
                 else:
                     push.append("NONE")
 
-                traffic_lights = request.form['traffic-lights']
-                if traffic_lights == "road-lights":
-                    push.append("GO") # roadway traffic lights
-                    push.append("STOP") # waterway traffic lights
-                elif traffic_lights == "waterway-lights":
-                    push.append("STOP") # roadway traffic lights
-                    push.append("GO") # waterway traffic lights
-                elif traffic_lights == "emergency-lights":
-                    push.append("EMER") # roadway traffic lights
-                    push.append("EMER") # waterway traffic lights
+                # determine selected settings for traffic lights 
+                push.append(request.form['road-lights'])
+                push.append(request.form['waterway-lights'])
                 
-                push.append(request.form['speaker'])
-                
+                # convert "push" array to Status Obj
                 to_status = Status(push)
 
+                # set message to be sent to string
                 new_message = to_status.toString()
+
+                # flash confirmation message
                 flash('Pushed Manual Changes', 'info')
 
             elif mode == "auto":
                 # Send: "AUTO"
                 new_message = "AUTO"
+
+                # flash confirmation message
                 flash('Changed To Automatic Mode', 'info')
 
         # TODO - send message

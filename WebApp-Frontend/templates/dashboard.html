@@ -95,17 +95,6 @@
             <h3>Waterway Traffic Lights: <span class="yellow-text">EMERGENCY</span></h3>
         {% endif %}
 
-        <!-- Speaker -->
-         {% if status.speaker == "OPEN" %}
-            <h3>Speaker Audio: <span class="orange-text">OPEN</span></h3>
-        {% elif status.speaker == "CLOS" %}
-            <h3>Speaker Audio: <span class="orange-text">CLOSED</span></h3>
-        {% elif status.speaker == "EMER" %}
-            <h3>Speaker Audio: <span class="yellow-text">EMERGENCY</span></h3>
-        {% elif status.speaker == "NONE" %}
-            <h3>Speaker Audio: <span class="green-text">NONE</span></h3>
-        {% endif %}
-
         <!-- Ultrasonic Sensors -->
         {% if status.north_us == "SHIP" %}
             <h3>North Ultrasonic: <span class="orange-text">SHIP DETECTED</span></h3>
@@ -151,57 +140,51 @@
 
         <!-- traffic light controls -->
         <div>
-            <p>Traffic Light Override * <span class="hidden error" id="traf-lights-error-text">Please Select Traffic Light Settings.</span></p>
+            <p>Traffic Light Override * 
+                <span class="hidden error" id="traf-lights-error-text">Please Select Override for: </span>
+                <span class="hidden error" id="road-lights-error-text">Roadway </span>
+                <span class="hidden error" id="water-lights-error-text">Waterway</span></p>
 
             <div>
-                <label class="switch">
-                    <input type="radio" id="road-lights" name="traffic-lights" value="road-lights">
-                    <span class="slider round"></span>
-                    <br><br>Start Roadway
-                </label>
+                <div>
+                    <label class="switch">
+                        <input type="radio" id="road-go" name="road-lights" value="GO">
+                        <span class="slider round"></span>
+                        <br><br>Start Roadway
+                    </label>
 
-                <label class="switch">
-                    <input type="radio" id="waterway-lights" name="traffic-lights" value="waterway-lights">
-                    <span class="slider round"></span>
-                    <br><br>Start Waterway
-                </label>
+                    <label class="switch">
+                        <input type="radio" id="road-stop" name="road-lights" value="STOP">
+                        <span class="slider round"></span>
+                        <br><br>Stop Roadway
+                    </label>
 
-                <label class="switch">
-                    <input type="radio" id="emergency-lights" name="traffic-lights" value="emergency-lights">
-                    <span class="slider round"></span>
-                    <br><br>Emergency Lights
-                </label>
-            </div>
-        </div>
+                    <label class="switch">
+                        <input type="radio" id="road-emer" name="road-lights" value="EMER">
+                        <span class="slider round"></span>
+                        <br><br>Roadway Emergency
+                    </label>
+                </div>
 
-        <!-- Speaker Audio -->
-        <div id="speaker">
-            <p>Announcement Override * <span class="hidden error" id="speaker-error-text">Please Select Announcement.</span></p>
+                <div>
+                    <label class="switch">
+                        <input type="radio" id="waterway-go" name="waterway-lights" value="GO">
+                        <span class="slider round"></span>
+                        <br><br>Start Waterway
+                    </label>
 
-            <div>
-                <label class="switch">
-                    <input type="radio" id="open-audio" name="speaker" value="OPEN">
-                    <span class="slider round"></span>
-                    <br><br>Openning Bridge
-                </label>
+                    <label class="switch">
+                        <input type="radio" id="waterway-stop" name="waterway-lights" value="STOP">
+                        <span class="slider round"></span>
+                        <br><br>Stop Waterway
+                    </label>
 
-                <label class="switch">
-                    <input type="radio" id="close-audio" name="speaker" value="CLOS">
-                    <span class="slider round"></span>
-                    <br><br>Closing Bridge
-                </label>
-
-                <label class="switch">
-                    <input type="radio" id="emergency-audio" name="speaker" value="EMER">
-                    <span class="slider round"></span>
-                    <br><br>Emergency Announcement
-                </label>
-
-                <label class="switch">
-                    <input type="radio" id="no-audio" name="speaker" value="NONE">
-                    <span class="slider round"></span>
-                    <br><br>No Announcement
-                </label>
+                    <label class="switch">
+                        <input type="radio" id="waterway-emer" name="waterway-lights" value="EMER">
+                        <span class="slider round"></span>
+                        <br><br>Waterway Emergency
+                    </label>
+                </div>
             </div>
         </div>
 

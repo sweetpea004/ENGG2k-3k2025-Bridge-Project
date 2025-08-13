@@ -91,6 +91,7 @@ aside {
   border-radius: var(--radius);
   color: white;
   padding: var(--button-padding);
+  margin-top: var(--top-margin);
   border: none;
   text-decoration: none;
   transition: 0.25s;
@@ -171,6 +172,7 @@ input[type="radio"]:checked + .radio{
   width: 60px;
   height: 34px;
   margin-inline: var(--side-margin);
+  margin-top: var(--top-margin);
 }
 
 /* Hide default HTML checkbox */

@@ -1,9 +1,10 @@
 // set global querie variables
 const mode = document.getElementsByName('mode');
-const trafficLightInputs = document.getElementsByName('traffic-lights');
-const trafficLightsError = document.querySelector("#traf-lights-error-text");
-const speaker = document.getElementsByName('speaker');
-const speakerError = document.querySelector("#speaker-error-text");
+const roadTrafficLightInputs = document.getElementsByName('road-lights');
+const roadTrafficLightsError = document.querySelector("#road-lights-error-text");
+const waterTrafficLightInputs = document.getElementsByName('waterway-lights');
+const waterTrafficLightsError = document.querySelector("#water-lights-error-text");
+const trafficLightsError = document.querySelector("#traf-lights-error-text")
 const northUS = document.querySelector("#north-us");
 const underUS = document.querySelector("#under-us");
 const southUS = document.querySelector("#south-us");
@@ -29,13 +30,11 @@ mode.forEach(input => {
 });
 
 // checks if traffic lights have been inputted
-trafficLightInputs.forEach(input => {
-    input.addEventListener("click", validateTrafficLights)
+roadTrafficLightInputs.forEach(input => {
+    input.addEventListener("click", validateRoadTrafficLights)
 });
-
-// checks if speaker has been inputted
-speaker.forEach(input => {
-    input.addEventListener("click", validateSpeaker)
+waterTrafficLightInputs.forEach(input => {
+    input.addEventListener("click", validateWaterTrafficLights)
 });
 
 // checks if gates have been inputted
@@ -62,24 +61,28 @@ function changeMode() {
     }
 }
 
-function validateTrafficLights() {
-    let selected = document.querySelector('input[name="traffic-lights"]:checked');
-    if (selected || isAuto) {
+function validateRoadTrafficLights() {
+    let roadSelected = document.querySelector('input[name="road-lights"]:checked');
+    if (roadSelected || isAuto) {
         trafficLightsError.classList.add("hidden");
+        roadTrafficLightsError.classList.add("hidden");
         return true;
     } else {
         trafficLightsError.classList.remove("hidden");
+        roadTrafficLightsError.classList.remove("hidden");
         return false;
     }
 }
 
-function validateSpeaker() {
-    let selected = document.querySelector('input[name="speaker"]:checked');
-    if (selected || isAuto) {
-        speakerError.classList.add("hidden");
+function validateWaterTrafficLights() {
+    let waterSelected = document.querySelector('input[name="waterway-lights"]:checked');
+    if (waterSelected || isAuto) {
+        trafficLightsError.classList.add("hidden");
+        waterTrafficLightsError.classList.add("hidden");
         return true;
     } else {
-        speakerError.classList.remove("hidden");
+        trafficLightsError.classList.remove("hidden");
+        waterTrafficLightsError.classList.remove("hidden");
         return false;
     }
 }
@@ -108,12 +111,12 @@ function validateBridge() {
 
 function validateAll(event) {
     // calls each validation functions
-    let validTrafficLights = validateTrafficLights();
-    let validSpeaker = validateSpeaker();
+    let validRoadTrafficLights = validateRoadTrafficLights();
+    let validWaterTrafficLights = validateWaterTrafficLights();
     let validGates = validateGates();
     let validBridge = validateBridge();
 
-    allValid = validTrafficLights && validSpeaker && validGates && validBridge;
+    allValid = validRoadTrafficLights && validWaterTrafficLights && validGates && validBridge;
 
     if (!allValid) {
         // stops the form from submitting
@@ -124,18 +127,17 @@ function validateAll(event) {
 function disableInputs() {
 
     // hide errors
-    trafficLightsError.classList.add("hidden");
+    roadTrafficLightsError.classList.add("hidden");
+    waterTrafficLightsError.classList.add("hidden");
     gatesError.classList.add("hidden");
     bridgeError.classList.add("hidden");
 
     // disable Traffic light inputs
-    trafficLightInputs.forEach(input => {
+    roadTrafficLightInputs.forEach(input => {
         input.disabled = true;
         input.checked = false;
     });
-
-    // disable Speaker inputs
-    speaker.forEach(input => {
+    waterTrafficLightInputs.forEach(input => {
         input.disabled = true;
         input.checked = false;
     });
@@ -170,13 +172,10 @@ function disableInputs() {
 function enableInputs() {
 
     // enable Traffic light inputs
-    trafficLightInputs.forEach(input => {
+    roadTrafficLightInputs.forEach(input => {
         input.disabled = false;
-        console.log(input.disabled);
     });
-
-    // enable Speaker inputs
-    speaker.forEach(input => {
+    waterTrafficLightInputs.forEach(input => {
         input.disabled = false;
     });
 
