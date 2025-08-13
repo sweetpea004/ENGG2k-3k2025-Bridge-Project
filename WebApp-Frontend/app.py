@@ -145,7 +145,7 @@ if __name__ == "__main__":
     sock = socket.socket()
     #sock.connect(("localhost", ESP_PORT))
 
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF GO STOP NONE 1"
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF GO STOP 1"
     status = Status(default_status.split(" "))
     
     # Thread 1: Running App
