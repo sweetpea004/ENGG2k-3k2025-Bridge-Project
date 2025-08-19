@@ -12,7 +12,7 @@ WiFiServer server(serverPort);
 WiFiClient client;
 bool clientConnected = false;
 unsigned long lastHeartbeat = 0;
-const unsigned long heartbeatInterval = 2000; // 2 seconds
+const unsigned long heartbeatInterval = 1000; // 1 second
 
 // Bridge State Structure
 struct BridgeState {
@@ -22,12 +22,13 @@ struct BridgeState {
   String underUS = "NONE";
   String southUS = "NONE";
   String roadLoad = "NONE";
-  String roadLights = "GO";
+  String roadLights = "GOGO";
   String waterwayLights = "STOP";
-  int errorCode = 1;
+  int errorCode = 0;
 };
 // error codes:
-// 1: No Error
+// 0: No Error
+// 1:
 // 2:
 // 3:
 // 4:
