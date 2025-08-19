@@ -24,18 +24,18 @@ class Status:
         self.under_us = array[4].upper()
         self.south_us = array[5].upper()
         self.road_load = array[6].upper()
-        self.road_lights = array[7].upper()
-        self.waterway_lights = array[8].upper()
-
-        if self.message_code == "STAT":
-            self.error_code = array[9].upper()
+        self.bridge_top_limit = array[7].upper()
+        self.bridge_bottom_limit = array[8].upper()
+        self.gate_top_limit = array[9].upper()
+        self.gate_bottom_limit = array[10].upper()
+        self.road_lights = array[11].upper()
+        self.waterway_lights = array[12].upper()
+        self.audio = array[13].upper()
+        self.error_code = array[14].upper()
     
     def toString(self):
 
-        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_lights} {self.waterway_lights}"
-
-        if self.message_code == "STAT":
-            message += f" {self.error_code}"
+        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
 
         return message
 
@@ -112,9 +112,15 @@ def redirect_home():
                 else:
                     push.append("NONE")
 
+                # TODO: Limit Switch Inputs
+
                 # determine selected settings for traffic lights 
                 push.append(request.form['road-lights'])
                 push.append(request.form['waterway-lights'])
+
+                # TODO audio system
+
+                # TODO Error codes
                 
                 # convert "push" array to Status Obj
                 to_status = Status(push)
@@ -145,7 +151,7 @@ if __name__ == "__main__":
     sock = socket.socket()
     #sock.connect(("localhost", ESP_PORT))
 
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF GO STOP 1"
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRIG NONE TRIG NONE GOGO STOP 0"
     status = Status(default_status.split(" "))
     
     # Thread 1: Running App

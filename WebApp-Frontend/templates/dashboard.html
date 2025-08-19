@@ -40,8 +40,10 @@
         {% endif %}
         
         <!-- Error Code -->
+        {% if status.error_code == "0" %}
+            <h3>Error Code: <span class="green-text">0 - NO ERROR</span></h3>
         {% if status.error_code == "1" %}
-            <h3>Error Code: <span class="green-text">1 - NO ERRORS</span></h3>
+            <h3>Error Code: <span class="red-text">1 - </span></h3>
         {% elif status.error_code == "2" %}
             <h3>Error Code: <span class="red-text">2 - </span></h3>
         {% elif status.error_code == "3" %}
@@ -121,6 +123,42 @@
             <h3>Roadway LoadCell Detected: <span class="green-text">NOTHING DETECTED</span></h3>
         {% endif %}
 
+        <!-- LIMIT SWITCHES STATUS -->
+        {% if bridge_top_limit == "TRIG" %}
+            <h3>Bridge Top Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
+        {% elif bridge_top_limit == "NONE" %}
+            <h3>Bridge Top Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
+        {% if bridge_bottom_limit == "TRIG" %}
+            <h3>Bridge Bottom Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
+        {% elif bridge_bottom_limit == "NONE" %}
+            <h3>Bridge Bottom Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
+        {% if gate_top_limit == "TRIG" %}
+            <h3>Gate Top Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
+        {% elif gate_top_limit == "NONE" %}
+            <h3>Gate Top Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
+        {% if gate_bottom_limit == "TRIG" %}
+            <h3>Gate Bottom Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
+        {% elif gate_bottom_limit == "NONE" %}
+            <h3>Gate Bottom Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
+        {% endif %}
+
+        <!-- AUDIO STATUS -->
+        {% if status.audio == "DONE" %}
+            <h3>Audio Announcement: <span class="orange-text">GO</span></h3>
+        {% elif status.audio == "MOVN" %}
+            <h3>Audio Announcement: <span class="orange-text">SLOW</span></h3>
+        {% elif status.audio == "EMER" %}
+            <h3>Audio Announcement: <span class="yellow-text">STOP</span></h3>
+        {% elif status.audio == "NONE" %}
+            <h3>Audio Announcement: <span class="green-text">EMERGENCY</span></h3>
+        {% endif %}
+
         <!-- Emergency E-STOP -->
         <form class="emergency-button" method="POST">
             <button type="submit" value="emergency" name="action" class="button red-button">EMERGENCY STOP</button>
@@ -148,7 +186,7 @@
             <div>
                 <div>
                     <label class="switch">
-                        <input type="radio" id="road-go" name="road-lights" value="GO">
+                        <input type="radio" id="road-go" name="road-lights" value="GOGO">
                         <span class="slider round"></span>
                         <br><br>Start Roadway
                     </label>
@@ -168,7 +206,7 @@
 
                 <div>
                     <label class="switch">
-                        <input type="radio" id="waterway-go" name="waterway-lights" value="GO">
+                        <input type="radio" id="waterway-go" name="waterway-lights" value="GOGO">
                         <span class="slider round"></span>
                         <br><br>Start Waterway
                     </label>
@@ -220,6 +258,10 @@
             </label>
         </div>
 
+        <!-- TODO Limit Switch Override -->
+
+        <!-- TODO Audio Announcement inputs -->
+
         <!-- control gates-->
          <div>
             <p>Roadway Gate Control Override *<span class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</span></p>
@@ -246,7 +288,7 @@
 
         <!-- Push Button-->
         <div class="push">
-            <button type="submit" id="push" value="push" name="action" class="button grey-button">Push</button>
+            <button type="submit" id="push" value="push" name="action" class="button push-button">Push</button>
         </div>
     </form>
 </body>
