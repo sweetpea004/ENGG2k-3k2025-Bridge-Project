@@ -42,7 +42,7 @@
         <!-- Error Code -->
         {% if status.error_code == "0" %}
             <h3>Error Code: <span class="green-text">0 - NO ERROR</span></h3>
-        {% if status.error_code == "1" %}
+        {% elif status.error_code == "1" %}
             <h3>Error Code: <span class="red-text">1 - </span></h3>
         {% elif status.error_code == "2" %}
             <h3>Error Code: <span class="red-text">2 - </span></h3>
@@ -150,13 +150,13 @@
 
         <!-- AUDIO STATUS -->
         {% if status.audio == "DONE" %}
-            <h3>Audio Announcement: <span class="orange-text">GO</span></h3>
+            <h3>Audio Announcement: <span class="orange-text">BRIDGE STARTING OR COMPLETING MOVEMENT</span></h3>
         {% elif status.audio == "MOVN" %}
-            <h3>Audio Announcement: <span class="orange-text">SLOW</span></h3>
+            <h3>Audio Announcement: <span class="orange-text">BRIDGE MOVING</span></h3>
         {% elif status.audio == "EMER" %}
-            <h3>Audio Announcement: <span class="yellow-text">STOP</span></h3>
+            <h3>Audio Announcement: <span class="yellow-text">EMERGENCY</span></h3>
         {% elif status.audio == "NONE" %}
-            <h3>Audio Announcement: <span class="green-text">EMERGENCY</span></h3>
+            <h3>Audio Announcement: <span class="green-text">NONE</span></h3>
         {% endif %}
 
         <!-- Emergency E-STOP -->
