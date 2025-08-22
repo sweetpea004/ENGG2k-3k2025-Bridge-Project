@@ -32,6 +32,17 @@
             <h1>Bridge Status: <span class="yellow-text">EMERGENCY</span></h1>
         {% endif %}
 
+        <!-- Gates -->
+        {% if status.gate_status == "OPEN" %}
+            <h3>Gate Status: <span class="green-text">OPEN</span></h3>
+        {% elif status.gate_status == "MOVN" %}
+            <h3>Gate Status: <span class="orange-text">MOVING</span></h3>
+        {% elif status.gate_status == "CLOS" %}
+            <h3>Gate Status: <span class="green-text">CLOSED</span></h3>
+        {% elif status.gate_status == "EMER" %}
+            <h3>Gate Status: <span class="yellow-text">EMERGENCY</span></h3>
+        {% endif %}
+
         <!-- Connection status -->
         {% if conn == True %}
             <h3>Connection Status: <span class="green-text">STABLE</span></h3>
@@ -56,8 +67,6 @@
             <h3>Error Code: <span class="red-text">6 - </span></h3>
         {% elif status.error_code == "7" %}
             <h3>Error Code: <span class="red-text">7 - </span></h3>
-        {% elif status.error_code == "8" %}
-            <h3>Error Code: <span class="red-text">8 - </span></h3>
         {% endif %}
 
         <!-- INSERT BRIDGE IMAGE/GRAPHIC -->
@@ -65,19 +74,8 @@
         <!-- SENSOR STATUS SECTION -->
         <h1>Sensor Statuses:</h1>
 
-        <!-- Gates -->
-        {% if status.gate_status == "OPEN" %}
-            <h3>Gate Status: <span class="green-text">OPEN</span></h3>
-        {% elif status.gate_status == "MOVN" %}
-            <h3>Gate Status: <span class="orange-text">MOVING</span></h3>
-        {% elif status.gate_status == "CLOS" %}
-            <h3>Gate Status: <span class="green-text">CLOSED</span></h3>
-        {% elif status.gate_status == "EMER" %}
-            <h3>Gate Status: <span class="yellow-text">EMERGENCY</span></h3>
-        {% endif %}
-
         <!--Traffic Lights-->
-        {% if status.road_lights == "GO" %}
+        {% if status.road_lights == "GOGO" %}
             <h3>Roadway Traffic Lights: <span class="green-text">GO</span></h3>
         {% elif status.road_lights == "SLOW" %}
             <h3>Roadway Traffic Lights: <span class="orange-text">SLOW</span></h3>
@@ -87,7 +85,7 @@
             <h3>Roadway Traffic Lights: <span class="yellow-text">EMERGENCY</span></h3>
         {% endif %}
 
-        {% if status.waterway_lights == "GO" %}
+        {% if status.waterway_lights == "GOGO" %}
             <h3>Waterway Traffic Lights: <span class="green-text">GO</span></h3>
         {% elif status.waterway_lights == "SLOW" %}
             <h3>Waterway Traffic Lights: <span class="orange-text">SLOW</span></h3>
@@ -118,33 +116,33 @@
 
         <!-- Roadway traffic Status-->
         {% if status.road_load == "TRAF" %}
-            <h3>Roadway LoadCell Detected: <span class="orange-text">TRAFFIC DETECTED</span></h3>
+            <h3>Roadway LoadCell: <span class="orange-text">TRAFFIC DETECTED</span></h3>
         {% elif status.road_load == "NONE" %}
-            <h3>Roadway LoadCell Detected: <span class="green-text">NOTHING DETECTED</span></h3>
+            <h3>Roadway LoadCell: <span class="green-text">NOTHING DETECTED</span></h3>
         {% endif %}
 
         <!-- LIMIT SWITCHES STATUS -->
-        {% if bridge_top_limit == "TRIG" %}
+        {% if status.bridge_top_limit == "TRIG" %}
             <h3>Bridge Top Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif bridge_top_limit == "NONE" %}
+        {% elif status.bridge_top_limit == "NONE" %}
             <h3>Bridge Top Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
         {% endif %}
 
-        {% if bridge_bottom_limit == "TRIG" %}
+        {% if status.bridge_bottom_limit == "TRIG" %}
             <h3>Bridge Bottom Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif bridge_bottom_limit == "NONE" %}
+        {% elif status.bridge_bottom_limit == "NONE" %}
             <h3>Bridge Bottom Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
         {% endif %}
 
-        {% if gate_top_limit == "TRIG" %}
+        {% if status.gate_top_limit == "TRIG" %}
             <h3>Gate Top Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif gate_top_limit == "NONE" %}
+        {% elif status.gate_top_limit == "NONE" %}
             <h3>Gate Top Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
         {% endif %}
 
-        {% if gate_bottom_limit == "TRIG" %}
+        {% if status.gate_bottom_limit == "TRIG" %}
             <h3>Gate Bottom Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif gate_bottom_limit == "NONE" %}
+        {% elif status.gate_bottom_limit == "NONE" %}
             <h3>Gate Bottom Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
         {% endif %}
 
@@ -171,118 +169,188 @@
         <div class="mode-buttons">
             <input type="radio" id="auto" name="mode" value="auto" checked>
             <label for="auto" class="radio big-radio"><span>Automatic Bridge Control</span></label>
-            <br><br>
+            <br><br><br>
             <input type="radio" id="manual" name="mode" value="manual">
             <label for="manual" class="radio big-radio"><span>Manual Bridge Control</span></label>
         </div>
 
+        <div class="disabled-box" id="disabled-box">
         <!-- traffic light controls -->
-        <div>
-            <p>Traffic Light Override * 
-                <span class="hidden error" id="traf-lights-error-text">Please Select Override for: </span>
-                <span class="hidden error" id="road-lights-error-text">Roadway </span>
-                <span class="hidden error" id="water-lights-error-text">Waterway</span></p>
-
             <div>
-                <div>
-                    <label class="switch">
-                        <input type="radio" id="road-go" name="road-lights" value="GOGO">
-                        <span class="slider round"></span>
-                        <br><br>Start Roadway
-                    </label>
-
-                    <label class="switch">
-                        <input type="radio" id="road-stop" name="road-lights" value="STOP">
-                        <span class="slider round"></span>
-                        <br><br>Stop Roadway
-                    </label>
-
-                    <label class="switch">
-                        <input type="radio" id="road-emer" name="road-lights" value="EMER">
-                        <span class="slider round"></span>
-                        <br><br>Roadway Emergency
-                    </label>
-                </div>
+                <p>Traffic Light Override * 
+                    <span class="hidden error" id="traf-lights-error-text">Please Select Override: </span>
+                    <span class="hidden error" id="road-lights-error-text">Missing Roadway Input</span>
+                    <span class="hidden error" id="water-lights-error-text">Missing Waterway Input</span></p>
 
                 <div>
-                    <label class="switch">
-                        <input type="radio" id="waterway-go" name="waterway-lights" value="GOGO">
-                        <span class="slider round"></span>
-                        <br><br>Start Waterway
-                    </label>
+                    <div>
+                        <label class="switch">
+                            <input type="radio" id="road-go" name="road-lights" value="GOGO">
+                            <span class="slider round"></span>
+                            <br><br>Start Roadway
+                        </label>
 
-                    <label class="switch">
-                        <input type="radio" id="waterway-stop" name="waterway-lights" value="STOP">
-                        <span class="slider round"></span>
-                        <br><br>Stop Waterway
-                    </label>
+                        <label class="switch">
+                            <input type="radio" id="road-stop" name="road-lights" value="STOP">
+                            <span class="slider round"></span>
+                            <br><br>Stop Roadway
+                        </label>
 
-                    <label class="switch">
-                        <input type="radio" id="waterway-emer" name="waterway-lights" value="EMER">
-                        <span class="slider round"></span>
-                        <br><br>Waterway Emergency
-                    </label>
+                        <label class="switch">
+                            <input type="radio" id="road-emer" name="road-lights" value="EMER">
+                            <span class="slider round"></span>
+                            <br><br>Roadway Emergency
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="switch">
+                            <input type="radio" id="waterway-go" name="waterway-lights" value="GOGO">
+                            <span class="slider round"></span>
+                            <br><br>Start Waterway
+                        </label>
+
+                        <label class="switch">
+                            <input type="radio" id="waterway-stop" name="waterway-lights" value="STOP">
+                            <span class="slider round"></span>
+                            <br><br>Stop Waterway
+                        </label>
+
+                        <label class="switch">
+                            <input type="radio" id="waterway-emer" name="waterway-lights" value="EMER">
+                            <span class="slider round"></span>
+                            <br><br>Waterway Emergency
+                        </label>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- control ulrasonic readings -->
-        <div>
-            <p>Ship Detection Override (Ultrasonics)</p>
-            <label class="switch">
-                <input type="checkbox" id="north-us" name="ultrasonics" value="north-us">
-                <span class="slider"></span>
-                North Detected
-            </label>
+            <!-- control ulrasonic readings -->
+            <div>
+                <p>Ship Detection Override (Ultrasonics)</p>
+                <label class="switch">
+                    <input type="checkbox" id="north-us" name="ultrasonics" value="north-us">
+                    <span class="slider"></span>
+                    North Detected
+                </label>
 
-            <label class="switch">
-                <input type="checkbox" id="under-us" name="ultrasonics" value="under-us">
-                <span class="slider"></span>
-                Underside Detected
-            </label>
+                <label class="switch">
+                    <input type="checkbox" id="under-us" name="ultrasonics" value="under-us">
+                    <span class="slider"></span>
+                    Underside Detected
+                </label>
 
-            <label class="switch">
-                <input type="checkbox" id="south-us" name="ultrasonics" value="south-us">
-                <span class="slider"></span>
-                South Detected
-            </label>
-        </div>
-
-        <!-- control load cell readings -->
-        <div>
-            <p>Roadway Detection Override (LoadCell)</p>
-            <label class="switch">
-                <input type="checkbox" id="loadcell" name="loadcell" value="loadcell">
-                <span class="slider"></span>
-                Load Detected 
-            </label>
-        </div>
-
-        <!-- TODO Limit Switch Override -->
-
-        <!-- TODO Audio Announcement inputs -->
-
-        <!-- control gates-->
-         <div>
-            <p>Roadway Gate Control Override *<span class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</span></p>
-
-            <div class="radio-container">
-                <input type="radio" id="open-gates" name="gates" value="OPEN">
-                <label for="open-gates" class="radio">Open Gates</label>
-                <input type="radio" id="close-gates" name="gates" value="CLOS">
-                <label for="close-gates" class="radio">Close Gates</label>
+                <label class="switch">
+                    <input type="checkbox" id="south-us" name="ultrasonics" value="south-us">
+                    <span class="slider"></span>
+                    South Detected
+                </label>
             </div>
-        </div>
 
-        <!-- control bridge -->
-        <div>
-            <p>Bridge Control Override * <span class="hidden error" id="bridge-error-text">Please Select an Instruction for the Bridge.</span></p>
+            <!-- control load cell readings -->
+            <div>
+                <p>Roadway Detection Override (LoadCell)</p>
+                <label class="switch">
+                    <input type="checkbox" id="loadcell" name="loadcell" value="loadcell">
+                    <span class="slider"></span>
+                    Load Detected 
+                </label>
+            </div>
 
-            <div class="radio-container">
-                <input type="radio" id="open-bridge" name="bridge" value="OPEN">
-                <label for="open-bridge" class="radio">Open Bridge</label>
-                <input type="radio" id="close-bridge" name="bridge" value="CLOS">
-                <label for="close-bridge" class="radio">Close Bridge</label>
+            <!-- Limit Switch Override -->
+            <div>
+                <p>Bridge and Gate Limit Switch Detection Override</p>
+                <label class="switch">
+                    <input type="checkbox" id="bridge-top" name="limit-switch" value="bridge-top">
+                    <span class="slider"></span>
+                    Bridge Top
+                </label>
+
+                <label class="switch">
+                    <input type="checkbox" id="bridge-bottom" name="limit-switch" value="bridge-bottom">
+                    <span class="slider"></span>
+                    Bridge Bottom
+                </label>
+
+                <label class="switch">
+                    <input type="checkbox" id="gate-top" name="limit-switch" value="gate-top">
+                    <span class="slider"></span>
+                    Gate Top
+                </label>
+
+                <label class="switch">
+                    <input type="checkbox" id="gate-bottom" name="limit-switch" value="gate-bottom">
+                    <span class="slider"></span>
+                    Gate Bottom
+                </label>
+            </div>
+
+            <!-- TODO Audio Announcement inputs -->
+            <div>
+                <p>Audio Announcement Override * <span class="hidden error" id="audio-error-text">Please Select an Instruction for the Audio.</span></p>
+                <label class="switch">
+                    <input type="radio" id="start-complete-audio" name="audio" value="DONE">
+                    <span class="slider round"></span>
+                    <br><br>Terminus
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="moving-audio" name="audio" value="MOVN">
+                    <span class="slider round"></span>
+                    <br><br>Moving
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="emer-audio" name="audio" value="EMER">
+                    <span class="slider round"></span>
+                    <br><br>Emergency
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="no-audio" name="audio" value="NONE">
+                    <span class="slider round"></span>
+                    <br><br>None
+                </label>
+            </div>
+
+            <!-- control gates-->
+            <div>
+                <p>Roadway Gate Control Override *<span class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</span></p>
+
+                <div class="radio-container">
+                    <input type="radio" id="open-gates" name="gates" value="OPEN">
+                    <label for="open-gates" class="radio">Open Gates</label>
+                    <input type="radio" id="close-gates" name="gates" value="CLOS">
+                    <label for="close-gates" class="radio">Close Gates</label>
+                </div>
+            </div>
+
+            <!-- control bridge -->
+            <div>
+                <p>Bridge Control Override * <span class="hidden error" id="bridge-error-text">Please Select an Instruction for the Bridge.</span></p>
+
+                <div class="radio-container">
+                    <input type="radio" id="open-bridge" name="bridge" value="OPEN">
+                    <label for="open-bridge" class="radio">Open Bridge</label>
+                    <input type="radio" id="close-bridge" name="bridge" value="CLOS">
+                    <label for="close-bridge" class="radio">Close Bridge</label>
+                </div>
+            </div>
+
+            <!-- Error Code Override -->
+            <div>
+                <p>Error Code Override *</p>
+                
+                <select name="error-code" id="error-code">
+                    <option value="0" selected>0: No Error</option>
+                    <option value="1">1: </option>
+                    <option value="2">2: </option>
+                    <option value="3">3: </option>
+                    <option value="4">4: </option>
+                    <option value="5">5: </option>
+                    <option value="6">6: </option>
+                    <option value="7">7: </option>
+                </select>
             </div>
         </div>
 

@@ -1,5 +1,6 @@
 // set global querie variables
 const mode = document.getElementsByName('mode');
+const disabledBox = document.querySelector("#disabled-box")
 const roadTrafficLightInputs = document.getElementsByName('road-lights');
 const roadTrafficLightsError = document.querySelector("#road-lights-error-text");
 const waterTrafficLightInputs = document.getElementsByName('waterway-lights');
@@ -9,7 +10,14 @@ const northUS = document.querySelector("#north-us");
 const underUS = document.querySelector("#under-us");
 const southUS = document.querySelector("#south-us");
 const loadCell = document.querySelector("#loadcell");
+const bTopLimit = document.querySelector("#bridge-top");
+const bBottomLimit = document.querySelector("#bridge-bottom");
+const gTopLimit = document.querySelector("#gate-top");
+const gBottomLimit = document.querySelector("#gate-bottom");
+const audioError = document.querySelector("#audio-error-text");
+const audio = document.getElementsByName('audio');
 const gates = document.getElementsByName('gates');
+const errorCode = document.querySelector("#error-code");
 const gatesError = document.querySelector("#gate-error-text");
 const bridge = document.getElementsByName('bridge');
 const bridgeError = document.querySelector("#bridge-error-text");
@@ -36,6 +44,10 @@ roadTrafficLightInputs.forEach(input => {
 waterTrafficLightInputs.forEach(input => {
     input.addEventListener("click", validateWaterTrafficLights)
 });
+
+audio.forEach(input => {
+    input.addEventListener("click", validateAudio)
+})
 
 // checks if gates have been inputted
 gates.forEach(input => {
@@ -87,6 +99,17 @@ function validateWaterTrafficLights() {
     }
 }
 
+function validateAudio() {
+    let selected = document.querySelector('input[name="audio"]:checked');
+    if (selected || isAuto) {
+        audioError.classList.add("hidden");
+        return true;
+    } else {
+        audioError.classList.remove("hidden");
+        return false;
+    }
+}
+
 function validateGates() {
     let selected = document.querySelector('input[name="gates"]:checked');
     if (selected || isAuto) {
@@ -113,10 +136,11 @@ function validateAll(event) {
     // calls each validation functions
     let validRoadTrafficLights = validateRoadTrafficLights();
     let validWaterTrafficLights = validateWaterTrafficLights();
+    let validAudio = validateAudio();
     let validGates = validateGates();
     let validBridge = validateBridge();
 
-    allValid = validRoadTrafficLights && validWaterTrafficLights && validGates && validBridge;
+    allValid = validRoadTrafficLights && validWaterTrafficLights && validAudio && validGates && validBridge;
 
     if (!allValid) {
         // stops the form from submitting
@@ -126,9 +150,15 @@ function validateAll(event) {
 
 function disableInputs() {
 
+    // remove hidden from disabled box
+    disabledBox.classList.remove("content-box");
+    disabledBox.classList.add("disabled-box");
+
     // hide errors
+    trafficLightsError.classList.add("hidden");
     roadTrafficLightsError.classList.add("hidden");
     waterTrafficLightsError.classList.add("hidden");
+    audioError.classList.add("hidden");
     gatesError.classList.add("hidden");
     bridgeError.classList.add("hidden");
 
@@ -156,6 +186,29 @@ function disableInputs() {
     loadCell.disabled = true;
     loadCell.checked = false;
 
+    // disable Limit Switches inputs
+    bTopLimit.disabled = true;
+    bTopLimit.checked = false;
+
+    bBottomLimit.disabled = true;
+    bBottomLimit.checked = false;
+
+    gTopLimit.disabled = true;
+    gTopLimit.checked = false;
+    
+    gBottomLimit.disabled = true;
+    gBottomLimit.checked = false;
+
+    // disable audio inputs
+    audio.forEach(input => {
+        input.disabled = true;
+        input.checked = false;
+    });
+
+    // disable error code inputs
+    errorCode.disabled = true;
+    
+
     // disable gate inputs
     gates.forEach(input => {
         input.disabled = true;
@@ -170,6 +223,10 @@ function disableInputs() {
 }
 
 function enableInputs() {
+
+    // remove hidden from disabled box
+    disabledBox.classList.remove("disabled-box");
+    disabledBox.classList.add("content-box");
 
     // enable Traffic light inputs
     roadTrafficLightInputs.forEach(input => {
@@ -186,6 +243,20 @@ function enableInputs() {
 
     // enable load cell sensor inputs
     loadCell.disabled = false;
+
+    // enable Limit Switches inputs
+    bTopLimit.disabled = false;
+    bBottomLimit.disabled = false;
+    gTopLimit.disabled = false;
+    gBottomLimit.disabled = false;
+
+    // enable audio inputs
+    audio.forEach(input => {
+        input.disabled = false;
+    });
+
+    // enable error code inputs
+    errorCode.disabled = false;
 
     // enable gate inputs
     gates.forEach(input => {

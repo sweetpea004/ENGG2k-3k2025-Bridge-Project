@@ -112,15 +112,34 @@ def redirect_home():
                 else:
                     push.append("NONE")
 
-                # TODO: Limit Switch Inputs
+                # Limit Switch Inputs
+                limit_switches = request.form.getlist('limit-switch')
+                if "bridge-top" in limit_switches:
+                    push.append("TRIG")
+                else:
+                    push.append("NONE")
+                if "bridge-bottom" in limit_switches:
+                    push.append("TRIG")
+                else:
+                    push.append("NONE")
+                if "gate-top" in limit_switches:
+                    push.append("TRIG")
+                else:
+                    push.append("NONE")
+                if "gate-bottom" in limit_switches:
+                    push.append("TRIG")
+                else:
+                    push.append("NONE")
 
                 # determine selected settings for traffic lights 
                 push.append(request.form['road-lights'])
                 push.append(request.form['waterway-lights'])
 
-                # TODO audio system
+                # audio system
+                push.append(request.form['audio'])
 
-                # TODO Error codes
+                # Error codes
+                push.append(request.form['error-code'])
                 
                 # convert "push" array to Status Obj
                 to_status = Status(push)

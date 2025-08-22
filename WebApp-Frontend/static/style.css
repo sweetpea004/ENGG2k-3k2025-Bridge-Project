@@ -60,6 +60,15 @@ aside {
   min-height: 50rem;
 }
 
+.disabled-box {
+  margin: var(--margin);
+  padding: var(--padding);
+  background-color: var(--grey);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-main);
+  min-height: 50rem;
+}
+
 .hidden {
   display: none;
 }
@@ -86,12 +95,11 @@ aside {
   background-color: lightcoral;
 }
 
-.grey-button {
-  background-color: var(--dark-grey);
+.push-button {
+  background-color: var(--orange);
   border-radius: var(--radius);
   color: white;
   padding: var(--button-padding);
-  margin-top: var(--top-margin);
   border: none;
   text-decoration: none;
   transition: 0.25s;
@@ -99,7 +107,7 @@ aside {
   text-align: center;
 }
 
-.grey-button:not(:disabled):hover{
+.push-button:not(:disabled):hover{
   background-color: var(--green);
 }
 
