@@ -131,6 +131,40 @@ aside {
   color: var(--yellow)
 }
 
+select {
+  appearance: base-select;
+  border-radius: var(--radius);
+  padding: var(--padding);
+  margin-inline: var(--margin);
+  background-color: var(--dark-grey);
+  color: white;
+  border: none;
+
+  &::picker(select) {
+    appearance: base-select;
+    /* style the 'listbox' */
+    border-radius: var(--small-radius);
+ }
+
+  option {
+    padding: 0.5rem;
+  }
+
+  option:hover {
+    background-color: var(--light-grey); 
+  }
+
+  option:checked {
+    background-color: var(--red); /* Highlight the selected option */
+    color: white;
+    font-weight: bold;
+  }
+
+  option::checkmark {
+    display: none;
+  }
+}
+
 /* Hide default button */
 input[type="radio"] {
   display: none;
