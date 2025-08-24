@@ -62,7 +62,7 @@ def send(message: str):
     sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
 
 @app.route("/", methods=['GET', 'POST'])
-def redirect_home():
+def redirect_dashboard():
 
     # if POST
     if request.method == 'POST':
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     sock = socket.socket()
     #sock.connect(("localhost", ESP_PORT))
 
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRIG NONE TRIG NONE EMER EMER NONE 0"
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
     status = Status(default_status.split(" "))
     
     # Thread 1: Running App
