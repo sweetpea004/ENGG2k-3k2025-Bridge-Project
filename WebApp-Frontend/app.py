@@ -54,6 +54,10 @@ def receive() -> str:
         print("Received:", message)
     return message
 
+def parse_message(message: str) -> Status:
+    status = Status(message.split(" "))
+    return status
+
 def send(message: str):
 
     # send message in strong form
