@@ -253,6 +253,10 @@ function enableInputs() {
     // enable audio inputs
     audio.forEach(input => {
         input.disabled = false;
+        // automatically select None option
+        if (input.value == "NONE") {
+            input.checked = true;
+        }
     });
 
     // enable error code inputs

@@ -68,25 +68,22 @@ def send(message: str):
 @app.route("/", methods=['GET', 'POST'])
 def redirect_dashboard():
 
-    # if POST
     if request.method == 'POST':
-        # Save message to be sent
+        
         new_message = ""
 
         if request.form.get('action') == 'emergency':
             # Send EMER 
             new_message = "EMER"
 
-            # flash confirmation message
+            # flash confirmation message for Emergency
             flash('Stopping Bridge Processes for Emergency', 'error')
             
         elif request.form.get('action') == 'push':
             # Check the mode (manual vs automatic)
             mode = request.form['mode']
 
-            if mode == "manual":
-                # Send: "PUSH [bridge] [gate] [northUS] [underUS] [southUS] [loadcell] [roadlights] [waterlights] [speaker]"
-                
+            if mode == "manual":                
                 # create array in order to make a new status obj
                 push = ["PUSH"]
 
@@ -116,7 +113,7 @@ def redirect_dashboard():
                 else:
                     push.append("NONE")
 
-                # Limit Switch Inputs
+                # determine Limit Switch Inputs
                 limit_switches = request.form.getlist('limit-switch')
                 if "bridge-top" in limit_switches:
                     push.append("TRIG")
@@ -139,10 +136,10 @@ def redirect_dashboard():
                 push.append(request.form['road-lights'])
                 push.append(request.form['waterway-lights'])
 
-                # audio system
+                # determine audio system selection
                 push.append(request.form['audio'])
 
-                # Error codes
+                # determine Error code selected 
                 push.append(request.form['error-code'])
                 
                 # convert "push" array to Status Obj
