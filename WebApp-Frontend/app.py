@@ -2,9 +2,10 @@ from flask import Flask, render_template, request, flash
 import os
 import multiprocessing
 import socket
+import time
 
 ESP_PORT = 5000
-APP_PORT = 5001
+APP_PORT = 5003
 BUF_SIZE = 4000
 VERBOSE = True # Controls whether messages are printed to console
 
@@ -16,7 +17,8 @@ app.secret_key = os.urandom(32)
 
 class Status:
     def __init__(self, array):
-
+        self.time_current = time.time_ns()
+        self.time_since_last_status = time.time_ns()
         self.message_code = array[0].upper()
         self.bridge_status = array[1].upper()
         self.gate_status = array[2].upper()
@@ -56,6 +58,8 @@ def receive() -> str:
 
 def parse_message(message: str) -> Status:
     status = Status(message.split(" "))
+    if(status.message_code == "STAT"):
+        status.time_since_last_status = status.time_current
     return status
 
 def send(message: str):
@@ -67,6 +71,13 @@ def send(message: str):
 
 @app.route("/", methods=['GET', 'POST'])
 def redirect_dashboard():
+
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+    status = Status(default_status.split(" "))
+    status.time_current = time.time_ns()
+    if(status.time_current - status.time_since_last_status > 2000000000):
+        # attempt Reconnect
+        print("Test")
 
     if request.method == 'POST':
         
