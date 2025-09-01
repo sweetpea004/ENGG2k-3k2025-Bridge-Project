@@ -24,26 +24,40 @@ struct BridgeState {
   String roadLoad = "NONE";
   String roadLights = "GOGO";
   String waterwayLights = "STOP";
+  String audioSys = "NONE";
   int errorCode = 0;
 };
+
+struct Message {
+  String msgType = "OKOK";
+  String bridgeStatus = "CLOS";
+  String gateStatus = "OPEN";
+  String northUS = "NONE";
+  String underUS = "NONE";
+  String southUS = "NONE";
+  String roadLoad = "NONE";
+  String roadLights = "GOGO";
+  String waterwayLights = "STOP";
+  String audioSys = "NONE";
+  int errorCode = 0;
+}
 // error codes:
 // 0: No Error
-// 1:
-// 2:
-// 3:
-// 4:
-// 5:
-// 6:
-// 7:
-// 8:
+// 1: Bridge Hung
+// 2: Gates Hung
+// 3: Lights Hung
+// 4: Ultrasonics Hung
+// 5: 
+// 6: 
+// 7: 
+// 8: 
 
 //String interpretation
 BridgeState readMssg(String mssg) {
-  // TODO: split up a string by spaces
-  String arr[12];
-  int strt = 0;
-  int word = 0;
-  for (int pos = 0 ; pos < mssg.length() ; pos++) {
+  // PRE: receive a string in the Appendix E format
+  // POST: output a BridgeState struct with the string contents
+  BridgeState new;
+  for (int pos = 0 ; pos < mssg.length() ; pos+= 5) {
     if (mssg[i] == ' ') {
       for (int k = strt; k < i; k++) {
 
