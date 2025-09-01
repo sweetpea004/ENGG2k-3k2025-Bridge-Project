@@ -55,16 +55,20 @@ struct Message {
 //String interpretation
 BridgeState readMssg(String mssg) {
   // PRE: receive a string in the Appendix E format
-  // POST: output a BridgeState struct with the string contents
-  BridgeState new;
-  for (int pos = 0 ; pos < mssg.length() ; pos+= 5) {
-    if (mssg[i] == ' ') {
-      for (int k = strt; k < i; k++) {
-
-      }
-    }
-  }
-  return NULL;
+  // POST: output a message struct with the string contents
+  Message retMsg;
+  retMsg.msgType = mssg.substr(0,5);
+  retMsg.bridgeStatus = mssg.substr(5,5);
+  retMsg.gateStatus = mssg.substr(10,5);
+  retMsg.northUS = mssg.substr(15,5);
+  retMsg.underUS = mssg.substr(20,5);
+  retMsg.southUS = mssg.substr(25,5);
+  retMsg.roadLoad = mssg.substr(30,5);
+  retMsg.roadLights = mssg.substr(35,5);
+  retMsg.waterwayLights = mssg.substr(40,5);
+  retMsg.audioSys = mssg.substr(45,5);
+  retMsg.errorCode = mssg[50] = '0';
+  return retMsg;
 }
 
 BridgeState currentState;
