@@ -19,6 +19,8 @@ class Status:
     def __init__(self, array):
         self.time_current = time.time_ns()
         self.time_since_last_status = time.time_ns()
+
+        # message contents
         self.message_code = array[0].upper()
         self.bridge_status = array[1].upper()
         self.gate_status = array[2].upper()
@@ -71,10 +73,6 @@ def send(message: str):
 
 @app.route("/", methods=['GET', 'POST'])
 def redirect_dashboard():
-
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
-    status = Status(default_status.split(" "))
-    status.time_current = time.time_ns()
     if(status.time_current - status.time_since_last_status > 2000000000):
         # attempt Reconnect
         print("Test")
@@ -184,6 +182,7 @@ if __name__ == "__main__":
 
     default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
     status = Status(default_status.split(" "))
+    status.time_current = time.time_ns()
     
     # Thread 1: Running App
     app.run(debug=True, port=APP_PORT)
