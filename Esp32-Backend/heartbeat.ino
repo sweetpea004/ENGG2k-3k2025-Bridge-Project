@@ -53,7 +53,7 @@ struct Message {
 // 8: 
 
 //String interpretation
-BridgeState readMssg(String mssg) {
+Message readMssg(String mssg) {
   // PRE: receive a string in the Appendix E format
   // POST: output a message struct with the string contents
   Message retMsg;
