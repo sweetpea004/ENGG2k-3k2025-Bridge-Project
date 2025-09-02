@@ -1,24 +1,24 @@
 from flask import Flask, render_template, request, flash
 import os
-import multiprocessing
+from  multiprocessing import Process
 import socket
 import time
 
-ESP_PORT = 5000
-APP_PORT = 5003
+ESP_IP = "172.20.10.2"
+ESP_PORT = 5003
+APP_PORT = 5004
 BUF_SIZE = 4000
 VERBOSE = True # Controls whether messages are printed to console
 
 # Globals
-conn = False # boolean value representing if the app is connected to the ESP32
+time_current = time.time_ns()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
 class Status:
     def __init__(self, array):
-        self.time_current = time.time_ns()
-        self.time_since_last_status = time.time_ns()
+        self.recieved_status = time.time_ns()
 
         # message contents
         self.message_code = array[0].upper()
@@ -59,23 +59,43 @@ def receive() -> str:
     return message
 
 def parse_message(message: str) -> Status:
+
     status = Status(message.split(" "))
     if(status.message_code == "STAT"):
-        status.time_since_last_status = status.time_current
+        status.recieved_status = time_current
     return status
 
 def send(message: str):
 
-    # send message in strong form
+    # send message in string form
     if VERBOSE:
         print("Sent:", message)
     sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
+    
+
+def communication(conn):
+
+    while True:
+        while conn == False:
+            send("REDY")
+
+            try:
+                m = receive()
+                conn = True
+            except Exception as e:
+                m = "no connection"
+    
+        '''
+        while conn == True:
+            time_current = time.time_ns()
+            if(time_current - status.recieved_status > 2000000000):
+                # attempt Reconnect
+                print("Test")
+            else:
+        '''
 
 @app.route("/", methods=['GET', 'POST'])
 def redirect_dashboard():
-    if(status.time_current - status.time_since_last_status > 2000000000):
-        # attempt Reconnect
-        print("Test")
 
     if request.method == 'POST':
         
@@ -174,19 +194,19 @@ def redirect_dashboard():
     # Load page
     return render_template("dashboard.html", status=status, conn=conn)
 
+default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+status = Status(default_status.split(" "))
+
 if __name__ == "__main__":
+    conn = False
 
     # Connection with ESP32
     sock = socket.socket()
-    #sock.connect(("localhost", ESP_PORT))
+    #sock.connect((ESP_IP, ESP_PORT))
 
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
-    status = Status(default_status.split(" "))
-    status.time_current = time.time_ns()
+    # thread for simultaneously communicating
+    #Process(target=communication(conn)).start()
+    Process(target=app.run, args=dict(debug=True, port=APP_PORT)).start()
     
-    # Thread 1: Running App
-    app.run(debug=True, port=APP_PORT)
-
-    # Thread 2: Communications
 
     
