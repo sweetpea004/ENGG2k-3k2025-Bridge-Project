@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <script src="/static/form.js" defer></script>
     <title>Bridge Control Panel</title>
 </head>
@@ -22,52 +23,16 @@
         {% endwith %}
 
         <!-- Bridge Status Text -->
-        {% if status.bridge_status == "OPEN" %}
-            <h1>Bridge Status: <span class="green-text">OPEN</span></h1>
-        {% elif status.bridge_status == "MOVN" %}
-            <h1>Bridge Status: <span class="orange-text">MOVING</span></h1>
-        {% elif status.bridge_status == "CLOS" %}
-            <h1>Bridge Status: <span class="green-text">CLOSED</span></h1>
-        {% elif status.bridge_status == "EMER" %}
-            <h1>Bridge Status: <span class="yellow-text">EMERGENCY</span></h1>
-        {% endif %}
+        <h1>Bridge Status: <span id="text-bridge-status"></span></h1>
 
         <!-- Gates -->
-        {% if status.gate_status == "OPEN" %}
-            <h3>Gate Status: <span class="green-text">OPEN</span></h3>
-        {% elif status.gate_status == "MOVN" %}
-            <h3>Gate Status: <span class="orange-text">MOVING</span></h3>
-        {% elif status.gate_status == "CLOS" %}
-            <h3>Gate Status: <span class="green-text">CLOSED</span></h3>
-        {% elif status.gate_status == "EMER" %}
-            <h3>Gate Status: <span class="yellow-text">EMERGENCY</span></h3>
-        {% endif %}
+        <h3>Gate Status: <span id="text-gate-status"></span></h3>
 
         <!-- Connection status -->
-        {% if conn == True %}
-            <h3>Connection Status: <span class="green-text">STABLE</span></h3>
-        {% elif conn == False %}
-            <h3>Connection Status: <span class="red-text">DISCONNECTED</span></h3>
-        {% endif %}
+        <h3>Connection Status: <span id="text-conn-status"></span></h3>
         
         <!-- Error Code -->
-        {% if status.error_code == "0" %}
-            <h3>Error Code: <span class="green-text">0 - NO ERROR</span></h3>
-        {% elif status.error_code == "1" %}
-            <h3>Error Code: <span class="red-text">1 - </span></h3>
-        {% elif status.error_code == "2" %}
-            <h3>Error Code: <span class="red-text">2 - </span></h3>
-        {% elif status.error_code == "3" %}
-            <h3>Error Code: <span class="red-text">3 - </span></h3>
-        {% elif status.error_code == "4" %}
-            <h3>Error Code: <span class="red-text">4 - </span></h3>
-        {% elif status.error_code == "5" %}
-            <h3>Error Code: <span class="red-text">5 - </span></h3>
-        {% elif status.error_code == "6" %}
-            <h3>Error Code: <span class="red-text">6 - </span></h3>
-        {% elif status.error_code == "7" %}
-            <h3>Error Code: <span class="red-text">7 - </span></h3>
-        {% endif %}
+        <h3>Error Code: <span id="text-error-code"></span></h3>
 
         <!-- INSERT BRIDGE IMAGE/GRAPHIC -->
 
@@ -75,87 +40,31 @@
         <h1>Sensor Statuses:</h1>
 
         <!--Traffic Lights-->
-        {% if status.road_lights == "GOGO" %}
-            <h3>Roadway Traffic Lights: <span class="green-text">GO</span></h3>
-        {% elif status.road_lights == "SLOW" %}
-            <h3>Roadway Traffic Lights: <span class="orange-text">SLOW</span></h3>
-        {% elif status.road_lights == "STOP" %}
-            <h3>Roadway Traffic Lights: <span class="red-text">STOP</span></h3>
-        {% elif status.road_lights == "EMER" %}
-            <h3>Roadway Traffic Lights: <span class="yellow-text">EMERGENCY</span></h3>
-        {% endif %}
+        <h3>Roadway Traffic Lights: <span id="text-road-traf"></span></h3>
 
-        {% if status.waterway_lights == "GOGO" %}
-            <h3>Waterway Traffic Lights: <span class="green-text">GO</span></h3>
-        {% elif status.waterway_lights == "SLOW" %}
-            <h3>Waterway Traffic Lights: <span class="orange-text">SLOW</span></h3>
-        {% elif status.waterway_lights == "STOP" %}
-            <h3>Waterway Traffic Lights: <span class="red-text">STOP</span></h3>
-        {% elif status.waterway_lights == "EMER" %}
-            <h3>Waterway Traffic Lights: <span class="yellow-text">EMERGENCY</span></h3>
-        {% endif %}
+        <h3>Waterway Traffic Lights: <span id="text-waterway-traf"></span></h3>
 
         <!-- Ultrasonic Sensors -->
-        {% if status.north_us == "SHIP" %}
-            <h3>North Ultrasonic: <span class="orange-text">SHIP DETECTED</span></h3>
-        {% elif status.north_us == "NONE" %}
-            <h3>North Ultrasonic: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>North Ultrasonic: <span id="text-north-us"></span></h3>
 
-        {% if status.under_us == "SHIP" %}
-            <h3>Underside Ultrasonic: <span class="orange-text">SHIP DETECTED</span></h3>
-        {% elif status.under_us == "NONE" %}
-            <h3>Underside Ultrasonic: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>Underside Ultrasonic: <span id="text-under-us"></span></h3>
 
-        {% if status.south_us == "SHIP" %}
-            <h3>South Ultrasonic: <span class="orange-text">SHIP DETECTED</span></h3>
-        {% elif status.south_us == "NONE" %}
-            <h3>South Ultrasonic: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>South Ultrasonic: <span id="text-south-us"></span></h3>
 
         <!-- Roadway traffic Status-->
-        {% if status.road_load == "TRAF" %}
-            <h3>Roadway LoadCell: <span class="orange-text">TRAFFIC DETECTED</span></h3>
-        {% elif status.road_load == "NONE" %}
-            <h3>Roadway LoadCell: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>Roadway LoadCell: <span id="text-load-cell"></span></h3>
 
         <!-- LIMIT SWITCHES STATUS -->
-        {% if status.bridge_top_limit == "TRIG" %}
-            <h3>Bridge Top Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif status.bridge_top_limit == "NONE" %}
-            <h3>Bridge Top Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>Bridge Top Limit Switch: <span id="text-bridge-top-limit"></span></h3>
 
-        {% if status.bridge_bottom_limit == "TRIG" %}
-            <h3>Bridge Bottom Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif status.bridge_bottom_limit == "NONE" %}
-            <h3>Bridge Bottom Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>Bridge Bottom Limit Switch: <span id="text-bridge-bottom-limit"></span></h3>
 
-        {% if status.gate_top_limit == "TRIG" %}
-            <h3>Gate Top Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif status.gate_top_limit == "NONE" %}
-            <h3>Gate Top Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>Gate Top Limit Switch: <span id="text-gate-top-limit"></span></h3>
 
-        {% if status.gate_bottom_limit == "TRIG" %}
-            <h3>Gate Bottom Limit Switch: <span class="orange-text">TRIGGERED</span></h3>
-        {% elif status.gate_bottom_limit == "NONE" %}
-            <h3>Gate Bottom Limit Switch: <span class="green-text">NOTHING DETECTED</span></h3>
-        {% endif %}
+        <h3>Gate Bottom Limit Switch: <span id="text-gate-bottom-limit"></span></h3>
 
         <!-- AUDIO STATUS -->
-        {% if status.audio == "DONE" %}
-            <h3>Audio Announcement: <span class="orange-text">BRIDGE STARTING OR COMPLETING MOVEMENT</span></h3>
-        {% elif status.audio == "MOVN" %}
-            <h3>Audio Announcement: <span class="orange-text">BRIDGE MOVING</span></h3>
-        {% elif status.audio == "EMER" %}
-            <h3>Audio Announcement: <span class="yellow-text">EMERGENCY</span></h3>
-        {% elif status.audio == "NONE" %}
-            <h3>Audio Announcement: <span class="green-text">NONE</span></h3>
-        {% endif %}
+        <h3>Audio Announcement: <span id="text-audio"></span></h3>
 
         <!-- Emergency E-STOP -->
         <form class="emergency-button" method="POST">

@@ -1,11 +1,17 @@
 from flask import Flask, render_template, request, flash
+from flask_socketio import SocketIO, emit
 import os
-from  multiprocessing import Process
+import threading
 import socket
 import time
+import json
+
+TEST_IP = "127.0.0.1"
+TEST_PORT = 5005
 
 ESP_IP = "172.20.10.2"
 ESP_PORT = 5003
+
 APP_PORT = 5004
 BUF_SIZE = 4000
 VERBOSE = True # Controls whether messages are printed to console
@@ -15,6 +21,7 @@ time_current = time.time_ns()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
+socketio = SocketIO(app)
 
 class Status:
     def __init__(self, array):
@@ -42,6 +49,25 @@ class Status:
         message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
 
         return message
+    
+    def toSerializable(self):
+        return {
+            "message_code": self.message_code,
+            "bridge_status": self.bridge_status,
+            "gate_status": self.gate_status,
+            "north_us": self.north_us,
+            "under_us": self.under_us,
+            "south_us": self.south_us,
+            "road_load": self.road_load,
+            "bridge_top_limit": self.bridge_top_limit,
+            "bridge_bottom_limit": self.bridge_bottom_limit,
+            "gate_top_limit": self.gate_top_limit,
+            "gate_bottom_limit": self.gate_bottom_limit,
+            "road_lights": self.road_lights,
+            "waterway_lights": self.waterway_lights,
+            "audio": self.audio,
+            "error_code": self.error_code
+        }
 
 def receive() -> str:
 
@@ -188,25 +214,31 @@ def redirect_dashboard():
                 flash('Changed To Automatic Mode', 'info')
 
         # TODO - send message
-        print(new_message)
         #send(new_message)
+    
+    else:
+        print("start communication thread")
+        # thread for simultaneously communicating
+        #threading.Thread(target=communication(conn)).start()
 
     # Load page
     return render_template("dashboard.html", status=status, conn=conn)
 
-default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
-status = Status(default_status.split(" "))
+@socketio.on("retrieve_stat_data")
+def handle_update():
+    emit('update_stat_data', (status.toSerializable(), conn), broadcast=True)
 
 if __name__ == "__main__":
     conn = False
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+    status = Status(default_status.split(" "))
+
+    sock = socket.socket()
 
     # Connection with ESP32
-    sock = socket.socket()
     #sock.connect((ESP_IP, ESP_PORT))
 
-    # thread for simultaneously communicating
-    #Process(target=communication(conn)).start()
-    Process(target=app.run, args=dict(debug=True, port=APP_PORT)).start()
-    
+    # Connection with Tester
+    #sock.connect((TEST_IP, TEST_PORT))
 
-    
+    socketio.run(app, debug=True, port=APP_PORT)
