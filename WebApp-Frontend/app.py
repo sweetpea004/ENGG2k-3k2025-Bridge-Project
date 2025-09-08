@@ -222,7 +222,7 @@ def redirect_dashboard():
         #threading.Thread(target=communication(conn)).start()
 
     # Load page
-    return render_template("dashboard.html", status=status, conn=conn)
+    return render_template("dashboard.html")
 
 @socketio.on("retrieve_stat_data")
 def handle_update():
