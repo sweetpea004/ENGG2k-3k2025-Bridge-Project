@@ -18,6 +18,7 @@ VERBOSE = True # Controls whether messages are printed to console
 
 # Globals
 time_current = time.time_ns()
+conn = False
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
@@ -98,7 +99,6 @@ def send(message: str):
         print("Sent:", message)
     sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
     
-
 def communication(conn):
 
     while True:
@@ -119,6 +119,9 @@ def communication(conn):
                 print("Test")
             else:
         '''
+
+def run_app():
+    socketio.run(app, debug=True, port=APP_PORT)
 
 @app.route("/", methods=['GET', 'POST'])
 def redirect_dashboard():
@@ -215,11 +218,6 @@ def redirect_dashboard():
 
         # TODO - send message
         #send(new_message)
-    
-    else:
-        print("start communication thread")
-        # thread for simultaneously communicating
-        #threading.Thread(target=communication(conn)).start()
 
     # Load page
     return render_template("dashboard.html")
@@ -228,17 +226,31 @@ def redirect_dashboard():
 def handle_update():
     emit('update_stat_data', (status.toSerializable(), conn), broadcast=True)
 
-if __name__ == "__main__":
-    conn = False
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
-    status = Status(default_status.split(" "))
-
-    sock = socket.socket()
-
+def main():
     # Connection with ESP32
-    #sock.connect((ESP_IP, ESP_PORT))
+    sock.connect((ESP_IP, ESP_PORT))
 
     # Connection with Tester
     #sock.connect((TEST_IP, TEST_PORT))
 
-    socketio.run(app, debug=True, port=APP_PORT)
+    threads = []
+
+    # thread for running app
+    ui_thread = threading.Thread(target=run_app(), daemon=True)
+    threads.append(ui_thread)
+
+    # thread for simultaneously communicating
+    comm_thread = threading.Thread(target=communication(conn), daemon=True)
+    threads.append(comm_thread)
+
+    for thread in threads:
+        thread.start()
+
+
+if __name__ == "__main__":
+    sock = socket.socket()
+
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+    status = Status(default_status.split(" "))
+
+    main()
