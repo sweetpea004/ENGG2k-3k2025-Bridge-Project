@@ -6,24 +6,6 @@ import socket
 import time
 import json
 
-TEST_IP = "127.0.0.1"
-TEST_PORT = 5005
-
-ESP_IP = "172.20.10.2"
-ESP_PORT = 5003
-
-APP_PORT = 5004
-BUF_SIZE = 4000
-VERBOSE = True # Controls whether messages are printed to console
-
-# Globals
-time_current = time.time_ns()
-conn = False
-
-app = Flask(__name__)
-app.secret_key = os.urandom(32)
-socketio = SocketIO(app)
-
 class Status:
     def __init__(self, array):
         self.recieved_status = time.time_ns()
@@ -69,6 +51,46 @@ class Status:
             "audio": self.audio,
             "error_code": self.error_code
         }
+    
+class Connection:
+    def __init__(self):
+        self.value = False
+    
+    def toFalse(self):
+        self.value = False
+    
+    def toTrue(self):
+        self.value = True
+
+# CONSTANTS
+TEST_IP = "127.0.0.1"
+TEST_PORT = 5005
+
+ESP_IP = "172.20.10.2"
+ESP_PORT = 5003
+
+APP_PORT = 5004
+BUF_SIZE = 4000
+VERBOSE = True # Controls whether messages are printed to console
+
+# Globals
+time_current = time.time_ns()
+sock = socket.socket()
+default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+status = Status(default_status.split(" "))
+conn = Connection()
+
+# APP INITIALISATION
+app = Flask(__name__)
+app.secret_key = os.urandom(32)
+socketio = SocketIO(app)
+
+def send(message: str):
+
+    # send message in string form
+    if VERBOSE:
+        print("Sent:", message)
+    sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
 
 def receive() -> str:
 
@@ -91,30 +113,24 @@ def parse_message(message: str) -> Status:
     if(status.message_code == "STAT"):
         status.recieved_status = time_current
     return status
-
-def send(message: str):
-
-    # send message in string form
-    if VERBOSE:
-        print("Sent:", message)
-    sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
     
-def communication(conn):
+def communication():
 
     while True:
-        while conn == False:
+        if conn.value == False:
             send("REDY")
 
             try:
                 m = receive()
-                conn = True
+                conn.toTrue()
             except Exception as e:
                 m = "no connection"
     
         '''
-        while conn == True:
+        else:
             time_current = time.time_ns()
             if(time_current - status.recieved_status > 2000000000):
+                conn.toFalse()
                 # attempt Reconnect
                 print("Test")
             else:
@@ -224,7 +240,7 @@ def redirect_dashboard():
 
 @socketio.on("retrieve_stat_data")
 def handle_update():
-    emit('update_stat_data', (status.toSerializable(), conn), broadcast=True)
+    emit('update_stat_data', (status.toSerializable(), conn.value), broadcast=True)
 
 def main():
     # Connection with ESP32
@@ -236,21 +252,18 @@ def main():
     threads = []
 
     # thread for running app
-    ui_thread = threading.Thread(target=run_app(), daemon=True)
+    ui_thread = threading.Thread(target=run_app, daemon=True)
     threads.append(ui_thread)
 
     # thread for simultaneously communicating
-    comm_thread = threading.Thread(target=communication(conn), daemon=True)
+    comm_thread = threading.Thread(target=communication, daemon=True)
     threads.append(comm_thread)
 
     for thread in threads:
         thread.start()
 
+    for thread in threads:
+        thread.join()
 
 if __name__ == "__main__":
-    sock = socket.socket()
-
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
-    status = Status(default_status.split(" "))
-
     main()
