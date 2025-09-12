@@ -5,6 +5,12 @@ PORT = 5005        # Port to listen on (non-privileged ports are > 1023)
 
 BUF_SIZE = 4000
 
+def send(message: str):
+
+    # send message in string form
+    print("Sent:", message)
+    s.sendall(bytes(f"{message}\n", encoding="utf-8"))
+
 def receive() -> str:
 
     # recieve string message 
@@ -18,12 +24,6 @@ def receive() -> str:
     message = data.decode().strip()
     print("Received:", message)
     return message
-
-def send(message: str):
-
-    # send message in string form
-    print("Sent:", message)
-    s.sendall(bytes(f"{message}\n", encoding="utf-8"))
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))

@@ -74,7 +74,6 @@ BUF_SIZE = 4000
 VERBOSE = True # Controls whether messages are printed to console
 
 # Globals
-time_current = time.time_ns()
 sock = socket.socket()
 default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
 status = Status(default_status.split(" "))
@@ -109,9 +108,9 @@ def receive() -> str:
 
 def parse_message(message: str) -> Status:
 
-    status = Status(message.split(" "))
-    if(status.message_code == "STAT"):
-        status.recieved_status = time_current
+    message = message.split(" ")
+    if(message[0] == "STAT"):
+        status = Status(message)
     return status
     
 def communication():
