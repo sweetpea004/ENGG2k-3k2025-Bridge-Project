@@ -5,14 +5,14 @@
 // Network Configuration
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
-const int serverPort = 5003;
+const int serverPort = 5000;
 
 // Communication shi
 WiFiServer server(serverPort);
 WiFiClient client;
 bool clientConnected = false;
 unsigned long lastHeartbeat = 0;
-const unsigned long heartbeatInterval = 1000; // 1 second
+const unsigned long heartbeatInterval = 2000; // 2 seconds
 
 // Bridge State Structure
 struct BridgeState {
@@ -22,53 +22,34 @@ struct BridgeState {
   String underUS = "NONE";
   String southUS = "NONE";
   String roadLoad = "NONE";
-  String roadLights = "GOGO";
+  String roadLights = "GO";
   String waterwayLights = "STOP";
-  String audioSys = "NONE";
-  int errorCode = 0;
+  int errorCode = 1;
 };
-
-struct Message {
-  String msgType = "OKOK";
-  String bridgeStatus = "CLOS";
-  String gateStatus = "OPEN";
-  String northUS = "NONE";
-  String underUS = "NONE";
-  String southUS = "NONE";
-  String roadLoad = "NONE";
-  String roadLights = "GOGO";
-  String waterwayLights = "STOP";
-  String audioSys = "NONE";
-  int errorCode = 0;
-}
 // error codes:
-// 0: No Error
-// 1: Bridge Hung
-// 2: Gates Hung
-// 3: Lights Hung
-// 4: Ultrasonics Hung
-// 5: 
-// 6: 
-// 7: 
-// 8: 
+// 1: No Error
+// 2:
+// 3:
+// 4:
+// 5:
+// 6:
+// 7:
+// 8:
 
 //String interpretation
-Message readMssg(String mssg) {
-  // PRE: receive a string in the Appendix E format
-  // POST: output a message struct with the string contents
-  Message retMsg;
-  retMsg.msgType = mssg.substr(0,5);
-  retMsg.bridgeStatus = mssg.substr(5,5);
-  retMsg.gateStatus = mssg.substr(10,5);
-  retMsg.northUS = mssg.substr(15,5);
-  retMsg.underUS = mssg.substr(20,5);
-  retMsg.southUS = mssg.substr(25,5);
-  retMsg.roadLoad = mssg.substr(30,5);
-  retMsg.roadLights = mssg.substr(35,5);
-  retMsg.waterwayLights = mssg.substr(40,5);
-  retMsg.audioSys = mssg.substr(45,5);
-  retMsg.errorCode = mssg[50] = '0';
-  return retMsg;
+BridgeState readMssg(String mssg) {
+  // TODO: split up a string by spaces
+  String arr[12];
+  int strt = 0;
+  int word = 0;
+  for (int pos = 0 ; pos < mssg.length() ; pos++) {
+    if (mssg[i] == ' ') {
+      for (int k = strt; k < i; k++) {
+
+      }
+    }
+  }
+  return NULL;
 }
 
 BridgeState currentState;
@@ -158,24 +139,8 @@ void updateSensors() {
 void controlBridge() {
   if (!autoMode) return;
   
-  // Checks for ships approaching
-  bool shipDetected = checkForShips();
-  
-  // TODO: Add functions:
-  // - controlTrafficLights()
-  // - controlBridgeMotors() 
-  // - manageGates()
-}
-
-bool checkForShips() {
-  // Check ultrasonic sensors for approaching ships
-  // TODO: Read actual sensor values when hardware is connected
-  
-  // For now useing sensor state from currentState
-  bool northShip = (currentState.northUS != "NONE");
-  bool southShip = (currentState.southUS != "NONE");
-  
-  return northShip || southShip;
+  // TODO: Implement automatic bridge control logic
+  // Check for ships, control motors, manage traffic lights
 }
 
 void emergencyStop() {

@@ -1,22 +1,16 @@
 from flask import Flask, render_template, request, flash
+from flask_socketio import SocketIO, emit
 import os
-import multiprocessing
+import threading
 import socket
-
-ESP_PORT = 5000
-APP_PORT = 5001
-BUF_SIZE = 4000
-VERBOSE = True # Controls whether messages are printed to console
-
-# Globals
-conn = False # boolean value representing if the app is connected to the ESP32
-
-app = Flask(__name__)
-app.secret_key = os.urandom(32)
+import time
+import json
 
 class Status:
     def __init__(self, array):
+        self.recieved_status = time.time_ns()
 
+        # message contents
         self.message_code = array[0].upper()
         self.bridge_status = array[1].upper()
         self.gate_status = array[2].upper()
@@ -38,6 +32,64 @@ class Status:
         message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
 
         return message
+    
+    def toSerializable(self):
+        return {
+            "message_code": self.message_code,
+            "bridge_status": self.bridge_status,
+            "gate_status": self.gate_status,
+            "north_us": self.north_us,
+            "under_us": self.under_us,
+            "south_us": self.south_us,
+            "road_load": self.road_load,
+            "bridge_top_limit": self.bridge_top_limit,
+            "bridge_bottom_limit": self.bridge_bottom_limit,
+            "gate_top_limit": self.gate_top_limit,
+            "gate_bottom_limit": self.gate_bottom_limit,
+            "road_lights": self.road_lights,
+            "waterway_lights": self.waterway_lights,
+            "audio": self.audio,
+            "error_code": self.error_code
+        }
+    
+class Connection:
+    def __init__(self):
+        self.value = False
+    
+    def toFalse(self):
+        self.value = False
+    
+    def toTrue(self):
+        self.value = True
+
+# CONSTANTS
+TEST_IP = "127.0.0.1"
+TEST_PORT = 5005
+
+ESP_IP = "172.20.10.2"
+ESP_PORT = 5003
+
+APP_PORT = 5004
+BUF_SIZE = 4000
+VERBOSE = True # Controls whether messages are printed to console
+
+# Globals
+sock = socket.socket()
+default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+status = Status(default_status.split(" "))
+conn = Connection()
+
+# APP INITIALISATION
+app = Flask(__name__)
+app.secret_key = os.urandom(32)
+socketio = SocketIO(app)
+
+def send(message: str):
+
+    # send message in string form
+    if VERBOSE:
+        print("Sent:", message)
+    sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
 
 def receive() -> str:
 
@@ -54,35 +106,57 @@ def receive() -> str:
         print("Received:", message)
     return message
 
-def send(message: str):
+def parse_message(message: str) -> Status:
 
-    # send message in strong form
-    if VERBOSE:
-        print("Sent:", message)
-    sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
+    message = message.split(" ")
+    if(message[0] == "STAT"):
+        status = Status(message)
+    return status
+    
+def communication():
+
+    while True:
+        if conn.value == False:
+            send("REDY")
+
+            try:
+                m = receive()
+                conn.toTrue()
+            except Exception as e:
+                m = "no connection"
+    
+        '''
+        else:
+            time_current = time.time_ns()
+            if(time_current - status.recieved_status > 2000000000):
+                conn.toFalse()
+                # attempt Reconnect
+                print("Test")
+            else:
+        '''
+
+def run_app():
+    socketio.run(app, debug=True, port=APP_PORT)
 
 @app.route("/", methods=['GET', 'POST'])
 def redirect_dashboard():
 
-    # if POST
     if request.method == 'POST':
-        # Save message to be sent
+        
         new_message = ""
 
         if request.form.get('action') == 'emergency':
             # Send EMER 
             new_message = "EMER"
 
-            # flash confirmation message
+            # flash confirmation message for Emergency
             flash('Stopping Bridge Processes for Emergency', 'error')
             
         elif request.form.get('action') == 'push':
             # Check the mode (manual vs automatic)
             mode = request.form['mode']
 
-            if mode == "manual":
-                # Send: "PUSH [bridge] [gate] [northUS] [underUS] [southUS] [loadcell] [roadlights] [waterlights] [speaker]"
-                
+            if mode == "manual":                
                 # create array in order to make a new status obj
                 push = ["PUSH"]
 
@@ -112,7 +186,7 @@ def redirect_dashboard():
                 else:
                     push.append("NONE")
 
-                # Limit Switch Inputs
+                # determine Limit Switch Inputs
                 limit_switches = request.form.getlist('limit-switch')
                 if "bridge-top" in limit_switches:
                     push.append("TRIG")
@@ -135,10 +209,10 @@ def redirect_dashboard():
                 push.append(request.form['road-lights'])
                 push.append(request.form['waterway-lights'])
 
-                # audio system
+                # determine audio system selection
                 push.append(request.form['audio'])
 
-                # Error codes
+                # determine Error code selected 
                 push.append(request.form['error-code'])
                 
                 # convert "push" array to Status Obj
@@ -158,24 +232,37 @@ def redirect_dashboard():
                 flash('Changed To Automatic Mode', 'info')
 
         # TODO - send message
-        print(new_message)
         #send(new_message)
 
     # Load page
-    return render_template("dashboard.html", status=status, conn=conn)
+    return render_template("dashboard.html")
+
+@socketio.on("retrieve_stat_data")
+def handle_update():
+    emit('update_stat_data', (status.toSerializable(), conn.value), broadcast=True)
+
+def main():
+    # Connection with ESP32
+    sock.connect((ESP_IP, ESP_PORT))
+
+    # Connection with Tester
+    #sock.connect((TEST_IP, TEST_PORT))
+
+    threads = []
+
+    # thread for running app
+    ui_thread = threading.Thread(target=run_app, daemon=True)
+    threads.append(ui_thread)
+
+    # thread for simultaneously communicating
+    comm_thread = threading.Thread(target=communication, daemon=True)
+    threads.append(comm_thread)
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 
 if __name__ == "__main__":
-
-    # Connection with ESP32
-    sock = socket.socket()
-    #sock.connect(("localhost", ESP_PORT))
-
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
-    status = Status(default_status.split(" "))
-    
-    # Thread 1: Running App
-    app.run(debug=True, port=APP_PORT)
-
-    # Thread 2: Communications
-
-    
+    main()
