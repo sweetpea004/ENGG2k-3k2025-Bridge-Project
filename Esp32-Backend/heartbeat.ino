@@ -140,8 +140,24 @@ void updateSensors() {
 void controlBridge() {
   if (!autoMode) return;
   
-  // TODO: Implement automatic bridge control logic
-  // Check for ships, control motors, manage traffic lights
+  // Checks for ships approaching
+  bool shipDetected = checkForShips();
+  
+  // TODO: Add functions:
+  // - controlTrafficLights()
+  // - controlBridgeMotors() 
+  // - manageGates()
+}
+
+bool checkForShips() {
+  // Check ultrasonic sensors for approaching ships
+  // TODO: Read actual sensor values when hardware is connected
+  
+  // For now useing sensor state from currentState
+  bool northShip = (currentState.northUS != "NONE");
+  bool southShip = (currentState.southUS != "NONE");
+  
+  return northShip || southShip;
 }
 
 void emergencyStop() {
