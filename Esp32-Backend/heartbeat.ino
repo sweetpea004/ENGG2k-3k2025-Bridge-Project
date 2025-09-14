@@ -1,49 +1,33 @@
 #include <WiFi.h>
 #include <WiFiServer.h>
-#include <stdio.h>
+#include <ESP32Servo.h>  // Added for servo control
+#include <NewPing.h>  // Added for ultrasonic sensor
 
 // Network Configuration
 const char* ssid = "Dragan’s iPhone (2)";
 const char* password = "bigpassword";
 const int serverPort = 5003;
 
-// Communication shi
+// Communication
 WiFiServer server(serverPort);
 WiFiClient client;
 bool clientConnected = false;
 unsigned long lastHeartbeat = 0;
 const unsigned long heartbeatInterval = 1000; // 1 second
 
-// pins
+// Pins
+#define TRIGGER_PIN  13
+#define ECHO_PIN     12
+#define MAX_DISTANCE 500
+#define SERVO_PIN 15
+#define MOTOR_PIN1  12
+#define MOTOR_PIN2  13
+#define MOTOR_ENABLE_PIN 14
 
-// Bridge State Structure
-struct BridgeState {
-  String bridgeStatus = "CLOS";
-  String gateStatus = "OPEN";
-  String northUS = "NONE";
-  String underUS = "NONE";
-  String southUS = "NONE";
-  String roadLoad = "NONE";
-  String roadLights = "GOGO";
-  String waterwayLights = "STOP";
-  String audioSys = "NONE";
-  String speaker = "placeholder";
-  int errorCode = 0;
-};
+// Servo & Ultrasonic sensor setup
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+Servo myservo; // Servo object
 
-struct Message {
-  String msgType = "OKOK";
-  String bridgeStatus = "CLOS";
-  String gateStatus = "OPEN";
-  String northUS = "NONE";
-  String underUS = "NONE";
-  String southUS = "NONE";
-  String roadLoad = "NONE";
-  String roadLights = "GOGO";
-  String waterwayLights = "STOP";
-  String audioSys = "NONE";
-  int errorCode = 0;
-};
 // error codes:
 // 0: No Error
 // 1: Bridge Hung
@@ -74,15 +58,48 @@ struct Message {
 //   return retMsg;
 // }
 
-struct BridgeState currentState;
+// Bridge State Structure
+struct BridgeState {
+  String bridgeStatus = "CLOS";
+  String gateStatus = "OPEN";
+  String northUS = "NONE";
+  String underUS = "NONE";
+  String southUS = "NONE";
+  String roadLoad = "NONE";
+  String roadLights = "GOGO";
+  String waterwayLights = "STOP";
+  String audioSys = "NONE";
+  String speaker = "placeholder";
+  int errorCode = 0;
+};
+
+struct Message {
+  String msgType = "OKOK";
+  String bridgeStatus = "CLOS";
+  String gateStatus = "OPEN";
+  String northUS = "NONE";
+  String underUS = "NONE";
+  String southUS = "NONE";
+  String roadLoad = "NONE";
+  String roadLights = "GOGO";
+  String waterwayLights = "STOP";
+  String audioSys = "NONE";
+  int errorCode = 0;
+};
+
+BridgeState currentState;
 bool autoMode = true;
 
+// Setup
 void setup() {
   Serial.begin(115200);
   Serial.println("ESP32 Bridge Control - Heartbeat Program");
-  
-  // TODO: Initialize hardware pins
-  
+
+  // Initialize motor pins
+  pinMode(MOTOR_PIN1, OUTPUT);
+  pinMode(MOTOR_PIN2, OUTPUT);
+  pinMode(MOTOR_ENABLE_PIN, OUTPUT);
+
   // Setup WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -94,18 +111,23 @@ void setup() {
   // Start server
   server.begin();
   Serial.println("Server started on port 5003");
+
+  // Setup the servo
+  myservo.attach(SERVO_PIN, 500, 2500); // Attach servo with range
+  myservo.write(90);  // Initial position (bridge closed)
+  delay(1000);
 }
 
+// Main Loop
 void loop() {
   handleClient();
-  //updateSensors();
   controlBridge();
   sendHeartbeat();
   delay(50);
 }
 
+// Handle client requests
 void handleClient() {
-  // Handle webapp connections and commands
   if (!clientConnected) {
     client = server.available();
     if (client) {
@@ -119,10 +141,10 @@ void handleClient() {
     command.trim();
     Serial.println(command);
     processCommand(command);
-    
   }
 }
 
+// Process commands from the client
 void processCommand(String command) {
   if (command == "REDY") {
     client.println("OKOK");
@@ -133,11 +155,12 @@ void processCommand(String command) {
     autoMode = true;
     client.println("OK");
   } else if (command.startsWith("PUSH ")) {
-    // TODO: Parse manual control commands
+    // Manual control logic here (e.g., control motor or servo manually)
     client.println("OK");
   }
 }
 
+// Send heartbeat to client
 void sendHeartbeat() {
   if (clientConnected && (millis() - lastHeartbeat >= heartbeatInterval)) {
     String status = buildStatusMessage();
@@ -146,26 +169,15 @@ void sendHeartbeat() {
   }
 }
 
+// Build status message
 String buildStatusMessage() {
-  // Format: STAT [bridge] [gate] [northUS] [underUS] [southUS] [roadLoad] [roadLights] [waterwayLights] [errorCode]
   return "STAT " + currentState.bridgeStatus + " " + currentState.gateStatus + " " + 
          currentState.northUS + " " + currentState.underUS + " " + currentState.southUS + " " +
          currentState.roadLoad + " " + currentState.roadLights + " " + currentState.waterwayLights + " " + 
          String(currentState.errorCode);
 }
 
-//void updateSensors() {
-  // TODO: Read ultrasonic sensors
-  // TODO: Read load cell
-  // TODO: Update currentState with sensor readings
-//}
-
-
-
-// TODO: Add functions:
-// - controlTrafficLights()
-// - controlBridgeMotors() 
-// - manageGates()
+// Control the bridge states (open/close)
 void controlBridge() {
   if (!autoMode) return;
 
@@ -191,6 +203,7 @@ void controlBridge() {
         Serial.println("Opening bridge...");
         currentState.bridgeStatus = "OPEN";    // Open bridge
         currentState.waterwayLights = "GOGO";  // Allow ships to pass
+        openBridge();  // Trigger servo and motors
         stateStartTime = millis();
         state = BRIDGE_OPEN;
       }
@@ -202,6 +215,7 @@ void controlBridge() {
         Serial.println("Closing bridge...");
         currentState.bridgeStatus = "CLOS";    // Close bridge
         currentState.waterwayLights = "STOP";  // Stop waterway traffic
+        closeBridge();  // Trigger servo and motors
         stateStartTime = millis();
         state = BRIDGE_CLOSE;
       }
@@ -219,21 +233,36 @@ void controlBridge() {
   }
 }
 
+// Function to open the bridge (Servo & Motor)
+void openBridge() {
+  myservo.write(120);  // Move servo to "open" position
+  digitalWrite(MOTOR_PIN1, HIGH);
+  digitalWrite(MOTOR_PIN2, LOW);
+  digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
+  delay(2000); // Simulate motor running for opening
+}
 
+// Function to close the bridge (Servo & Motor)
+void closeBridge() {
+  myservo.write(90);   // Move servo to "closed" position
+  digitalWrite(MOTOR_PIN1, LOW);
+  digitalWrite(MOTOR_PIN2, HIGH);
+  digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
+  delay(2000); // Simulate motor running for closing
+}
 
+// Check if ships are detected
 bool checkForShips() {
   // Check ultrasonic sensors for approaching ships
-  // TODO: Read actual sensor values when hardware is connected
-  
-  // For now useing sensor state from currentState
   bool northShip = (currentState.northUS != "NONE");
   bool southShip = (currentState.southUS != "NONE");
-  
   return northShip || southShip;
 }
 
+// Emergency stop function
 void emergencyStop() {
-  // TODO: Stop all motors, activate emergency lights
+  myservo.write(90);  // Return servo to default position
+  digitalWrite(MOTOR_ENABLE_PIN, LOW);  // Stop the motor
   currentState.bridgeStatus = "EMER";
   currentState.gateStatus = "EMER";
   currentState.roadLights = "EMER";
