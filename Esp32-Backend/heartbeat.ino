@@ -3,8 +3,8 @@
 #include <stdio.h>
 
 // Network Configuration
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "Dragan’s iPhone (2)";
+const char* password = "bigpassword";
 const int serverPort = 5003;
 
 // Communication shi
@@ -13,6 +13,8 @@ WiFiClient client;
 bool clientConnected = false;
 unsigned long lastHeartbeat = 0;
 const unsigned long heartbeatInterval = 1000; // 1 second
+
+// pins
 
 // Bridge State Structure
 struct BridgeState {
@@ -25,6 +27,7 @@ struct BridgeState {
   String roadLights = "GOGO";
   String waterwayLights = "STOP";
   String audioSys = "NONE";
+  String speaker = "placeholder";
   int errorCode = 0;
 };
 
@@ -40,7 +43,7 @@ struct Message {
   String waterwayLights = "STOP";
   String audioSys = "NONE";
   int errorCode = 0;
-}
+};
 // error codes:
 // 0: No Error
 // 1: Bridge Hung
@@ -53,25 +56,25 @@ struct Message {
 // 8: 
 
 //String interpretation
-Message readMssg(String mssg) {
-  // PRE: receive a string in the Appendix E format
-  // POST: output a message struct with the string contents
-  Message retMsg;
-  retMsg.msgType = mssg.substr(0,5);
-  retMsg.bridgeStatus = mssg.substr(5,5);
-  retMsg.gateStatus = mssg.substr(10,5);
-  retMsg.northUS = mssg.substr(15,5);
-  retMsg.underUS = mssg.substr(20,5);
-  retMsg.southUS = mssg.substr(25,5);
-  retMsg.roadLoad = mssg.substr(30,5);
-  retMsg.roadLights = mssg.substr(35,5);
-  retMsg.waterwayLights = mssg.substr(40,5);
-  retMsg.audioSys = mssg.substr(45,5);
-  retMsg.errorCode = mssg[50] = '0';
-  return retMsg;
-}
+// Message readMssg(String mssg) {
+//   // PRE: receive a string in the Appendix E format
+//   // POST: output a message struct with the string contents
+//   Message retMsg;
+//   retMsg.msgType = mssg.substr(0,5);
+//   retMsg.bridgeStatus = mssg.substr(5,5);
+//   retMsg.gateStatus = mssg.substr(10,5);
+//   retMsg.northUS = mssg.substr(15,5);
+//   retMsg.underUS = mssg.substr(20,5);
+//   retMsg.southUS = mssg.substr(25,5);
+//   retMsg.roadLoad = mssg.substr(30,5);
+//   retMsg.roadLights = mssg.substr(35,5);
+//   retMsg.waterwayLights = mssg.substr(40,5);
+//   retMsg.audioSys = mssg.substr(45,5);
+//   retMsg.errorCode = mssg[50] = '0';
+//   return retMsg;
+// }
 
-BridgeState currentState;
+struct BridgeState currentState;
 bool autoMode = true;
 
 void setup() {
@@ -90,12 +93,12 @@ void setup() {
   
   // Start server
   server.begin();
-  Serial.println("Server started on port 5000");
+  Serial.println("Server started on port 5003");
 }
 
 void loop() {
   handleClient();
-  updateSensors();
+  //updateSensors();
   controlBridge();
   sendHeartbeat();
   delay(50);
@@ -114,13 +117,15 @@ void handleClient() {
   if (clientConnected && client.available()) {
     String command = client.readStringUntil('\n');
     command.trim();
+    Serial.println(command);
     processCommand(command);
+    
   }
 }
 
 void processCommand(String command) {
-  if (command == "READY") {
-    client.println("OK");
+  if (command == "REDY") {
+    client.println("OKOK");
   } else if (command == "EMER") {
     emergencyStop();
     client.println("OK");
@@ -149,23 +154,72 @@ String buildStatusMessage() {
          String(currentState.errorCode);
 }
 
-void updateSensors() {
+//void updateSensors() {
   // TODO: Read ultrasonic sensors
   // TODO: Read load cell
   // TODO: Update currentState with sensor readings
-}
+//}
 
+
+
+// TODO: Add functions:
+// - controlTrafficLights()
+// - controlBridgeMotors() 
+// - manageGates()
 void controlBridge() {
   if (!autoMode) return;
-  
-  // Checks for ships approaching
-  bool shipDetected = checkForShips();
-  
-  // TODO: Add functions:
-  // - controlTrafficLights()
-  // - controlBridgeMotors() 
-  // - manageGates()
+
+  static enum { IDLE, PREPARE, BRIDGE_OPEN, BRIDGE_CLOSE } state = IDLE;
+  static unsigned long stateStartTime = 0;
+
+  switch (state) {
+    case IDLE:
+      if (checkForShips()) {
+        // Ship detected, prepare to open the bridge
+        Serial.println("Ship detected - Preparing to open bridge...");
+        currentState.gateStatus = "CLOS";       // Close gates
+        currentState.roadLights = "STOP";       // Stop road traffic
+        currentState.waterwayLights = "STOP";   // Stop waterway traffic
+        stateStartTime = millis();
+        state = PREPARE;
+      }
+      break;
+
+    case PREPARE:
+      if (millis() - stateStartTime > 3000) {  // Simulate time to close gates
+        // Gates are closed, now open the bridge
+        Serial.println("Opening bridge...");
+        currentState.bridgeStatus = "OPEN";    // Open bridge
+        currentState.waterwayLights = "GOGO";  // Allow ships to pass
+        stateStartTime = millis();
+        state = BRIDGE_OPEN;
+      }
+      break;
+
+    case BRIDGE_OPEN:
+      if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds
+        // Time to close the bridge
+        Serial.println("Closing bridge...");
+        currentState.bridgeStatus = "CLOS";    // Close bridge
+        currentState.waterwayLights = "STOP";  // Stop waterway traffic
+        stateStartTime = millis();
+        state = BRIDGE_CLOSE;
+      }
+      break;
+
+    case BRIDGE_CLOSE:
+      if (millis() - stateStartTime > 3000) {  // Simulate time to close bridge and reopen traffic
+        // Gates open again for traffic
+        Serial.println("Reopening gates for traffic...");
+        currentState.gateStatus = "OPEN";      // Open gates
+        currentState.roadLights = "GOGO";      // Green for road traffic
+        state = IDLE;
+      }
+      break;
+  }
 }
+
+
 
 bool checkForShips() {
   // Check ultrasonic sensors for approaching ships
