@@ -233,18 +233,16 @@ void controlBridge() {
   }
 }
 
-// Function to open the bridge (Servo & Motor)
 void openBridge() {
-  myservo.write(120);  // Move servo to "open" position
+  myservo.write(120);  // Move servo to open position
   digitalWrite(MOTOR_PIN1, HIGH);
   digitalWrite(MOTOR_PIN2, LOW);
   digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
   delay(2000); // Simulate motor running for opening
 }
 
-// Function to close the bridge (Servo & Motor)
 void closeBridge() {
-  myservo.write(90);   // Move servo to "closed" position
+  myservo.write(90);   // Move servo to closed position
   digitalWrite(MOTOR_PIN1, LOW);
   digitalWrite(MOTOR_PIN2, HIGH);
   digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
