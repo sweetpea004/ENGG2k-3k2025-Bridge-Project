@@ -1,7 +1,7 @@
 #include <WiFi.h>
 #include <WiFiServer.h>
-#include <ESP32Servo.h>  // Added for servo control
-#include <NewPing.h>  // Added for ultrasonic sensor
+#include <ESP32Servo.h>  // servo control
+#include <NewPing.h>  // ultrasonic sensor 
 
 // Network Configuration
 const char* ssid = "Dragan’s iPhone (2)";
@@ -19,14 +19,14 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define TRIGGER_PIN  13
 #define ECHO_PIN     12
 #define MAX_DISTANCE 500
-#define SERVO_PIN 15
-#define MOTOR_PIN1  12
-#define MOTOR_PIN2  13
-#define MOTOR_ENABLE_PIN 14
+
+#define SERVO_BRIDGE_PIN 23
+#define SERVO_GATE_PIN 22
 
 // Servo & Ultrasonic sensor setup
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
-Servo myservo; // Servo object
+Servo bridgeServo; // Servo object
+Servo gateServo; // Servo object
 
 // error codes:
 // 0: No Error
@@ -95,11 +95,6 @@ void setup() {
   Serial.begin(115200);
   Serial.println("ESP32 Bridge Control - Heartbeat Program");
 
-  // Initialize motor pins
-  pinMode(MOTOR_PIN1, OUTPUT);
-  pinMode(MOTOR_PIN2, OUTPUT);
-  pinMode(MOTOR_ENABLE_PIN, OUTPUT);
-
   // Setup WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -112,14 +107,25 @@ void setup() {
   server.begin();
   Serial.println("Server started on port 5003");
 
+  // esp timer
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+
   // Setup the servo
-  myservo.attach(SERVO_PIN, 500, 2500); // Attach servo with range
-  myservo.write(90);  // Initial position (bridge closed)
+  bridgeServo.attach(SERVO_BRIDGE_PIN, 500, 2500); // Attach servo with range
+  bridgeServo.write(90);  // ake sure motor is stopped
+
+  gateServo.attach(SERVO_GATE_PIN, 500, 2500); // Attach servo with range
+  gateServo.write(90);  // make sure motor is stopped
+
   delay(1000);
 }
 
 // Main Loop
 void loop() {
+  //test();
   handleClient();
   controlBridge();
   sendHeartbeat();
@@ -198,6 +204,7 @@ void controlBridge() {
       break;
 
     case PREPARE:
+      closeGates(); 
       if (millis() - stateStartTime > 3000) {  // Simulate time to close gates
         // Gates are closed, now open the bridge
         Serial.println("Opening bridge...");
@@ -210,7 +217,7 @@ void controlBridge() {
       break;
 
     case BRIDGE_OPEN:
-      if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds
+      if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds (make this longer
         // Time to close the bridge
         Serial.println("Closing bridge...");
         currentState.bridgeStatus = "CLOS";    // Close bridge
@@ -225,6 +232,7 @@ void controlBridge() {
       if (millis() - stateStartTime > 3000) {  // Simulate time to close bridge and reopen traffic
         // Gates open again for traffic
         Serial.println("Reopening gates for traffic...");
+        openGates();
         currentState.gateStatus = "OPEN";      // Open gates
         currentState.roadLights = "GOGO";      // Green for road traffic
         state = IDLE;
@@ -234,36 +242,76 @@ void controlBridge() {
 }
 
 void openBridge() {
-  myservo.write(120);  // Move servo to open position
-  digitalWrite(MOTOR_PIN1, HIGH);
-  digitalWrite(MOTOR_PIN2, LOW);
-  digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
-  delay(2000); // Simulate motor running for opening
+  bridgeServo.write(120);
+  delay(2000);
+  bridgeServo.write(90);
 }
-
 void closeBridge() {
-  myservo.write(90);   // Move servo to closed position
-  digitalWrite(MOTOR_PIN1, LOW);
-  digitalWrite(MOTOR_PIN2, HIGH);
-  digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
-  delay(2000); // Simulate motor running for closing
+  bridgeServo.write(60);
+  delay(2000);
+  bridgeServo.write(90);
 }
 
 // Check if ships are detected
 bool checkForShips() {
+  int distance = sonar.ping_cm();
   // Check ultrasonic sensors for approaching ships
-  bool northShip = (currentState.northUS != "NONE");
-  bool southShip = (currentState.southUS != "NONE");
-  return northShip || southShip;
+  if (distance > 0 && distance < 30) {
+    currentState.northUS = "SHIP";  // Ship detected
+    //Serial.println("ship detected"); /// for testing
+    return true;
+  } else {
+    currentState.northUS = "NONE";  // No ship
+    //Serial.println("no ship detected"); /// for testing
+    return false;
+  }
+}
+
+void closeGates(){
+  gateServo.write(60);
+  delay(2000); 
+  gateServo.write(90);
+}
+
+void openGates(){
+  gateServo.write(120);
+  delay(2000);
+  gateServo.write(90);
 }
 
 // Emergency stop function
 void emergencyStop() {
-  myservo.write(90);  // Return servo to default position
-  digitalWrite(MOTOR_ENABLE_PIN, LOW);  // Stop the motor
+  bridgeServo.write(90); //stop motor
+  // set everythings status to emergancy
   currentState.bridgeStatus = "EMER";
   currentState.gateStatus = "EMER";
   currentState.roadLights = "EMER";
   currentState.waterwayLights = "EMER";
   currentState.speaker = "EMER";
+}
+
+
+////////////// testing stuff
+
+void test(){
+  //test motor
+  Serial.println("testing motors");
+  testMotors();
+  Serial.println("finished testing motors");
+  // test sensor
+  Serial.println("testing sensor");
+  for(int i=0; i<=20; i++){
+    checkForShips();
+    delay(1000);
+  }
+  //
+  Serial.println("finished all testing");
+    delay(10000);
+}
+
+void testMotors(){
+  openBridge();
+  delay(5000);
+  closeBridge();
+  delay(5000);
 }
