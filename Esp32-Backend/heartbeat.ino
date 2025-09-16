@@ -20,9 +20,6 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define ECHO_PIN     12
 #define MAX_DISTANCE 500
 #define SERVO_PIN 15
-#define MOTOR_PIN1  26 // TEMP
-#define MOTOR_PIN2  27 // TEMP
-#define MOTOR_ENABLE_PIN 14
 
 // Servo & Ultrasonic sensor setup
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
@@ -95,11 +92,6 @@ void setup() {
   Serial.begin(115200);
   Serial.println("ESP32 Bridge Control - Heartbeat Program");
 
-  // Initialize motor pins
-  pinMode(MOTOR_PIN1, OUTPUT);
-  pinMode(MOTOR_PIN2, OUTPUT);
-  pinMode(MOTOR_ENABLE_PIN, OUTPUT);
-
   // Setup WiFi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -125,6 +117,7 @@ void setup() {
 
 // Main Loop
 void loop() {
+  //test();
   handleClient();
   controlBridge();
   sendHeartbeat();
@@ -203,6 +196,7 @@ void controlBridge() {
       break;
 
     case PREPARE:
+      closeGates(); 
       if (millis() - stateStartTime > 3000) {  // Simulate time to close gates
         // Gates are closed, now open the bridge
         Serial.println("Opening bridge...");
@@ -230,6 +224,7 @@ void controlBridge() {
       if (millis() - stateStartTime > 3000) {  // Simulate time to close bridge and reopen traffic
         // Gates open again for traffic
         Serial.println("Reopening gates for traffic...");
+        openGates();
         currentState.gateStatus = "OPEN";      // Open gates
         currentState.roadLights = "GOGO";      // Green for road traffic
         state = IDLE;
@@ -239,43 +234,72 @@ void controlBridge() {
 }
 
 void openBridge() {
-  myservo.write(120);  // Move servo to open position
-  digitalWrite(MOTOR_PIN1, HIGH);
-  digitalWrite(MOTOR_PIN2, LOW);
-  digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
+  myservo.write(120);
   delay(2000); // Simulate motor running for opening
-  digitalWrite(MOTOR_ENABLE_PIN, LOW); // stop motor
+  myservo.write(90);
 }
-
 void closeBridge() {
-  myservo.write(90);   // Move servo to closed position
-  digitalWrite(MOTOR_PIN1, LOW);
-  digitalWrite(MOTOR_PIN2, HIGH);
-  digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
+  myservo.write(60);
   delay(2000); // Simulate motor running for opening
-  digitalWrite(MOTOR_ENABLE_PIN, LOW); // stop motor
+  myservo.write(90);
 }
 
 // Check if ships are detected
 bool checkForShips() {
   int distance = sonar.ping_cm();
   // Check ultrasonic sensors for approaching ships
-  if (distance > 0 && distance < 50) {
+  if (distance > 0 && distance < 30) {
     currentState.northUS = "SHIP";  // Ship detected
+    Serial.println("ship detected"); /// for testing
     return true;
   } else {
     currentState.northUS = "NONE";  // No ship
+    Serial.println("no ship detected"); /// for testing
     return false;
   }
 }
 
+void closeGates(){
+
+}
+
+void openGates(){
+
+}
+
 // Emergency stop function
 void emergencyStop() {
-  myservo.write(90);  // Return servo to default position
-  digitalWrite(MOTOR_ENABLE_PIN, LOW);  // Stop the motor
+  myservo.write(90); //stop motor
+  // set everythings status to emergancy
   currentState.bridgeStatus = "EMER";
   currentState.gateStatus = "EMER";
   currentState.roadLights = "EMER";
   currentState.waterwayLights = "EMER";
   currentState.speaker = "EMER";
+}
+
+
+////////////// testing stuff
+
+void test(){
+  //test motor
+  Serial.println("testing motors");
+  testMotors();
+  Serial.println("finished testing motors");
+  // test sensor
+  Serial.println("testing sensor");
+  for(int i=0; i<=20; i++){
+    checkForShips();
+    delay(1000);
+  }
+  //
+  Serial.println("finished all testing");
+    delay(10000);
+}
+
+void testMotors(){
+  openBridge();
+  delay(5000);
+  closeBridge();
+  delay(5000);
 }
