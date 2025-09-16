@@ -1,7 +1,7 @@
 #include <WiFi.h>
 #include <WiFiServer.h>
-#include <ESP32Servo.h>  // Added for servo control
-#include <NewPing.h>  // Added for ultrasonic sensor
+#include <ESP32Servo.h>  // servo control
+#include <NewPing.h>  // ultrasonic sensor 
 
 // Network Configuration
 const char* ssid = "Dragan’s iPhone (2)";
@@ -20,8 +20,8 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define ECHO_PIN     12
 #define MAX_DISTANCE 500
 #define SERVO_PIN 15
-#define MOTOR_PIN1  12
-#define MOTOR_PIN2  13
+#define MOTOR_PIN1  26 // TEMP
+#define MOTOR_PIN2  27 // TEMP
 #define MOTOR_ENABLE_PIN 14
 
 // Servo & Ultrasonic sensor setup
@@ -111,6 +111,11 @@ void setup() {
   // Start server
   server.begin();
   Serial.println("Server started on port 5003");
+
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
 
   // Setup the servo
   myservo.attach(SERVO_PIN, 500, 2500); // Attach servo with range
@@ -239,6 +244,7 @@ void openBridge() {
   digitalWrite(MOTOR_PIN2, LOW);
   digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
   delay(2000); // Simulate motor running for opening
+  digitalWrite(MOTOR_ENABLE_PIN, LOW); // stop motor
 }
 
 void closeBridge() {
@@ -246,15 +252,21 @@ void closeBridge() {
   digitalWrite(MOTOR_PIN1, LOW);
   digitalWrite(MOTOR_PIN2, HIGH);
   digitalWrite(MOTOR_ENABLE_PIN, HIGH); // Enable motor
-  delay(2000); // Simulate motor running for closing
+  delay(2000); // Simulate motor running for opening
+  digitalWrite(MOTOR_ENABLE_PIN, LOW); // stop motor
 }
 
 // Check if ships are detected
 bool checkForShips() {
+  int distance = sonar.ping_cm();
   // Check ultrasonic sensors for approaching ships
-  bool northShip = (currentState.northUS != "NONE");
-  bool southShip = (currentState.southUS != "NONE");
-  return northShip || southShip;
+  if (distance > 0 && distance < 50) {
+    currentState.northUS = "SHIP";  // Ship detected
+    return true;
+  } else {
+    currentState.northUS = "NONE";  // No ship
+    return false;
+  }
 }
 
 // Emergency stop function
