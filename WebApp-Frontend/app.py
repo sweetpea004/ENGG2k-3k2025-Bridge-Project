@@ -58,7 +58,7 @@ def redirect_dashboard():
 
                 # determine selected settings for bridge loadcell and ultrasonic
                 road_detect = request.form.getlist('road-detect')
-                if "bridge-us" in road_detect:
+                if "road-us" in road_detect:
                     push.append("TRAF")
                 else:
                     push.append("NONE")
