@@ -27,9 +27,9 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define LATCH_PIN 22
 #define CLOCK_PIN 23
 #define DATA_PIN 24
-#define LED_OFF 0
-#define LED_RED 1
-#define LED_GREEN 2
+#define LEDS_OFF 0
+#define LEDS_RED 1
+#define LEDS_GREEN 2
 byte leds1 = 0;
 byte leds2 = 0;
 
@@ -310,7 +310,7 @@ void emergencyStop() {
 void updateShiftRegister() {
   digitalWrite(LATCH_PIN, LOW);
   shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, leds2);
-  shiftout(DATA_PIN, CLOCK_PIN, LSBFIRST, leds1);
+  shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, leds1);
   digitalWrite(LATCH_PIN, HIGH);
 }
 
@@ -387,10 +387,10 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
 }
 
 void testLEDs(){
-  setLEDS(LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, 7);
+  setLEDs(LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, 7);
   delay(1000);
   for (int i = 0 ; i < 8 ; i ++) {
-    setLEDS(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_RED, i);
+    setLEDs(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_RED, i);
     delay(1000);
   }
   setLEDs(LEDS_GREEN, LEDS_RED, LEDS_RED, LEDS_RED, 0);
