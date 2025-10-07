@@ -197,7 +197,7 @@ void controlBridge() {
       if (checkForShips()) {
         // Ship detected, prepare to open the bridge
         Serial.println("Ship detected - Preparing to open bridge...");
-        currentState.gateStatus = "CLOS";       // Close gates
+        closeGates(); // Close gates
         currentState.roadLights = "STOP";       // Stop road traffic
         currentState.waterwayLights = "STOP";   // Stop waterway traffic
         stateStartTime = millis();
@@ -210,9 +210,8 @@ void controlBridge() {
       if (millis() - stateStartTime > 3000) {  // Simulate time to close gates
         // Gates are closed, now open the bridge
         Serial.println("Opening bridge...");
-        currentState.bridgeStatus = "OPEN";    // Open bridge
         currentState.waterwayLights = "GOGO";  // Allow ships to pass
-        openBridge();  // Trigger servo and motors
+        openBridge(); 
         stateStartTime = millis();
         state = BRIDGE_OPEN;
       }
@@ -222,9 +221,8 @@ void controlBridge() {
       if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds (make this longer
         // Time to close the bridge
         Serial.println("Closing bridge...");
-        currentState.bridgeStatus = "CLOS";    // Close bridge
         currentState.waterwayLights = "STOP";  // Stop waterway traffic
-        closeBridge();  // Trigger servo and motors
+        closeBridge(); //close bridge
         stateStartTime = millis();
         state = BRIDGE_CLOSE;
       }
@@ -234,8 +232,7 @@ void controlBridge() {
       if (millis() - stateStartTime > 3000) {  // Simulate time to close bridge and reopen traffic
         // Gates open again for traffic
         Serial.println("Reopening gates for traffic...");
-        openGates();
-        currentState.gateStatus = "OPEN";      // Open gates
+        openGates(); // Open gates
         currentState.roadLights = "GOGO";      // Green for road traffic
         state = IDLE;
       }
@@ -244,11 +241,13 @@ void controlBridge() {
 }
 
 void openBridge() {
+  currentState.bridgeStatus = "OPEN";
   bridgeServo.write(120);
   delay(2000);
   bridgeServo.write(90);
 }
 void closeBridge() {
+  currentState.bridgeStatus = "CLOS";
   bridgeServo.write(60);
   delay(2000);
   bridgeServo.write(90);
@@ -270,12 +269,14 @@ bool checkForShips() {
 }
 
 void closeGates(){
+  currentState.gateStatus = "CLOS";
   gateServo.write(60);
   delay(2000); 
   gateServo.write(90);
 }
 
 void openGates(){
+  currentState.gateStatus = "OPEN";
   gateServo.write(120);
   delay(2000);
   gateServo.write(90);
