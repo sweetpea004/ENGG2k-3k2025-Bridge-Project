@@ -23,6 +23,8 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define SERVO_BRIDGE_PIN 23
 #define SERVO_GATE_PIN 22
 
+/// add led stuff below here
+
 // Servo & Ultrasonic sensor setup
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
@@ -290,8 +292,38 @@ void emergencyStop() {
   currentState.speaker = "EMER";
 }
 
+/////// LED functions ///////
 
-////////////// testing stuff
+void ErrorDisplay(){
+
+}
+
+void waterwayLights(String command){
+  if(command == "STOP"){
+    // turn on red light
+  }
+  else if(command == "GOGO"){
+    // turn on green light
+  }
+  else if(command == "WARN"){
+    // turn on yellow light
+  }
+}
+
+void bridgelights(String command){
+  if(command == "STOP"){
+    // turn on red light
+  }
+  else if(command == "GOGO"){
+    // turn on green light
+  }
+  else if(command == "WARN"){
+    // turn on yellow light
+  }
+}
+
+
+////////////// testing stuff /////////////////////
 
 void test(){
   //test motor
