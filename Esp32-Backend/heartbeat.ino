@@ -24,6 +24,15 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define SERVO_GATE_PIN 22
 
 /// add led stuff below here
+#define LATCH_PIN 22
+#define CLOCK_PIN 23
+#define DATA_PIN 24
+#define LED_OFF 0
+#define LED_RED 1
+#define LED_GREEN 2
+byte leds1 = 0;
+byte leds2 = 0;
+#define 
 
 // Servo & Ultrasonic sensor setup
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
@@ -39,7 +48,6 @@ Servo gateServo; // Servo object
 // 5: 
 // 6: 
 // 7: 
-// 8: 
 
 //String interpretation
 // Message readMssg(String mssg) {
@@ -94,6 +102,9 @@ bool autoMode = true;
 
 // Setup
 void setup() {
+  pinMode(LATCH_PIN, OUTPUT);
+  pinMode(DATA_PIN, OUTPUT);  
+  pinMode(CLOCK_PIN, OUTPUT);
   Serial.begin(115200);
   Serial.println("ESP32 Bridge Control - Heartbeat Program");
 
@@ -131,6 +142,7 @@ void loop() {
   handleClient();
   controlBridge();
   sendHeartbeat();
+  testLEDs();
   delay(50);
 }
 
@@ -293,6 +305,104 @@ void emergencyStop() {
 }
 
 /////// LED functions ///////
+
+// LED shift register handling
+void updateShiftRegister() {
+  digitalWrite(LATCH_PIN, LOW);
+  shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, leds1);
+  shiftout(DATA_PIN, CLOCK_PIN, LSBFIRST, leds2);
+  digitalWrite(LATCH_PIN, HIGH);
+}
+
+// sets LED bytes and pushes to set LED colours
+void setLEDs(char north, char south, char west, char east, char errorCode) {
+  leds1 = 0;
+  leds2 = 0;
+  switch (north) {
+    case LEDS_OFF:
+    break
+    
+    case LEDS_RED:
+    leds1 += 0b01000000;
+
+    case LEDS_GREEN:
+    leds1 += 0b10000000;
+  }
+  switch (south) {
+    case LEDS_OFF:
+    break
+    
+    case LEDS_RED:
+    leds1 += 0b00010000;
+
+    case LEDS_GREEN:
+    leds1 += 0b00100000;
+  }
+  switch (west) {
+    case LEDS_OFF:
+    break
+    
+    case LEDS_RED:
+    leds1 += 0b01000000;
+
+    case LEDS_GREEN:
+    leds1 += 0b10000000;
+  }
+  switch (east) {
+    case LEDS_OFF:
+    break
+    
+    case LEDS_RED:
+    leds1 += 0b00000001;
+
+    case LEDS_GREEN:
+    leds1 += 0b00000010;
+  }
+  switch (errorCode) {
+    case 0:
+    break
+    
+    case 1:
+    leds2 += 0b0010000;
+
+    case 2:
+    leds2 += 0b01000000;
+
+    case 3:
+    leds2 += 0b01100000;
+
+    case 4:
+    leds2 += 0b10000000;
+
+    case 5:
+    leds2 += 0b10100000;
+
+    case 6:
+    leds2 += 0b11000000;
+
+    case 7:
+    leds2 += 0b11100000;
+  }
+  updateShiftRegister();
+}
+
+void testLEDs(){
+  setLEDS(LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, 7);
+  delay(1000);
+  for (int i = 0 ; i < 8 ; i ++) {
+    setLEDS(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_RED, i);
+    delay(1000);
+  }
+  setLEDs(LEDS_GREEN, LEDS_RED, LEDS_RED, LEDS_RED, 0);
+  delay(500);
+  setLEDs(LEDS_RED, LEDS_GREEN, LEDS_RED, LEDS_RED, 0);
+  delay(500);
+  setLEDs(LEDS_RED, LEDS_RED, LEDS_GREEN, LEDS_RED, 0);
+  delay(500);
+  setLEDs(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_GREEN, 0);
+  delay(500);
+  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
+}
 
 void ErrorDisplay(){
 
