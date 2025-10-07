@@ -109,21 +109,25 @@ def parse_message(message: str) -> Status:
     
 def communication():
 
-    # Connection with ESP32
-    sock.connect((ESP_IP, ESP_PORT))
-
-    # Connection with Tester
-    #sock.connect((TEST_IP, TEST_PORT))
-
     while True:
         if conn.value == False:
-            send("REDY")
+            # Connection with ESP32
+            sock.connect((ESP_IP, ESP_PORT))
+
+            # Connection with Tester
+            #sock.connect((TEST_IP, TEST_PORT))
 
             try:
+                send("REDY")
+                
                 m = receive()
+                if (m == "OKOK"):
+                    status.resetTime()
+
                 conn.toTrue()
+                time.sleep(1) # small delay
             except Exception as e:
-                m = "no connection"
+                print("no connection")
     
         else:
             time_current = time.time_ns()
