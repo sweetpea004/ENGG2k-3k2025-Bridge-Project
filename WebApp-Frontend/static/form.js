@@ -118,31 +118,31 @@ socket.on('update_stat_data', function(status, conn) {
             textErrorCode.classList = "green-text";
             break;
         case "1":
-            textErrorCode.innerText = "1 - ";
+            textErrorCode.innerText = "1 - Bridge Servo position misaligned with limit switch";
             textErrorCode.classList = "red-text";
             break;
         case "2":
-            textErrorCode.innerText = "2 - ";
+            textErrorCode.innerText = "2 - Gate Servo position misaligned with limit switch";
             textErrorCode.classList = "red-text";
             break;
         case "3":
-            textErrorCode.innerText = "3 - ";
+            textErrorCode.innerText = "3 - Bridge and Gate Servo position misaligned with limit switch";
             textErrorCode.classList = "red-text";
             break;
         case "4":
-            textErrorCode.innerText = "4 - ";
+            textErrorCode.innerText = "4 - Road traffic detection error";
             textErrorCode.classList = "red-text";
             break;
         case "5":
-            textErrorCode.innerText = "5 - ";
+            textErrorCode.innerText = "5 - Road traffic detection error and Bridge Servo position misaligned with limit switch";
             textErrorCode.classList = "red-text";
             break;
         case "6":
-            textErrorCode.innerText = "6 - ";
+            textErrorCode.innerText = "6 - Road traffic detection error and Gate Servo position misaligned with limit switch";
             textErrorCode.classList = "red-text";
             break;
         case "7":
-            textErrorCode.innerText = "7 - ";
+            textErrorCode.innerText = "7 - All errors";
             textErrorCode.classList = "red-text";
             break;
     }
