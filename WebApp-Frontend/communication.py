@@ -47,6 +47,9 @@ class Status:
             "error_code": self.error_code
         }
     
+    def resetTime(self):
+        self.recieved_status = time.time_ns()
+    
 class Connection:
     def __init__(self):
         self.value = False
@@ -66,6 +69,8 @@ TEST_PORT = 5005
 
 ESP_IP = "172.20.10.2"
 ESP_PORT = 5003
+
+STATUS_FREQUENCY = 2000000000
 
 # Globals
 sock = socket.socket()
@@ -120,12 +125,19 @@ def communication():
             except Exception as e:
                 m = "no connection"
     
-        '''
         else:
             time_current = time.time_ns()
-            if(time_current - status.recieved_status > 2000000000):
+            if(time_current - status.recieved_status > STATUS_FREQUENCY):
                 conn.toFalse()
                 # attempt Reconnect
                 print("Test")
             else:
-        '''
+                received_string = receive().split(" ")
+                match received_string[0]:
+                    case "STAT":
+                        status = Status(received_string)
+                        send("OKOK")
+                    case "OKOK":
+                        status.resetTime()
+
+
