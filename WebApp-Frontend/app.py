@@ -55,10 +55,14 @@ def redirect_dashboard():
                     push.append("SHIP")
                 else:
                     push.append("NONE")
-                
-                # determine selected settings for loadcell
-                loadcell = request.form.getlist('loadcell')
-                if "loadcell" in loadcell:
+
+                # determine selected settings for bridge loadcell and ultrasonic
+                road_detect = request.form.getlist('road-detect')
+                if "bridge-us" in road_detect:
+                    push.append("TRAF")
+                else:
+                    push.append("NONE")
+                if "loadcell" in road_detect:
                     push.append("TRAF")
                 else:
                     push.append("NONE")
