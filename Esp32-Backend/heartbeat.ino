@@ -310,8 +310,8 @@ void emergencyStop() {
 // LED shift register handling
 void updateShiftRegister() {
   digitalWrite(LATCH_PIN, LOW);
-  shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, leds1);
-  shiftout(DATA_PIN, CLOCK_PIN, LSBFIRST, leds2);
+  shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, leds2);
+  shiftout(DATA_PIN, CLOCK_PIN, LSBFIRST, leds1);
   digitalWrite(LATCH_PIN, HIGH);
 }
 
