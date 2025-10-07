@@ -41,13 +41,13 @@ Servo gateServo; // Servo object
 
 // error codes:
 // 0: No Error
-// 1: Bridge Hung
-// 2: Gates Hung
-// 3: Lights Hung
-// 4: Ultrasonics Hung
-// 5: 
-// 6: 
-// 7: 
+// 1: Bridge limit switch not detecting bridge
+// 2: Gates limit switch not detecting gates
+// 3: Gates & Bridge
+// 4: Road traffic detection error
+// 5: Road traffic & Bridge
+// 6: Gates & Road Traffic 
+// 7: All errors
 
 //String interpretation
 // Message readMssg(String mssg) {
@@ -139,9 +139,9 @@ void setup() {
 // Main Loop
 void loop() {
   //test();
-  handleClient();
-  controlBridge();
-  sendHeartbeat();
+  //handleClient();
+  //controlBridge();
+  //sendHeartbeat();
   testLEDs();
   delay(50);
 }
