@@ -32,7 +32,6 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define LED_GREEN 2
 byte leds1 = 0;
 byte leds2 = 0;
-#define 
 
 // Servo & Ultrasonic sensor setup
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
