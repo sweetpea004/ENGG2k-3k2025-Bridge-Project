@@ -321,7 +321,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
   leds2 = 0;
   switch (north) {
     case LEDS_OFF:
-    break
+    break;
     
     case LEDS_RED:
     leds1 += 0b01000000;
@@ -331,7 +331,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
   }
   switch (south) {
     case LEDS_OFF:
-    break
+    break;
     
     case LEDS_RED:
     leds1 += 0b00010000;
@@ -341,7 +341,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
   }
   switch (west) {
     case LEDS_OFF:
-    break
+    break;
     
     case LEDS_RED:
     leds1 += 0b01000000;
@@ -351,7 +351,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
   }
   switch (east) {
     case LEDS_OFF:
-    break
+    break;
     
     case LEDS_RED:
     leds1 += 0b00000001;
@@ -361,7 +361,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
   }
   switch (errorCode) {
     case 0:
-    break
+    break;
     
     case 1:
     leds2 += 0b0010000;
