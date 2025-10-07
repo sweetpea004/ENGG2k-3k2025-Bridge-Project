@@ -8,6 +8,7 @@ const textWaterwayTrafficLights = document.getElementById("text-waterway-traf");
 const textNorthUS = document.getElementById("text-north-us");
 const textUnderUS = document.getElementById("text-under-us");
 const textSouthUS = document.getElementById("text-south-us");
+const textRoadUS = document.getElementById("text-road-us");
 const textLoadCell = document.getElementById("text-load-cell");
 const textBridgeTopLimitSwitch = document.getElementById("text-bridge-top-limit");
 const textBridgeBottomLimitSwitch = document.getElementById("text-bridge-bottom-limit");
@@ -26,6 +27,7 @@ const trafficLightsError = document.querySelector("#traf-lights-error-text");
 const northUS = document.querySelector("#north-us");
 const underUS = document.querySelector("#under-us");
 const southUS = document.querySelector("#south-us");
+const roadUS = document.querySelector("#road-us");
 const loadCell = document.querySelector("#loadcell");
 const bTopLimit = document.querySelector("#bridge-top");
 const bBottomLimit = document.querySelector("#bridge-bottom");
@@ -219,7 +221,18 @@ socket.on('update_stat_data', function(status, conn) {
             break;
     }
 
-    // load cell text
+    // road detection text
+    switch(status.road_us) {
+        case "TRAF":
+            textRoadUS.innerText = "TRAFFIC DETECTED";
+            textRoadUS.classList = "orange-text";
+            break;
+        case "NONE":
+            textRoadUS.innerText = "NOTHING DETECTED";
+            textRoadUS.classList = "green-text";
+            break;
+    }
+
     switch (status.road_load) {
         case "TRAF":
             textLoadCell.innerText = "TRAFFIC DETECTED";
@@ -453,7 +466,10 @@ function disableInputs() {
     southUS.disabled = true;
     southUS.checked = false;
 
-    // disable load cell sensor inputs
+    // disable road detection sensor inputs
+    roadUS.disabled = true;
+    roadUS.checked = false;
+
     loadCell.disabled = true;
     loadCell.checked = false;
 
@@ -512,7 +528,8 @@ function enableInputs() {
     underUS.disabled = false;
     southUS.disabled = false;
 
-    // enable load cell sensor inputs
+    // enable road detection sensor inputs
+    roadUS.disabled = false;
     loadCell.disabled = false;
 
     // enable Limit Switches inputs

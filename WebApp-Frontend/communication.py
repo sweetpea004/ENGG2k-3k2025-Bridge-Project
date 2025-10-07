@@ -12,19 +12,20 @@ class Status:
         self.north_us = array[3].upper()
         self.under_us = array[4].upper()
         self.south_us = array[5].upper()
-        self.road_load = array[6].upper()
-        self.bridge_top_limit = array[7].upper()
-        self.bridge_bottom_limit = array[8].upper()
-        self.gate_top_limit = array[9].upper()
-        self.gate_bottom_limit = array[10].upper()
-        self.road_lights = array[11].upper()
-        self.waterway_lights = array[12].upper()
-        self.audio = array[13].upper()
-        self.error_code = array[14].upper()
+        self.road_us = array[6].upper()
+        self.road_load = array[7].upper()
+        self.bridge_top_limit = array[8].upper()
+        self.bridge_bottom_limit = array[9].upper()
+        self.gate_top_limit = array[10].upper()
+        self.gate_bottom_limit = array[11].upper()
+        self.road_lights = array[12].upper()
+        self.waterway_lights = array[13].upper()
+        self.audio = array[14].upper()
+        self.error_code = array[15].upper()
     
     def toString(self):
 
-        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
+        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_us} {self.road_load} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
 
         return message
     
@@ -36,6 +37,7 @@ class Status:
             "north_us": self.north_us,
             "under_us": self.under_us,
             "south_us": self.south_us,
+            "road_us": self.road_us,
             "road_load": self.road_load,
             "bridge_top_limit": self.bridge_top_limit,
             "bridge_bottom_limit": self.bridge_bottom_limit,
@@ -74,7 +76,7 @@ STATUS_FREQUENCY = 2000000000
 
 # Globals
 sock = socket.socket()
-default_status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRAF TRIG NONE TRIG NONE EMER EMER NONE 0"
 status = Status(default_status.split(" "))
 conn = Connection()
 
@@ -119,7 +121,7 @@ def communication():
 
             try:
                 send("REDY")
-                
+
                 m = receive()
                 if (m == "OKOK"):
                     status.resetTime()
