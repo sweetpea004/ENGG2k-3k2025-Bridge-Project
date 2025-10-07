@@ -108,8 +108,7 @@ def redirect_dashboard():
                 # flash confirmation message
                 flash('Changed To Automatic Mode', 'info')
 
-        # TODO - send message
-        #commProg.send(new_message)
+        commProg.send(new_message)
 
     # Load page
     return render_template("dashboard.html")
