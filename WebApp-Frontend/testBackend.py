@@ -44,10 +44,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
         while True:
             if (time.time_ns() - last_time >= STATUS_FREQUENCY):
-                send(status)
-                receive() # OKOK
-                last_time = time.time_ns()
-            else:
                 try:
                     m = receive().split(" ")
                     match m[0]:
@@ -61,4 +57,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             send("OKOK")
                 except:
                     print("")
+                send(status)
+                receive() # OKOK
+                last_time = time.time_ns()
                     
