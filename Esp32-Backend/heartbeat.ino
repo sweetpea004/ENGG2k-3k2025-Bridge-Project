@@ -145,10 +145,10 @@ void setup() {
 
 // Main Loop
 void loop() {
-  //test();
-  //handleClient();
-  //controlBridge();
-  //sendHeartbeat();
+  test();
+  handleClient();
+  controlBridge();
+  sendHeartbeat();
   testLEDs();
   delay(50);
 }
@@ -174,36 +174,31 @@ void handleClient() {
 // Process commands from the client
 void processCommand(String command) {
   if (command == "REDY") {
-    client.println("OKOK");
   } else if (command == "EMER") {
     currentMode = EMERGENCY_MODE;
     emergencyStop();
-    client.println("OK");
   } else if (command == "AUTO") {
     if (currentMode == EMERGENCY_MODE) {
-      client.println("ERROR: Cannot switch from EMERGENCY mode - reset required");
+     //"ERROR: Cannot switch from EMERGENCY mode - reset required"
       return;
     }
     currentMode = AUTO_MODE;
     resetBridgeControlState(); // Reset state machine when switching to auto
     Serial.println("Switched to AUTO mode");
-    client.println("OK");
   } else if (command == "MANUAL") {
     if (currentMode == EMERGENCY_MODE) {
-      client.println("ERROR: Cannot switch from EMERGENCY mode - reset required");
       return;
     }
     currentMode = MANUAL_MODE;
     Serial.println("Switched to MANUAL mode");
-    client.println("OK");
   } else if (command.startsWith("PUSH ")) {
     if (currentMode == MANUAL_MODE) {
       handleManualCommand(command);
     } else {
-      client.println("ERROR: Manual commands only allowed in MANUAL mode");
+      //"ERROR: Manual commands only allowed in MANUAL mode"
     }
   } else {
-    client.println("ERROR: Unknown command");
+    //"ERROR: Unknown command"
   }
 }
 
@@ -211,39 +206,31 @@ void processCommand(String command) {
 void handleManualCommand(String command) {
   // Don't allow manual commands in emergency mode
   if (currentMode == EMERGENCY_MODE) {
-    client.println("ERROR: Manual commands blocked in EMERGENCY mode");
+    //"ERROR: Manual commands blocked in EMERGENCY mode"
     return;
   }
   
   // Extract the manual command (e.g., "PUSH BRIDGE_OPEN", "PUSH GATE_CLOSE")
   String action = command.substring(5); // Remove "PUSH " prefix
-  
+  // placeholders 
   if (action == "BRIDGE_OPEN") {
     openBridge();
-    client.println("OK");
   } else if (action == "BRIDGE_CLOSE") {
     closeBridge();
-    client.println("OK");
   } else if (action == "GATE_OPEN") {
     openGates();
-    client.println("OK");
   } else if (action == "GATE_CLOSE") {
     closeGates();
-    client.println("OK");
   } else if (action == "LIGHTS_ROAD_GO") {
     currentState.roadLights = "GOGO";
-    client.println("OK");
   } else if (action == "LIGHTS_ROAD_STOP") {
     currentState.roadLights = "STOP";
-    client.println("OK");
   } else if (action == "LIGHTS_WATER_GO") {
     currentState.waterwayLights = "GOGO";
-    client.println("OK");
   } else if (action == "LIGHTS_WATER_STOP") {
     currentState.waterwayLights = "STOP";
-    client.println("OK");
   } else {
-    client.println("ERROR: Unknown manual command");
+    //"ERROR: Unknown manual command"
   }
 }
 
@@ -251,7 +238,7 @@ void handleManualCommand(String command) {
 void sendHeartbeat() {
   if (clientConnected && (millis() - lastHeartbeat >= heartbeatInterval)) {
     String status = buildStatusMessage();
-    client.println(status);
+    //client.println(status);
     lastHeartbeat = millis();
   }
 }
@@ -312,11 +299,7 @@ void controlBridge() {
       if (millis() - stateStartTime > 3000) {  // Simulate time to close bridge and reopen traffic
         // Gates open again for traffic
         Serial.println("Reopening gates for traffic...");
-<<<<<<< HEAD
-        openGates();
-=======
         openGates(); // Open gates
->>>>>>> 3d190d6f501f77cdfbeafeada647e6fdb3be8d64
         currentState.roadLights = "GOGO";      // Green for road traffic
         state = IDLE;
       }
