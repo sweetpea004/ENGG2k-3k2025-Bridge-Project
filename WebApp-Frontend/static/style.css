@@ -20,6 +20,9 @@
   /* content radii */
   --radius: 2rem;
   --small-radius: 1rem;
+
+  --picture-width: 630px;
+  --picture-height: 155px;
 }
 
 * {
@@ -35,6 +38,11 @@ h1 {
 
 h3, p, a, button, ul, ul > li, th, td, span {
   font-size: 1.25rem;
+}
+
+img {
+  width:var(--picture-width);
+  height: var(--picture-height);
 }
 
 body {

@@ -1,5 +1,6 @@
 // set global elements for status panel
 const textBridgeStat = document.getElementById("text-bridge-status");
+const bridgeImage = document.getElementById("bridge-img");
 const textGateStat = document.getElementById("text-gate-status");
 const textConnectionStat = document.getElementById("text-conn-status");
 const textErrorCode = document.getElementById("text-error-code");
@@ -64,18 +65,30 @@ socket.on('update_stat_data', function(status, conn) {
         case "OPEN":
             textBridgeStat.innerText = "OPEN";
             textBridgeStat.classList = "green-text";
+
+            // bridge image
+            bridgeImage.src = "/static/Images/staticOpen.png";
             break;
         case "MOVN":
             textBridgeStat.innerText = "MOVING";
             textBridgeStat.classList = "orange-text";
+
+            // bridge image
+            bridgeImage.src = "/static/Images/openning.gif";
             break;
         case "CLOS":
             textBridgeStat.innerText = "CLOSED";
             textBridgeStat.classList = "green-text";
+
+            // bridge image
+            bridgeImage.src = "/static/Images/staticClosed.png";
             break;
         case "EMER":
             textBridgeStat.innerText = "EMERGENCY";
             textBridgeStat.classList = "yellow-text";
+
+            // bridge image
+            bridgeImage.src = "/static/Images/openning.gif";
             break;
     }
 
