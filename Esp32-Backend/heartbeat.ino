@@ -88,7 +88,15 @@ struct Message {
 };
 
 BridgeState currentState;
-bool autoMode = true;
+
+// Control Mode Enum
+enum ControlMode {
+  AUTO_MODE,
+  MANUAL_MODE,
+  EMERGENCY_MODE
+};
+
+ControlMode currentMode = AUTO_MODE;
 
 // Setup
 void setup() {
@@ -155,14 +163,74 @@ void processCommand(String command) {
   if (command == "REDY") {
     client.println("OKOK");
   } else if (command == "EMER") {
+    currentMode = EMERGENCY_MODE;
     emergencyStop();
     client.println("OK");
   } else if (command == "AUTO") {
-    autoMode = true;
+    if (currentMode == EMERGENCY_MODE) {
+      client.println("ERROR: Cannot switch from EMERGENCY mode - reset required");
+      return;
+    }
+    currentMode = AUTO_MODE;
+    resetBridgeControlState(); // Reset state machine when switching to auto
+    Serial.println("Switched to AUTO mode");
+    client.println("OK");
+  } else if (command == "MANUAL") {
+    if (currentMode == EMERGENCY_MODE) {
+      client.println("ERROR: Cannot switch from EMERGENCY mode - reset required");
+      return;
+    }
+    currentMode = MANUAL_MODE;
+    Serial.println("Switched to MANUAL mode");
     client.println("OK");
   } else if (command.startsWith("PUSH ")) {
-    // Manual control logic here (e.g., control motor or servo manually)
+    if (currentMode == MANUAL_MODE) {
+      handleManualCommand(command);
+    } else {
+      client.println("ERROR: Manual commands only allowed in MANUAL mode");
+    }
+  } else {
+    client.println("ERROR: Unknown command");
+  }
+}
+
+// Handle manual commands when in MANUAL mode
+void handleManualCommand(String command) {
+  // Don't allow manual commands in emergency mode
+  if (currentMode == EMERGENCY_MODE) {
+    client.println("ERROR: Manual commands blocked in EMERGENCY mode");
+    return;
+  }
+  
+  // Extract the manual command (e.g., "PUSH BRIDGE_OPEN", "PUSH GATE_CLOSE")
+  String action = command.substring(5); // Remove "PUSH " prefix
+  
+  if (action == "BRIDGE_OPEN") {
+    openBridge();
     client.println("OK");
+  } else if (action == "BRIDGE_CLOSE") {
+    closeBridge();
+    client.println("OK");
+  } else if (action == "GATE_OPEN") {
+    openGates();
+    client.println("OK");
+  } else if (action == "GATE_CLOSE") {
+    closeGates();
+    client.println("OK");
+  } else if (action == "LIGHTS_ROAD_GO") {
+    currentState.roadLights = "GOGO";
+    client.println("OK");
+  } else if (action == "LIGHTS_ROAD_STOP") {
+    currentState.roadLights = "STOP";
+    client.println("OK");
+  } else if (action == "LIGHTS_WATER_GO") {
+    currentState.waterwayLights = "GOGO";
+    client.println("OK");
+  } else if (action == "LIGHTS_WATER_STOP") {
+    currentState.waterwayLights = "STOP";
+    client.println("OK");
+  } else {
+    client.println("ERROR: Unknown manual command");
   }
 }
 
@@ -185,7 +253,8 @@ String buildStatusMessage() {
 
 // Control the bridge states (open/close)
 void controlBridge() {
-  if (!autoMode) return;
+  // Don't run automatic control in manual or emergency mode
+  if (currentMode != AUTO_MODE) return;
 
   static enum { IDLE, PREPARE, BRIDGE_OPEN, BRIDGE_CLOSE } state = IDLE;
   static unsigned long stateStartTime = 0;
@@ -208,7 +277,6 @@ void controlBridge() {
       if (millis() - stateStartTime > 3000) {  // Simulate time to close gates
         // Gates are closed, now open the bridge
         Serial.println("Opening bridge...");
-        currentState.bridgeStatus = "OPEN";    // Open bridge
         currentState.waterwayLights = "GOGO";  // Allow ships to pass
         openBridge();  // Trigger servo and motors
         stateStartTime = millis();
@@ -220,7 +288,6 @@ void controlBridge() {
       if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds (make this longer
         // Time to close the bridge
         Serial.println("Closing bridge...");
-        currentState.bridgeStatus = "CLOS";    // Close bridge
         currentState.waterwayLights = "STOP";  // Stop waterway traffic
         closeBridge();  // Trigger servo and motors
         stateStartTime = millis();
@@ -233,7 +300,6 @@ void controlBridge() {
         // Gates open again for traffic
         Serial.println("Reopening gates for traffic...");
         openGates();
-        currentState.gateStatus = "OPEN";      // Open gates
         currentState.roadLights = "GOGO";      // Green for road traffic
         state = IDLE;
       }
@@ -245,11 +311,16 @@ void openBridge() {
   bridgeServo.write(120);
   delay(2000);
   bridgeServo.write(90);
+  currentState.bridgeStatus = "OPEN";  // Update heartbeat status
+  Serial.println("Bridge opened");
 }
+
 void closeBridge() {
   bridgeServo.write(60);
   delay(2000);
   bridgeServo.write(90);
+  currentState.bridgeStatus = "CLOS";  // Update heartbeat status
+  Serial.println("Bridge closed");
 }
 
 // Check if ships are detected
@@ -271,23 +342,49 @@ void closeGates(){
   gateServo.write(60);
   delay(2000); 
   gateServo.write(90);
+  currentState.gateStatus = "CLOS";  // Update heartbeat status
+  Serial.println("Gates closed");
 }
 
 void openGates(){
   gateServo.write(120);
   delay(2000);
   gateServo.write(90);
+  currentState.gateStatus = "OPEN";  // Update heartbeat status
+  Serial.println("Gates opened");
 }
 
 // Emergency stop function
 void emergencyStop() {
-  bridgeServo.write(90); //stop motor
-  // set everythings status to emergancy
+  // Immediately stop all motors
+  bridgeServo.write(90); // Stop bridge motor
+  gateServo.write(90);   // Stop gate motor
+  
+  // Set all status to emergency
   currentState.bridgeStatus = "EMER";
   currentState.gateStatus = "EMER";
   currentState.roadLights = "EMER";
   currentState.waterwayLights = "EMER";
+  currentState.audioSys = "EMER";
   currentState.speaker = "EMER";
+  currentState.errorCode = 8; // Emergency error code
+  
+  // Reset any ongoing operations
+  resetBridgeControlState();
+  
+  Serial.println("EMERGENCY STOP ACTIVATED!");
+  Serial.println("All systems halted - Manual intervention required");
+}
+
+// Reset the internal state machine for bridge control
+void resetBridgeControlState() {
+  // This function helps reset any static variables in controlBridge()
+  // Call this when switching modes or during emergency
+  static bool forceReset = true;
+  if (forceReset) {
+    // The next call to controlBridge() will start fresh
+    forceReset = false;
+  }
 }
 
 
