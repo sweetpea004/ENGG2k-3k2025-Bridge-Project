@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <string.h>
 #include <WiFiServer.h>
 #include <ESP32Servo.h>  // servo control
 #include <NewPing.h>  // ultrasonic sensor 
@@ -58,23 +59,36 @@ Servo gateServo; // Servo object
 // 7: All errors
 
 //String interpretation
-// Message readMssg(String mssg) {
-//   // PRE: receive a string in the Appendix E format
-//   // POST: output a message struct with the string contents
-//   Message retMsg;
-//   retMsg.msgType = mssg.substr(0,5);
-//   retMsg.bridgeStatus = mssg.substr(5,5);
-//   retMsg.gateStatus = mssg.substr(10,5);
-//   retMsg.northUS = mssg.substr(15,5);
-//   retMsg.underUS = mssg.substr(20,5);
-//   retMsg.southUS = mssg.substr(25,5);
-//   retMsg.roadLoad = mssg.substr(30,5);
-//   retMsg.roadLights = mssg.substr(35,5);
-//   retMsg.waterwayLights = mssg.substr(40,5);
-//   retMsg.audioSys = mssg.substr(45,5);
-//   retMsg.errorCode = mssg[50] = '0';
-//   return retMsg;
-// }
+void readMssg(String mssg) {
+  // PRE: receive a string in the Appendix E format
+  // POST: read the message and run the appropriate response command
+  switch (mssg.substr(0,4)) {
+    case "REDY":
+
+    case "OKOK":
+
+    case "STAT":
+
+    case "PUSH":
+
+    case "AUTO":
+
+    case "EMER":
+
+  }
+
+  // retMsg.msgType = mssg.substr(0,5);
+  // retMsg.bridgeStatus = mssg.substr(5,5);
+  // retMsg.gateStatus = mssg.substr(10,5);
+  // retMsg.northUS = mssg.substr(15,5);
+  // retMsg.underUS = mssg.substr(20,5);
+  // retMsg.southUS = mssg.substr(25,5);
+  // retMsg.roadLoad = mssg.substr(30,5);
+  // retMsg.roadLights = mssg.substr(35,5);
+  // retMsg.waterwayLights = mssg.substr(40,5);
+  // retMsg.audioSys = mssg.substr(45,5);
+  // retMsg.errorCode = mssg[50] = '0';
+}
 
 // Bridge State Structure
 struct BridgeState {
@@ -89,20 +103,6 @@ struct BridgeState {
   String waterwayLights = "STOP";
   String audioSys = "NONE";
   String speaker = "placeholder";
-  int errorCode = 0;
-};
-
-struct Message {
-  String msgType = "OKOK";
-  String bridgeStatus = "CLOS";
-  String gateStatus = "OPEN";
-  String northUS = "NONE";
-  String underUS = "NONE";
-  String southUS = "NONE";
-  String roadLoad = "NONE";
-  String roadLights = "GOGO";
-  String waterwayLights = "STOP";
-  String audioSys = "NONE";
   int errorCode = 0;
 };
 
@@ -454,68 +454,68 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
   leds2 = 0;
   switch (north) {
     case LEDS_OFF:
-    break;
+      break;
     
     case LEDS_RED:
-    leds1 += 0b01000000;
+      leds1 += 0b01000000;
 
     case LEDS_GREEN:
-    leds1 += 0b10000000;
+      leds1 += 0b10000000;
   }
   switch (south) {
     case LEDS_OFF:
-    break;
+      break;
     
     case LEDS_RED:
-    leds1 += 0b00010000;
+      leds1 += 0b00010000;
 
     case LEDS_GREEN:
-    leds1 += 0b00100000;
+      leds1 += 0b00100000;
   }
   switch (west) {
     case LEDS_OFF:
-    break;
+      break;
     
     case LEDS_RED:
-    leds1 += 0b01000000;
+      leds1 += 0b01000000;
 
     case LEDS_GREEN:
-    leds1 += 0b10000000;
+      leds1 += 0b10000000;
   }
   switch (east) {
     case LEDS_OFF:
-    break;
+      break;
     
     case LEDS_RED:
-    leds1 += 0b00000001;
+      leds1 += 0b00000001;
 
     case LEDS_GREEN:
-    leds1 += 0b00000010;
+      leds1 += 0b00000010;
   }
   switch (errorCode) {
     case 0:
-    break;
+      break;
     
     case 1:
-    leds2 += 0b0010000;
+      leds2 += 0b0010000;
 
     case 2:
-    leds2 += 0b01000000;
+      leds2 += 0b01000000;
 
     case 3:
-    leds2 += 0b01100000;
+      leds2 += 0b01100000;
 
     case 4:
-    leds2 += 0b10000000;
+      leds2 += 0b10000000;
 
     case 5:
-    leds2 += 0b10100000;
+      leds2 += 0b10100000;
 
     case 6:
-    leds2 += 0b11000000;
+      leds2 += 0b11000000;
 
     case 7:
-    leds2 += 0b11100000;
+      leds2 += 0b11100000;
   }
   updateShiftRegister();
 }
