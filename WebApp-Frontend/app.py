@@ -122,10 +122,9 @@ def handle_update():
     emit('update_stat_data', (commProg.status.toSerializable(), commProg.conn.value), broadcast=True)
 
 if __name__ == "__main__":
-    print("Starting connection")
     commThread = threading.Thread(target=commProg.communication, daemon=True)
     commThread.start()
 
     run_app()
-
+    
     commThread.join()

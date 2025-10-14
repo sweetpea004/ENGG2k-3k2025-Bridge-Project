@@ -66,7 +66,7 @@ class Connection:
 BUF_SIZE = 4000
 VERBOSE = True # Controls whether messages are printed to console
 
-TEST_IP = "127.0.0.1"
+TEST_IP = "10.126.242.252"
 TEST_PORT = 5005
 
 ESP_IP = "172.20.10.2"
@@ -111,32 +111,34 @@ def parse_message(message: str) -> Status:
     
 def communication():
 
+    print("Starting connection")
     while True:
         if conn.value == False:
             # Connection with ESP32
-            sock.connect((ESP_IP, ESP_PORT))
+            #sock.connect((ESP_IP, ESP_PORT))
 
             # Connection with Tester
-            #sock.connect((TEST_IP, TEST_PORT))
+            sock.connect((TEST_IP, TEST_PORT))
+            time.sleep(1) # small delay
 
-            try:
-                send("REDY")
+            send("REDY")
 
-                m = receive()
-                if (m == "OKOK"):
-                    status.resetTime()
+            m = receive()
+            if (m == "OKOK"):
+                status.resetTime()
 
-                conn.toTrue()
-                time.sleep(1) # small delay
-            except Exception as e:
-                print("no connection")
+            conn.toTrue()
+            time.sleep(1) # small delay
     
         else:
-            time_current = time.time_ns()
-            if(time_current - status.recieved_status > STATUS_FREQUENCY):
+            time_passed = time.time_ns() - status.recieved_status 
+            if(time_passed > STATUS_FREQUENCY):
+                print ("not connected")
+                sock.close()
                 conn.toFalse()
                 # attempt Reconnect
             else:
+                print ("connected")
                 received_string = receive().split(" ")
                 match received_string[0]:
                     case "STAT":
