@@ -16,8 +16,14 @@ unsigned long lastHeartbeat = 0;
 const unsigned long heartbeatInterval = 1000; // 1 second
 
 // Pins
-#define TRIGGER_PIN  13
-#define ECHO_PIN     12
+#define TRIGGER_PIN_NORTH  13
+#define ECHO_PIN_NORTH     12
+#define TRIGGER_PIN_SOUTH  14
+#define ECHO_PIN_SOUTH     15
+#define TRIGGER_PIN_ROAD   16
+#define ECHO_PIN_ROAD      17
+#define TRIGGER_PIN_UNDER  18
+#define ECHO_PIN_UNDER     19
 #define MAX_DISTANCE 500
 
 #define SERVO_BRIDGE_PIN 23
@@ -34,7 +40,10 @@ byte leds1 = 0;
 byte leds2 = 0;
 
 // Servo & Ultrasonic sensor setup
-NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
+NewPing sonarSouth(TRIGGER_PIN_SOUTH, ECHO_PIN_SOUTH, MAX_DISTANCE);
+NewPing sonarRoad(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
+NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
 
@@ -72,8 +81,9 @@ struct BridgeState {
   String bridgeStatus = "CLOS";
   String gateStatus = "OPEN";
   String northUS = "NONE";
-  String underUS = "NONE";
   String southUS = "NONE";
+  String underUS = "NONE";
+  String roadUS = "NONE";
   String roadLoad = "NONE";
   String roadLights = "GOGO";
   String waterwayLights = "STOP";
@@ -172,7 +182,7 @@ void handleClient() {
 }
 
 // Process commands from the client
-void processCommand(String command) {
+void processCommand(String command, int orderNum) {
   if (command == "REDY") {
   } else if (command == "EMER") {
     currentMode = EMERGENCY_MODE;
@@ -261,14 +271,16 @@ void controlBridge() {
 
   switch (state) {
     case IDLE:
-      if (checkForShips()) {
-        // Ship detected, prepare to open the bridge
-        Serial.println("Ship detected - Preparing to open bridge...");
+      if (checkForShips() && !checkForCars()) {
+        // Ship detected and no cars, prepare to open the bridge
+        Serial.println("Ship detected and no cars - Preparing to open bridge...");
         closeGates(); // Close gates
         currentState.roadLights = "STOP";       // Stop road traffic
         currentState.waterwayLights = "STOP";   // Stop waterway traffic
         stateStartTime = millis();
         state = PREPARE;
+      } else if (checkForShips() && checkForCars()) {
+        Serial.println("Ship detected but cars present - Bridge will not open.");
       }
       break;
 
@@ -285,13 +297,19 @@ void controlBridge() {
       break;
 
     case BRIDGE_OPEN:
-      if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds (make this longer
+      if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds
         // Time to close the bridge
-        Serial.println("Closing bridge...");
-        currentState.waterwayLights = "STOP";  // Stop waterway traffic
-        closeBridge(); //close bridge
-        stateStartTime = millis();
-        state = BRIDGE_CLOSE;
+        if (!checkUnderBridge()) {
+          Serial.println("Closing bridge...");
+          currentState.waterwayLights = "STOP";  // Stop waterway traffic
+          closeBridge(); //close bridge
+          stateStartTime = millis();
+          state = BRIDGE_CLOSE;
+        } else {
+          Serial.println("Ship detected under bridge - waiting to close.");
+          // Wait until ship is gone
+          stateStartTime = millis(); // reset timer
+        }
       }
       break;
 
@@ -325,17 +343,46 @@ void closeBridge() {
   Serial.println("Bridge closed");
 }
 
-// Check if ships are detected
+// Check if ships are detected (north/south)
 bool checkForShips() {
-  int distance = sonar.ping_cm();
-  // Check ultrasonic sensors for approaching ships
-  if (distance > 0 && distance < 30) {
-    currentState.northUS = "SHIP";  // Ship detected
-    //Serial.println("ship detected"); /// for testing
+  int distanceNorth = sonarNorth.ping_cm();
+  int distanceSouth = sonarSouth.ping_cm();
+  bool shipDetected = false;
+  if (distanceNorth > 0 && distanceNorth < 30) {
+    currentState.northUS = "SHIP";
+    shipDetected = true;
+  } else {
+    currentState.northUS = "NONE";
+  }
+  if (distanceSouth > 0 && distanceSouth < 30) {
+    currentState.southUS = "SHIP";
+    shipDetected = true;
+  } else {
+    currentState.southUS = "NONE";
+  }
+  return shipDetected;
+}
+
+// Check if cars are detected on the road
+bool checkForCars() {
+  int distanceRoad = sonarRoad.ping_cm();
+  if (distanceRoad > 0 && distanceRoad < 30) {
+    currentState.roadUS = "CAR";
     return true;
   } else {
-    currentState.northUS = "NONE";  // No ship
-    //Serial.println("no ship detected"); /// for testing
+    currentState.roadUS = "NONE";
+    return false;
+  }
+}
+
+// Check if ship is under the bridge before closing
+bool checkUnderBridge() {
+  int distanceUnder = sonarUnder.ping_cm();
+  if (distanceUnder > 0 && distanceUnder < 30) {
+    currentState.underUS = "SHIP";
+    return true;
+  } else {
+    currentState.underUS = "NONE";
     return false;
   }
 }
