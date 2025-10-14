@@ -136,7 +136,6 @@ def communication():
             if(time_current - status.recieved_status > STATUS_FREQUENCY):
                 conn.toFalse()
                 # attempt Reconnect
-                print("Test")
             else:
                 received_string = receive().split(" ")
                 match received_string[0]:
