@@ -23,6 +23,16 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define SERVO_BRIDGE_PIN 23
 #define SERVO_GATE_PIN 22
 
+/// add led stuff below here
+#define LATCH_PIN 22
+#define CLOCK_PIN 23
+#define DATA_PIN 24
+#define LEDS_OFF 0
+#define LEDS_RED 1
+#define LEDS_GREEN 2
+byte leds1 = 0;
+byte leds2 = 0;
+
 // Servo & Ultrasonic sensor setup
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
@@ -30,14 +40,13 @@ Servo gateServo; // Servo object
 
 // error codes:
 // 0: No Error
-// 1: Bridge Hung
-// 2: Gates Hung
-// 3: Lights Hung
-// 4: Ultrasonics Hung
-// 5: 
-// 6: 
-// 7: 
-// 8: 
+// 1: Bridge limit switch not detecting bridge
+// 2: Gates limit switch not detecting gates
+// 3: Gates & Bridge
+// 4: Road traffic detection error
+// 5: Road traffic & Bridge
+// 6: Gates & Road Traffic 
+// 7: All errors
 
 //String interpretation
 // Message readMssg(String mssg) {
@@ -100,6 +109,9 @@ ControlMode currentMode = AUTO_MODE;
 
 // Setup
 void setup() {
+  pinMode(LATCH_PIN, OUTPUT);
+  pinMode(DATA_PIN, OUTPUT);  
+  pinMode(CLOCK_PIN, OUTPUT);
   Serial.begin(115200);
   Serial.println("ESP32 Bridge Control - Heartbeat Program");
 
@@ -134,9 +146,10 @@ void setup() {
 // Main Loop
 void loop() {
   //test();
-  handleClient();
-  controlBridge();
-  sendHeartbeat();
+  //handleClient();
+  //controlBridge();
+  //sendHeartbeat();
+  testLEDs();
   delay(50);
 }
 
@@ -264,7 +277,7 @@ void controlBridge() {
       if (checkForShips()) {
         // Ship detected, prepare to open the bridge
         Serial.println("Ship detected - Preparing to open bridge...");
-        currentState.gateStatus = "CLOS";       // Close gates
+        closeGates(); // Close gates
         currentState.roadLights = "STOP";       // Stop road traffic
         currentState.waterwayLights = "STOP";   // Stop waterway traffic
         stateStartTime = millis();
@@ -278,7 +291,7 @@ void controlBridge() {
         // Gates are closed, now open the bridge
         Serial.println("Opening bridge...");
         currentState.waterwayLights = "GOGO";  // Allow ships to pass
-        openBridge();  // Trigger servo and motors
+        openBridge(); 
         stateStartTime = millis();
         state = BRIDGE_OPEN;
       }
@@ -289,7 +302,7 @@ void controlBridge() {
         // Time to close the bridge
         Serial.println("Closing bridge...");
         currentState.waterwayLights = "STOP";  // Stop waterway traffic
-        closeBridge();  // Trigger servo and motors
+        closeBridge(); //close bridge
         stateStartTime = millis();
         state = BRIDGE_CLOSE;
       }
@@ -299,7 +312,11 @@ void controlBridge() {
       if (millis() - stateStartTime > 3000) {  // Simulate time to close bridge and reopen traffic
         // Gates open again for traffic
         Serial.println("Reopening gates for traffic...");
+<<<<<<< HEAD
         openGates();
+=======
+        openGates(); // Open gates
+>>>>>>> 3d190d6f501f77cdfbeafeada647e6fdb3be8d64
         currentState.roadLights = "GOGO";      // Green for road traffic
         state = IDLE;
       }
@@ -308,6 +325,7 @@ void controlBridge() {
 }
 
 void openBridge() {
+  currentState.bridgeStatus = "OPEN";
   bridgeServo.write(120);
   delay(2000);
   bridgeServo.write(90);
@@ -316,6 +334,7 @@ void openBridge() {
 }
 
 void closeBridge() {
+  currentState.bridgeStatus = "CLOS";
   bridgeServo.write(60);
   delay(2000);
   bridgeServo.write(90);
@@ -339,6 +358,7 @@ bool checkForShips() {
 }
 
 void closeGates(){
+  currentState.gateStatus = "CLOS";
   gateServo.write(60);
   delay(2000); 
   gateServo.write(90);
@@ -347,6 +367,7 @@ void closeGates(){
 }
 
 void openGates(){
+  currentState.gateStatus = "OPEN";
   gateServo.write(120);
   delay(2000);
   gateServo.write(90);
@@ -387,8 +408,136 @@ void resetBridgeControlState() {
   }
 }
 
+/////// LED functions ///////
 
-////////////// testing stuff
+// LED shift register handling
+void updateShiftRegister() {
+  digitalWrite(LATCH_PIN, LOW);
+  shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, leds2);
+  shiftOut(DATA_PIN, CLOCK_PIN, LSBFIRST, leds1);
+  digitalWrite(LATCH_PIN, HIGH);
+}
+
+// sets LED bytes and pushes to set LED colours
+void setLEDs(char north, char south, char west, char east, char errorCode) {
+  leds1 = 0;
+  leds2 = 0;
+  switch (north) {
+    case LEDS_OFF:
+    break;
+    
+    case LEDS_RED:
+    leds1 += 0b01000000;
+
+    case LEDS_GREEN:
+    leds1 += 0b10000000;
+  }
+  switch (south) {
+    case LEDS_OFF:
+    break;
+    
+    case LEDS_RED:
+    leds1 += 0b00010000;
+
+    case LEDS_GREEN:
+    leds1 += 0b00100000;
+  }
+  switch (west) {
+    case LEDS_OFF:
+    break;
+    
+    case LEDS_RED:
+    leds1 += 0b01000000;
+
+    case LEDS_GREEN:
+    leds1 += 0b10000000;
+  }
+  switch (east) {
+    case LEDS_OFF:
+    break;
+    
+    case LEDS_RED:
+    leds1 += 0b00000001;
+
+    case LEDS_GREEN:
+    leds1 += 0b00000010;
+  }
+  switch (errorCode) {
+    case 0:
+    break;
+    
+    case 1:
+    leds2 += 0b0010000;
+
+    case 2:
+    leds2 += 0b01000000;
+
+    case 3:
+    leds2 += 0b01100000;
+
+    case 4:
+    leds2 += 0b10000000;
+
+    case 5:
+    leds2 += 0b10100000;
+
+    case 6:
+    leds2 += 0b11000000;
+
+    case 7:
+    leds2 += 0b11100000;
+  }
+  updateShiftRegister();
+}
+
+void testLEDs(){
+  setLEDs(LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, 7);
+  delay(1000);
+  for (int i = 0 ; i < 8 ; i ++) {
+    setLEDs(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_RED, i);
+    delay(1000);
+  }
+  setLEDs(LEDS_GREEN, LEDS_RED, LEDS_RED, LEDS_RED, 0);
+  delay(500);
+  setLEDs(LEDS_RED, LEDS_GREEN, LEDS_RED, LEDS_RED, 0);
+  delay(500);
+  setLEDs(LEDS_RED, LEDS_RED, LEDS_GREEN, LEDS_RED, 0);
+  delay(500);
+  setLEDs(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_GREEN, 0);
+  delay(500);
+  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
+}
+
+void ErrorDisplay(){
+
+}
+
+void waterwayLights(String command){
+  if(command == "STOP"){
+    // turn on red light
+  }
+  else if(command == "GOGO"){
+    // turn on green light
+  }
+  else if(command == "WARN"){
+    // turn on yellow light
+  }
+}
+
+void bridgelights(String command){
+  if(command == "STOP"){
+    // turn on red light
+  }
+  else if(command == "GOGO"){
+    // turn on green light
+  }
+  else if(command == "WARN"){
+    // turn on yellow light
+  }
+}
+
+
+////////////// testing stuff /////////////////////
 
 void test(){
   //test motor
