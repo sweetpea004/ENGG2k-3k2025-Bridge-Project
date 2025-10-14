@@ -1,4 +1,8 @@
 int spanPos;
+int backgroundRed = 255;
+
+static int stepSize = 3;
+static int colourChangeSpeed = 10;
 
 void setup() {
   size(1000, 1000);
@@ -9,7 +13,8 @@ void setup() {
 
 void draw() {
   background(255);
-  drawBridge(2);
+  drawBridge(4);
+  frameRate(1);
 }
 
 void drawBridge(int state) {
@@ -17,26 +22,34 @@ void drawBridge(int state) {
   //stage 1 = open
   //state 2 = closing
   //state 3 = opening
+  //stage 4 = emergency
+
   background(255);
-  int stepSize = 3;
-  if(state == 0) {
-   spanPos = 0; 
+  if (state == 0) {
+    spanPos = 0;
   }
-  if(state == 1) {
-   spanPos = 100; 
+  if (state == 1) {
+    spanPos = 100;
   }
-  if(state == 2) {
-    if(spanPos > 0) {
+  if (state == 2) {
+    if (spanPos > 0) {
       spanPos-= stepSize;
     } else {
-     spanPos = 100; 
+      spanPos = 100;
     }
   }
-  if(state == 3) {
-   if(spanPos < 100) {
-     spanPos+= stepSize;
-  } else {
-   spanPos = 0; 
+  if (state == 3) {
+    if (spanPos < 100) {
+      spanPos+= stepSize;
+    }
+  }
+  if (state == 4) {
+    spanPos = 50;
+    background(255, backgroundRed, backgroundRed);
+    if (backgroundRed == 255) {
+      backgroundRed = 100;
+    } else {
+      backgroundRed = 255;
     }
   }
   fill(0);
