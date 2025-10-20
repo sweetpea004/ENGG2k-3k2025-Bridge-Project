@@ -74,7 +74,7 @@ socket.on('update_stat_data', function(status, conn) {
             textBridgeStat.classList = "orange-text";
 
             // bridge image
-            bridgeImage.src = "/static/Images/openning.gif";
+            bridgeImage.src = "/static/Images/moving.gif";
             break;
         case "CLOS":
             textBridgeStat.innerText = "CLOSED";
@@ -88,7 +88,7 @@ socket.on('update_stat_data', function(status, conn) {
             textBridgeStat.classList = "yellow-text";
 
             // bridge image
-            bridgeImage.src = "/static/Images/openning.gif";
+            bridgeImage.src = "/static/Images/emergency.gif";
             break;
     }
 
