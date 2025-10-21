@@ -69,8 +69,6 @@ VERBOSE = True # Controls whether messages are printed to console
 TEST_IP = "10.126.242.252"
 TEST_PORT = 5005
 
-TEST2_IP = "192.168.0.150"
-
 ESP_IP = "172.20.10.2"
 ESP_PORT = 5003
 
@@ -79,8 +77,12 @@ STATUS_FREQUENCY = 2000000000
 # Globals
 sock = socket.socket()
 to_be_sent = ""
+default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRAF TRIG NONE TRIG NONE EMER EMER NONE 0"
+status = Status(default_status.split(" "))
+conn = Connection()
 
 def newMessage(message: str):
+    global to_be_sent
     to_be_sent = message
 
 def send(message: str):
@@ -114,9 +116,8 @@ def parse_message(message: str) -> Status:
     return status
     
 def communication():
-    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRAF TRIG NONE TRIG NONE EMER EMER NONE 0"
-    status = Status(default_status.split(" "))
-    conn = Connection()
+    global status
+    global conn
 
     print("Starting connection")
     while True:
