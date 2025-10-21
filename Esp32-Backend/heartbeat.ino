@@ -119,6 +119,7 @@ void readMssg(String mssg) {
   switch (mssg.substr(0,4)) {
     case "REDY":
       // send OKOK to frontend
+      // TNK write this
 
     case "OKOK":
       // Nothing
@@ -394,10 +395,13 @@ void handleClient() {
   }
   
   if (clientConnected && client.available()) {
+    // v receive message from client
     String command = client.readStringUntil('\n');
     command.trim();
+    // v update heartbeat timer
     lastHeartbeat = 0;
     Serial.println(command);
+    // v read the message
     readMssg(command);
   }
 }
