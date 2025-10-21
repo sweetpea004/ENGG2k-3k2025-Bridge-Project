@@ -48,6 +48,26 @@ NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
 
+// Speaker / Voice module (uses Serial2 on ESP32)
+#define SPEAKER_RX_PIN 27
+#define SPEAKER_TX_PIN 26
+
+// Play a specific track on the voice module
+void playVoice(uint8_t track) {
+  uint8_t playCmd[6] = {0xAA, 0x07, 0x02, 0x00, track, (uint8_t)(track + 0xB3)};
+  Serial2.write(playCmd, 6);
+}
+
+// Set voice module volume (0x00 - 0x1E)
+void setVolume(uint8_t vol) {
+  uint8_t volCmd[5] = {0xAA, 0x13, 0x01, vol, (uint8_t)(vol + 0xBE)};
+  Serial2.write(volCmd, 5);
+}
+
+// Convenience wrappers for open/close alarms
+void playOpenAlarm() { playVoice(0x01); }
+void playCloseAlarm() { playVoice(0x02); }
+
 // error codes:
 // 0: No Error
 // 1: Bridge limit switch not detecting bridge
@@ -64,12 +84,36 @@ void readMssg(String mssg) {
   // POST: read the message and run the appropriate response command
   switch (mssg.substr(0,4)) {
     case "REDY":
+      processCommand("REDY")
 
     case "OKOK":
-
-    case "STAT":
+      processCommand("OKOK");
 
     case "PUSH":
+      // 1 to 14
+      for (int i = 1; i < 15; i++) {
+        String extract = mssg.substr(i*5, 4);
+        switch (extract) {
+          case "OPEN": 
+
+          case "SHIP":
+
+          case "TRAF":
+
+          case "TRIG":
+
+          case "GOGO":
+
+          case "STOP":
+
+          case "SLOW":
+
+          case "NONE":
+                    
+        }
+
+      }
+
 
     case "AUTO":
 
@@ -136,6 +180,11 @@ void setup() {
   // Start server
   server.begin();
   Serial.println("Server started on port 5003");
+
+  // Initialize voice module serial (Serial2) on chosen pins
+  Serial2.begin(9600, SERIAL_8N1, SPEAKER_RX_PIN, SPEAKER_TX_PIN);
+  delay(200);
+  setVolume(0x1E); // set to max by default
 
   // esp timer
   ESP32PWM::allocateTimer(0);
@@ -266,66 +315,98 @@ void controlBridge() {
   // Don't run automatic control in manual or emergency mode
   if (currentMode != AUTO_MODE) return;
 
-  static enum { IDLE, PREPARE, BRIDGE_OPEN, BRIDGE_CLOSE } state = IDLE;
+  static enum {
+    WAIT_FOR_SHIPS,
+    WAIT_FOR_CARS_CLEAR,
+    GATES_CLOSING,
+    BRIDGE_OPENING,
+    BRIDGE_OPEN,
+    WAIT_FOR_UNDER_CLEAR,
+    BRIDGE_CLOSING,
+    GATES_OPENING
+  } state = WAIT_FOR_SHIPS;
   static unsigned long stateStartTime = 0;
 
   switch (state) {
-    case IDLE:
-      if (checkForShips() && !checkForCars()) {
-        // Ship detected and no cars, prepare to open the bridge
-        Serial.println("Ship detected and no cars - Preparing to open bridge...");
-        closeGates(); // Close gates
-        currentState.roadLights = "STOP";       // Stop road traffic
-        currentState.waterwayLights = "STOP";   // Stop waterway traffic
-        stateStartTime = millis();
-        state = PREPARE;
-      } else if (checkForShips() && checkForCars()) {
-        Serial.println("Ship detected but cars present - Bridge will not open.");
+    case WAIT_FOR_SHIPS:
+      if (checkForShips()) {
+        Serial.println("Ship detected - waiting for cars to clear...");
+        state = WAIT_FOR_CARS_CLEAR;
       }
       break;
 
-    case PREPARE:
-      closeGates(); 
-      if (millis() - stateStartTime > 3000) {  // Simulate time to close gates
-        // Gates are closed, now open the bridge
-        Serial.println("Opening bridge...");
-        currentState.waterwayLights = "GOGO";  // Allow ships to pass
-        openBridge(); 
+    case WAIT_FOR_CARS_CLEAR:
+      if (!checkForCars()) {
+        Serial.println("No cars detected - closing gates...");
+        closeGates();
+        currentState.roadLights = "STOP";
+        currentState.waterwayLights = "STOP";
+        stateStartTime = millis();
+        state = GATES_CLOSING;
+      }
+      break;
+
+    case GATES_CLOSING:
+      if (millis() - stateStartTime > 3000) {
+        Serial.println("Gates closed - opening bridge...");
+        currentState.waterwayLights = "GOGO";
+        openBridge();
+        stateStartTime = millis();
+        state = BRIDGE_OPENING;
+      }
+      break;
+
+    case BRIDGE_OPENING:
+      if (millis() - stateStartTime > 2000) {
+        Serial.println("Bridge is open.");
         stateStartTime = millis();
         state = BRIDGE_OPEN;
       }
       break;
 
     case BRIDGE_OPEN:
-      if (millis() - stateStartTime > 10000) {  // Keep bridge open for 10 seconds
-        // Time to close the bridge
-        if (!checkUnderBridge()) {
-          Serial.println("Closing bridge...");
-          currentState.waterwayLights = "STOP";  // Stop waterway traffic
-          closeBridge(); //close bridge
-          stateStartTime = millis();
-          state = BRIDGE_CLOSE;
-        } else {
-          Serial.println("Ship detected under bridge - waiting to close.");
-          // Wait until ship is gone
-          stateStartTime = millis(); // reset timer
-        }
+      if (millis() - stateStartTime > 10000) {
+        Serial.println("Waiting for ship under bridge to clear...");
+        state = WAIT_FOR_UNDER_CLEAR;
       }
       break;
 
-    case BRIDGE_CLOSE:
-      if (millis() - stateStartTime > 3000) {  // Simulate time to close bridge and reopen traffic
-        // Gates open again for traffic
-        Serial.println("Reopening gates for traffic...");
-        openGates(); // Open gates
-        currentState.roadLights = "GOGO";      // Green for road traffic
-        state = IDLE;
+    case WAIT_FOR_UNDER_CLEAR:
+      if (!checkUnderBridge()) {
+        Serial.println("No ship under bridge - closing bridge...");
+        currentState.waterwayLights = "STOP";
+        closeBridge();
+        stateStartTime = millis();
+        state = BRIDGE_CLOSING;
+      } else {
+        Serial.println("Ship still under bridge - waiting...");
+        stateStartTime = millis(); // reset timer
+      }
+      break;
+
+    case BRIDGE_CLOSING:
+      if (millis() - stateStartTime > 2000) {
+        Serial.println("Bridge closed - opening gates for traffic...");
+        openGates();
+        currentState.roadLights = "GOGO";
+        stateStartTime = millis();
+        state = GATES_OPENING;
+      }
+      break;
+
+    case GATES_OPENING:
+      if (millis() - stateStartTime > 2000) {
+        Serial.println("Gates open - waiting for next ship...");
+        state = WAIT_FOR_SHIPS;
       }
       break;
   }
 }
 
 void openBridge() {
+  // Play open alarm before movement
+  playOpenAlarm();
+
   currentState.bridgeStatus = "OPEN";
   bridgeServo.write(120);
   delay(2000);
@@ -335,6 +416,9 @@ void openBridge() {
 }
 
 void closeBridge() {
+  // Play close alarm before movement
+  playCloseAlarm();
+
   currentState.bridgeStatus = "CLOS";
   bridgeServo.write(60);
   delay(2000);
@@ -392,7 +476,6 @@ void closeGates(){
   gateServo.write(60);
   delay(2000); 
   gateServo.write(90);
-  currentState.gateStatus = "CLOS";  // Update heartbeat status
   Serial.println("Gates closed");
 }
 
@@ -401,7 +484,6 @@ void openGates(){
   gateServo.write(120);
   delay(2000);
   gateServo.write(90);
-  currentState.gateStatus = "OPEN";  // Update heartbeat status
   Serial.println("Gates opened");
 }
 
@@ -477,10 +559,10 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       break;
     
     case LEDS_RED:
-      leds1 += 0b01000000;
+      leds1 += 0b00000100;
 
     case LEDS_GREEN:
-      leds1 += 0b10000000;
+      leds1 += 0b00001000;
   }
   switch (east) {
     case LEDS_OFF:
@@ -497,27 +579,29 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       break;
     
     case 1:
-      leds2 += 0b0010000;
+      leds2 += 0b00001000;
 
     case 2:
-      leds2 += 0b01000000;
+      leds2 += 0b00010000;
 
     case 3:
-      leds2 += 0b01100000;
+      leds2 += 0b00011000;
 
     case 4:
-      leds2 += 0b10000000;
+      leds2 += 000b100000;
 
     case 5:
-      leds2 += 0b10100000;
+      leds2 += 0b00101000;
 
     case 6:
-      leds2 += 0b11000000;
+      leds2 += 0b00110000;
 
     case 7:
-      leds2 += 0b11100000;
+      leds2 += 0b00111000;
   }
   updateShiftRegister();
+  leds1 = 0;
+  leds2 = 0;
 }
 
 void testLEDs(){
