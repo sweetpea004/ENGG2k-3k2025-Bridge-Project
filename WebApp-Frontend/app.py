@@ -56,12 +56,8 @@ def redirect_dashboard():
                 else:
                     push.append("NONE")
 
-                # determine selected settings for bridge loadcell and ultrasonic
+                # determine selected settings for bridge loadcell
                 road_detect = request.form.getlist('road-detect')
-                if "road-us" in road_detect:
-                    push.append("TRAF")
-                else:
-                    push.append("NONE")
                 if "loadcell" in road_detect:
                     push.append("TRAF")
                 else:
@@ -69,6 +65,10 @@ def redirect_dashboard():
 
                 # determine Limit Switch Inputs
                 limit_switches = request.form.getlist('limit-switch')
+                if "road-us" in limit_switches:
+                    push.append("TRIG")
+                else:
+                    push.append("NONE")
                 if "bridge-top" in limit_switches:
                     push.append("TRIG")
                 else:
@@ -112,6 +112,7 @@ def redirect_dashboard():
                 # flash confirmation message
                 flash('Changed To Automatic Mode', 'info')
 
+        print(new_message)
         commProg.newMessage(new_message) # sets to_be_sent global to new message to respond with
 
     # Load page
@@ -122,9 +123,9 @@ def handle_update():
     emit('update_stat_data', (commProg.status.toSerializable(), commProg.conn.value), broadcast=True)
 
 if __name__ == "__main__":
-    commThread = threading.Thread(target=commProg.communication, daemon=True)
-    commThread.start()
+    #commThread = threading.Thread(target=commProg.communication, daemon=True)
+    #commThread.start()
 
     run_app()
     
-    commThread.join()
+    #commThread.join()

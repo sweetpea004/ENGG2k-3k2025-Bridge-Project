@@ -235,17 +235,6 @@ socket.on('update_stat_data', function(status, conn) {
     }
 
     // road detection text
-    switch(status.road_us) {
-        case "TRAF":
-            textRoadUS.innerText = "TRAFFIC DETECTED";
-            textRoadUS.classList = "orange-text";
-            break;
-        case "NONE":
-            textRoadUS.innerText = "NOTHING DETECTED";
-            textRoadUS.classList = "green-text";
-            break;
-    }
-
     switch (status.road_load) {
         case "TRAF":
             textLoadCell.innerText = "TRAFFIC DETECTED";
@@ -258,6 +247,17 @@ socket.on('update_stat_data', function(status, conn) {
     }
 
     // limit switches
+    switch(status.road_us) {
+        case "TRIG":
+            textRoadUS.innerText = "MAXIMUM REACHED";
+            textRoadUS.classList = "orange-text";
+            break;
+        case "NONE":
+            textRoadUS.innerText = "NOTHING DETECTED";
+            textRoadUS.classList = "green-text";
+            break;
+    }
+
     switch (status.bridge_top_limit) {
         case "TRIG":
             textBridgeTopLimitSwitch.innerText = "TRIGGERED";
@@ -338,6 +338,7 @@ mode.forEach(input => {
 roadTrafficLightInputs.forEach(input => {
     input.addEventListener("click", validateRoadTrafficLights)
 });
+
 waterTrafficLightInputs.forEach(input => {
     input.addEventListener("click", validateWaterTrafficLights)
 });

@@ -55,11 +55,11 @@
         <h3>South Ultrasonic: <span id="text-south-us"></span></h3>
 
         <!-- Roadway traffic Status-->
-        <h3>Roadway Ultrasonic: <span id="text-road-us"></span></h3>
-
         <h3>Roadway LoadCell: <span id="text-load-cell"></span></h3>
 
         <!-- LIMIT SWITCHES STATUS -->
+        <h3>Roadway Ultrasonic: <span id="text-road-us"></span></h3>
+
         <h3>Bridge Top Limit Switch: <span id="text-bridge-top-limit"></span></h3>
 
         <h3>Bridge Bottom Limit Switch: <span id="text-bridge-bottom-limit"></span></h3>
@@ -163,23 +163,22 @@
 
             <!-- control load cell readings -->
             <div>
-                <p>Roadway Detection Override (LoadCell and Ultrasonic)</p>
+                <p>Roadway Detection Override (LoadCell)</p>
                 <label class="switch">
                     <input type="checkbox" id="loadcell" name="road-detect" value="loadcell">
                     <span class="slider"></span>
                     Load Detected 
-                </label>
-
-                <label class="switch">
-                    <input type="checkbox" id="road-us" name="road-detect" value="road-us">
-                    <span class="slider"></span>
-                    Road Ultrasonic 
                 </label>
             </div>
 
             <!-- Limit Switch Override -->
             <div>
                 <p>Bridge and Gate Limit Switch Detection Override</p>
+                <label class="switch">
+                    <input type="checkbox" id="road-us" name="limit-switch" value="road-us">
+                    <span class="slider"></span>
+                    Road Ultrasonic 
+                </label>
                 <label class="switch">
                     <input type="checkbox" id="bridge-top" name="limit-switch" value="bridge-top">
                     <span class="slider"></span>
