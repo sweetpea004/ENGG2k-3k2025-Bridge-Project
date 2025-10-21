@@ -228,7 +228,7 @@ void processCommand(String command, int orderNum) {
     Serial.println("Switched to MANUAL mode");
   } else if (command.startsWith("PUSH ")) {
     if (currentMode == MANUAL_MODE) {
-      handleManualCommand(command);
+      handleManualCommand(command); // maybe change what you are giving this function
     } else {
       //"ERROR: Manual commands only allowed in MANUAL mode"
     }
