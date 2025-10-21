@@ -3,7 +3,6 @@ import time
 
 # Set to your own ip address, can be checked with 'ipconfig' on windows, or 'ip addr' on linux
 HOST = "10.126.242.252" 
-# HOST = "192.168.0.150" 
 PORT = 5005  # Port to listen on (non-privileged ports are > 1023)
 
 BUF_SIZE = 8192
