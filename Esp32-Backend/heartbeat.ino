@@ -153,7 +153,6 @@ void readMssg(String mssg) {
           case "TRIG":
             switch (i){ 
               case 8:
-              currenstate.birdge
 
               case 9:
 
