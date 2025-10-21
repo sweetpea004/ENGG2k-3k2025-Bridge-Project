@@ -84,10 +84,25 @@ void readMssg(String mssg) {
   // POST: read the message and run the appropriate response command
   switch (mssg.substr(0,4)) {
     case "REDY":
-      processCommand("REDY");
+      // send OKOK to frontend
 
     case "OKOK":
-      processCommand("OKOK");
+      // Nothing
+
+    case "AUTO":
+      // put the bridge into automatic mode
+      if (currentMode == EMERGENCY_MODE) {
+      //"ERROR: Cannot switch from EMERGENCY mode - reset required"
+        return;
+      }
+      currentMode = AUTO_MODE;
+      resetBridgeControlState(); // Reset state machine when switching to auto
+      Serial.println("Switched to AUTO mode");
+
+    case "EMER":
+      // put the bridge into emergency mode
+      currentMode = EMERGENCY_MODE;
+      emergencyStop();
 
     case "PUSH":
       // 1 to 14
@@ -97,103 +112,105 @@ void readMssg(String mssg) {
           case "OPEN": 
             switch (i){ 
               case 1:
+                openBridge();
 
               case 2:
+                openGates();
+            }
+
+          case "CLOS":
+            switch (i){
+              case 1:
+                closeBridge();
+              case 2:
+                closeGates();
+            }
+
+          case "SHIP":
+            switch (i){ 
+              case 3:
+
+              case 4:
+
+              case 5:
 
             }
 
-            case "CLOS":
-              switch (i){
-                case 1:
+          case "TRAF":
+            switch (i){ 
+              case 6:
 
-                case 2:
-              }
+              case 7:
 
-            case "SHIP":
-              switch (i){ 
-                case 3:
+            }
 
-                case 4:
+          case "TRIG":
+            switch (i){ 
+              case 8:
 
-                case 5:
+              case 9:
 
-              }
+              case 10:
 
-            case "TRAF":
-              switch (i){ 
-                case 6:
+              case 11:
 
-                case 7:
+            }
 
-              }
+          case "GOGO":
+            switch (i){ 
+              case 12:
+                currentState.roadLights = "GOGO";
+              case 13:
+                currentState.waterwayLights = "GOGO";
+              
+            }
 
-            case "TRIG":
-              switch (i){ 
-                case 8:
+          case "STOP":
+            switch (i){ 
+              case 12:
+                currentState.roadLights = "STOP";
 
-                case 9:
+              case 13:
+                currentState.waterwayLights = "STOP";
+              
+            }
 
-                case 10:
+          case "SLOW":
+            switch (i){ 
+              case 12:
+                currentState.roadLights = "SLOW";
 
-                case 11:
+              case 13:
+                currentState.waterwayLights = "SLOW";
 
-              }
+            }
 
-            case "GOGO":
-              switch (i){ 
-                case 12:
+          case "NONE":
+            switch (i){ 
+              case 3:
 
-                case 13:
-                
-              }
+              case 4:
 
-            case "STOP":
-              switch (i){ 
-                case 12:
+              case 5:
+              
+              case 6:
 
-                case 13:
-                
-              }
+              case 7:
 
-            case "SLOW":
-              switch (i){ 
-                case 12:
+              case 8:
 
-                case 13:
-                
-              }
+              case 9:
 
-            case "NONE":
-              switch (i){ 
-                case 3:
+              case 10:
+              
+              case 11:
 
-                case 4:
-
-                case 5:
-                
-                case 6:
-
-                case 7:
-
-                case 8:
-
-                case 9:
-
-                case 10:
-                
-                case 11:
-
-                case 14:
-              }
-                    
+              case 14:
+            }
+          }       
         }
 
       }
-
-
-    case "AUTO":
-
-    case "EMER":
 
   }
 
@@ -303,70 +320,7 @@ void handleClient() {
     command.trim();
     lastHeartbeat = 0;
     Serial.println(command);
-    processCommand(command);
-  }
-}
-
-// Process commands from the client
-void processCommand(String command, int orderNum) {
-  if (command == "REDY") {
-  } else if (command == "EMER") {
-    currentMode = EMERGENCY_MODE;
-    emergencyStop();
-  } else if (command == "AUTO") {
-    if (currentMode == EMERGENCY_MODE) {
-     //"ERROR: Cannot switch from EMERGENCY mode - reset required"
-      return;
-    }
-    currentMode = AUTO_MODE;
-    resetBridgeControlState(); // Reset state machine when switching to auto
-    Serial.println("Switched to AUTO mode");
-  } else if (command == "MANUAL") {
-    if (currentMode == EMERGENCY_MODE) {
-      return;
-    }
-    currentMode = MANUAL_MODE;
-    Serial.println("Switched to MANUAL mode");
-  } else if (command.startsWith("PUSH ")) {
-    if (currentMode == MANUAL_MODE) {
-      handleManualCommand(command); // maybe change what you are giving this function
-    } else {
-      //"ERROR: Manual commands only allowed in MANUAL mode"
-    }
-  } else {
-    //"ERROR: Unknown command"
-  }
-}
-
-// Handle manual commands when in MANUAL mode
-void handleManualCommand(String command) {
-  // Don't allow manual commands in emergency mode
-  if (currentMode == EMERGENCY_MODE) {
-    //"ERROR: Manual commands blocked in EMERGENCY mode"
-    return;
-  }
-  
-  // Extract the manual command (e.g., "PUSH BRIDGE_OPEN", "PUSH GATE_CLOSE")
-  String action = command.substring(5); // Remove "PUSH " prefix
-  // placeholders 
-  if (action == "BRIDGE_OPEN") {
-    openBridge();
-  } else if (action == "BRIDGE_CLOSE") {
-    closeBridge();
-  } else if (action == "GATE_OPEN") {
-    openGates();
-  } else if (action == "GATE_CLOSE") {
-    closeGates();
-  } else if (action == "LIGHTS_ROAD_GO") {
-    currentState.roadLights = "GOGO";
-  } else if (action == "LIGHTS_ROAD_STOP") {
-    currentState.roadLights = "STOP";
-  } else if (action == "LIGHTS_WATER_GO") {
-    currentState.waterwayLights = "GOGO";
-  } else if (action == "LIGHTS_WATER_STOP") {
-    currentState.waterwayLights = "STOP";
-  } else {
-    //"ERROR: Unknown manual command"
+    readMssg(command);
   }
 }
 
