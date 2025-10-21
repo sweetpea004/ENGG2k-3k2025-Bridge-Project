@@ -69,6 +69,8 @@ VERBOSE = True # Controls whether messages are printed to console
 TEST_IP = "10.126.242.252"
 TEST_PORT = 5005
 
+TEST2_IP = "192.168.0.150"
+
 ESP_IP = "172.20.10.2"
 ESP_PORT = 5003
 
@@ -76,9 +78,10 @@ STATUS_FREQUENCY = 2000000000
 
 # Globals
 sock = socket.socket()
-default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRAF TRIG NONE TRIG NONE EMER EMER NONE 0"
-status = Status(default_status.split(" "))
-conn = Connection()
+to_be_sent = ""
+
+def newMessage(message: str):
+    to_be_sent = message
 
 def send(message: str):
 
@@ -87,11 +90,12 @@ def send(message: str):
         print("Sent:", message)
     sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
 
-def receive() -> str:
+def receive(s: Status) -> str:
 
     # recieve string message 
     data = b''
-    while True:
+
+    while time.time_ns() - s.recieved_status < STATUS_FREQUENCY:
         part = sock.recv(BUF_SIZE)
         data += part
         if len(part) < BUF_SIZE: # Check if reached end of message
@@ -110,6 +114,9 @@ def parse_message(message: str) -> Status:
     return status
     
 def communication():
+    default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRAF TRIG NONE TRIG NONE EMER EMER NONE 0"
+    status = Status(default_status.split(" "))
+    conn = Connection()
 
     print("Starting connection")
     while True:
@@ -118,12 +125,12 @@ def communication():
             #sock.connect((ESP_IP, ESP_PORT))
 
             # Connection with Tester
-            sock.connect((TEST_IP, TEST_PORT))
+            sock.connect((TEST2_IP, TEST_PORT))
             time.sleep(1) # small delay
 
             send("REDY")
 
-            m = receive()
+            m = receive(status)
             if (m == "OKOK"):
                 status.resetTime()
 
@@ -139,12 +146,19 @@ def communication():
                 # attempt Reconnect
             else:
                 print ("connected")
-                received_string = receive().split(" ")
-                match received_string[0]:
-                    case "STAT":
-                        status = Status(received_string)
-                        send("OKOK")
-                    case "OKOK":
-                        status.resetTime()
+                received_string = receive(status)
+                if (received_string != ""):
+                    received_string = received_string.split(" ")
+                    match received_string[0]:
+                        case "STAT":
+                            status = Status(received_string) # auto resets time
+
+                            if (to_be_sent != ""):
+                                send(to_be_sent)
+                                to_be_sent = "" # reset to empty
+                            else: 
+                                send("OKOK")
+                        case "OKOK": # to be removed
+                            status.resetTime()
 
 

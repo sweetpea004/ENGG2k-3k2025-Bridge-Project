@@ -84,12 +84,36 @@ void readMssg(String mssg) {
   // POST: read the message and run the appropriate response command
   switch (mssg.substr(0,4)) {
     case "REDY":
+      processCommand("REDY")
 
     case "OKOK":
-
-    case "STAT":
+      processCommand("OKOK");
 
     case "PUSH":
+      // 1 to 14
+      for (int i = 1; i < 15; i++) {
+        String extract = mssg.substr(i*5, 4);
+        switch (extract) {
+          case "OPEN": 
+
+          case "SHIP":
+
+          case "TRAF":
+
+          case "TRIG":
+
+          case "GOGO":
+
+          case "STOP":
+
+          case "SLOW":
+
+          case "NONE":
+                    
+        }
+
+      }
+
 
     case "AUTO":
 
@@ -535,10 +559,10 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       break;
     
     case LEDS_RED:
-      leds1 += 0b01000000;
+      leds1 += 0b00000100;
 
     case LEDS_GREEN:
-      leds1 += 0b10000000;
+      leds1 += 0b00001000;
   }
   switch (east) {
     case LEDS_OFF:
@@ -555,27 +579,29 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       break;
     
     case 1:
-      leds2 += 0b0010000;
+      leds2 += 0b00001000;
 
     case 2:
-      leds2 += 0b01000000;
+      leds2 += 0b00010000;
 
     case 3:
-      leds2 += 0b01100000;
+      leds2 += 0b00011000;
 
     case 4:
-      leds2 += 0b10000000;
+      leds2 += 000b100000;
 
     case 5:
-      leds2 += 0b10100000;
+      leds2 += 0b00101000;
 
     case 6:
-      leds2 += 0b11000000;
+      leds2 += 0b00110000;
 
     case 7:
-      leds2 += 0b11100000;
+      leds2 += 0b00111000;
   }
   updateShiftRegister();
+  leds1 = 0;
+  leds2 = 0;
 }
 
 void testLEDs(){
