@@ -1,9 +1,10 @@
 import socket
 import time
 
-# HOST = "10.126.242.252"  # Standard loopback interface address (localhost)
-HOST = "192.168.0.150" # Set to your own ip address, can be checked with 'ipconfig' on windows, or 'ip addr' on linux
-PORT = 5005        # Port to listen on (non-privileged ports are > 1023)
+# Set to your own ip address, can be checked with 'ipconfig' on windows, or 'ip addr' on linux
+HOST = "10.126.242.252" 
+# HOST = "192.168.0.150" 
+PORT = 5005  # Port to listen on (non-privileged ports are > 1023)
 
 BUF_SIZE = 8192
 
@@ -48,21 +49,17 @@ if conn is not None:
 
     while True:
         if (time.time_ns() - last_time >= STATUS_FREQUENCY):
-            try:
-                m = receive(conn).split(" ")
-                match m[0]:
-                    case "PUSH":
-                        new_status = m[1:]
-                        status = "STAT" + " ".join(new_status)
-                        send("OKOK", conn)
-                    case "AUTO":
-                        send("OKOK", conn)
-                    case "EMER":
-                        send("OKOK", conn)
-            except:
-                print("")
-        send(status, conn)
-        receive(conn) # OKOK
-        last_time = time.time_ns()
+            send(status, conn)
+                
+            m = receive(conn).split(" ")
+            match m[0]:
+                case "PUSH":
+                    new_status = m[1:]
+                    status = "STAT" + " ".join(new_status)
+                case "AUTO":
+                    status = "STAT CLOS OPEN NONE NONE NONE TRAF NONE TRIG TRIG NONE EMER EMER NONE 0"
+                case "EMER":
+                    status = "“STAT EMER EMER SHIP NONE NONE NONE NONE NONE NONE NONE EMER EMER EMER 7”"
+            last_time = time.time_ns()
 s.close()
              
