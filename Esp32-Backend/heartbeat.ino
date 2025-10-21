@@ -204,7 +204,7 @@ void setup() {
 
 // Main Loop
 void loop() {
-  test();
+  //test();
   handleClient();
   controlBridge();
   sendHeartbeat();
@@ -295,10 +295,32 @@ void handleManualCommand(String command) {
 
 // Send heartbeat to client
 void sendHeartbeat() {
-  if (clientConnected && (millis() - lastHeartbeat >= heartbeatInterval)) {
-    String status = buildStatusMessage();
-    //client.println(status);
-    lastHeartbeat = millis();
+  // Attempt to accept a client if not already connected (just in case idk)
+  if (!clientConnected && WiFi.status() == WL_CONNECTED) {
+    WiFiClient newClient = server.available();
+    if (newClient) {
+      client = newClient;
+      clientConnected = true;
+      Serial.println("Client connected (heartbeat)");
+    }
+  }
+
+  // ensure client connected
+  if (clientConnected) {
+    if (!client || !client.connected()) {
+      clientConnected = false;
+      if (client) client.stop();
+      Serial.println("Client disconnected (heartbeat)");
+      return;
+    }
+
+    // Send heartbeat at the configured interval
+    if (millis() - lastHeartbeat >= heartbeatInterval) {
+      String status = buildStatusMessage();
+      client.println(status); // send to client
+      Serial.println("Heartbeat sent: " + status);
+      lastHeartbeat = millis();
+    }
   }
 }
 
