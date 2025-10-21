@@ -106,6 +106,7 @@ void readMssg(String mssg) {
 
     case "PUSH":
       // 1 to 14
+      currentMode = MANUAL_MODE;
       for (int i = 1; i < 15; i++) {
         String extract = mssg.substr(i*5, 4);
         switch (extract) {
@@ -129,24 +130,30 @@ void readMssg(String mssg) {
           case "SHIP":
             switch (i){ 
               case 3:
+                currentState.northUS = "SHIP";
 
               case 4:
+                currentState.underUS = "SHIP";
 
               case 5:
+                currentState.southUS = "SHIP";
 
             }
 
           case "TRAF":
             switch (i){ 
               case 6:
+                currentState.roadUS = "TRAF";
 
               case 7:
+                currentState.roadLoad = "TRAF";
 
             }
 
           case "TRIG":
             switch (i){ 
               case 8:
+              currenstate.birdge
 
               case 9:
 
@@ -207,24 +214,9 @@ void readMssg(String mssg) {
 
               case 14:
             }
-          }       
-        }
-
+        }       
       }
-
   }
-
-  // retMsg.msgType = mssg.substr(0,5);
-  // retMsg.bridgeStatus = mssg.substr(5,5);
-  // retMsg.gateStatus = mssg.substr(10,5);
-  // retMsg.northUS = mssg.substr(15,5);
-  // retMsg.underUS = mssg.substr(20,5);
-  // retMsg.southUS = mssg.substr(25,5);
-  // retMsg.roadLoad = mssg.substr(30,5);
-  // retMsg.roadLights = mssg.substr(35,5);
-  // retMsg.waterwayLights = mssg.substr(40,5);
-  // retMsg.audioSys = mssg.substr(45,5);
-  // retMsg.errorCode = mssg[50] = '0';
 }
 
 // Bridge State Structure
@@ -241,6 +233,7 @@ struct BridgeState {
   String audioSys = "NONE";
   String speaker = "placeholder";
   int errorCode = 0;
+  // add sections for limit switches
 };
 
 BridgeState currentState;
@@ -482,6 +475,9 @@ void closeBridge() {
 
 // Check if ships are detected (north/south)
 bool checkForShips() {
+  if (currentMode = MANUAL_MODE) {
+    return false;
+  }
   int distanceNorth = sonarNorth.ping_cm();
   int distanceSouth = sonarSouth.ping_cm();
   bool shipDetected = false;
@@ -502,6 +498,9 @@ bool checkForShips() {
 
 // Check if cars are detected on the road
 bool checkForCars() {
+  if (currentMode = MANUAL_MODE) {
+    return false;
+  }
   int distanceRoad = sonarRoad.ping_cm();
   if (distanceRoad > 0 && distanceRoad < 30) {
     currentState.roadUS = "CAR";
@@ -514,6 +513,9 @@ bool checkForCars() {
 
 // Check if ship is under the bridge before closing
 bool checkUnderBridge() {
+  if (currentMode = MANUAL_MODE) {
+    return false;
+  }
   int distanceUnder = sonarUnder.ping_cm();
   if (distanceUnder > 0 && distanceUnder < 30) {
     currentState.underUS = "SHIP";
