@@ -3,6 +3,36 @@
 #include <WiFiServer.h>
 #include <ESP32Servo.h>  // servo control
 #include <NewPing.h>  // ultrasonic sensor 
+#include "HX710.h" // load cell amplifier
+
+// Ultrasonic sensors
+#define TRIGGER_PIN_NORTH 25
+#define ECHO_PIN_NORTH    34
+#define TRIGGER_PIN_SOUTH 26
+#define ECHO_PIN_SOUTH    35
+#define TRIGGER_PIN_ROAD  27
+#define ECHO_PIN_ROAD     36
+#define TRIGGER_PIN_UNDER 14
+#define ECHO_PIN_UNDER    39
+
+// Servos
+#define SERVO_BRIDGE_PIN 23
+#define SERVO_GATE_PIN   22
+
+// Shift register pins
+#define LATCH_PIN 5   // RCLK
+#define CLOCK_PIN 18  // SCLK
+#define DATA_PIN 19   // DATA
+
+// Speaker pins
+#define SPEAKER_RX_PIN 16 // RX2
+#define SPEAKER_TX_PIN 17 // TX2
+
+// Limit switches
+#define LIMIT_GATE_CLOSED_PIN 4   // LimitSwitch_1
+#define LIMIT_GATE_OPEN_PIN   13  // LimitSwitch_2
+#define LIMIT_BRIDGE_CLOSED_PIN 12 // LimitSwitch_3
+#define LIMIT_BRIDGE_OPEN_PIN   15 // LimitSwitch_4
 
 // Network Configuration
 const char* ssid = "Dragan’s iPhone (2)";
@@ -17,28 +47,22 @@ unsigned long lastHeartbeat = 0;
 const unsigned long heartbeatInterval = 1000; // 1 second
 
 // Pins
-#define TRIGGER_PIN_NORTH  13
-#define ECHO_PIN_NORTH     12
-#define TRIGGER_PIN_SOUTH  14
-#define ECHO_PIN_SOUTH     15
-#define TRIGGER_PIN_ROAD   16
-#define ECHO_PIN_ROAD      17
-#define TRIGGER_PIN_UNDER  18
-#define ECHO_PIN_UNDER     19
 #define MAX_DISTANCE 500
 
-#define SERVO_BRIDGE_PIN 23
-#define SERVO_GATE_PIN 22
-
 /// add led stuff below here
-#define LATCH_PIN 22
-#define CLOCK_PIN 23
-#define DATA_PIN 24
 #define LEDS_OFF 0
 #define LEDS_RED 1
 #define LEDS_GREEN 2
 byte leds1 = 0;
 byte leds2 = 0;
+
+// Load cell pins & configuration
+#define LOADCELL_CLK_PIN 33
+#define LOADCELL_DOUT_PIN 32
+HX710 scale;
+long loadcellTare = 0;
+float calibration_factor = 717.5; // adjust to your calibration
+const float LOAD_THRESHOLD_GRAMS = 5.0; // anything above this and it counts as on bridge
 
 // Servo & Ultrasonic sensor setup
 NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
@@ -67,6 +91,16 @@ void setVolume(uint8_t vol) {
 // Convenience wrappers for open/close alarms
 void playOpenAlarm() { playVoice(0x01); }
 void playCloseAlarm() { playVoice(0x02); }
+
+// Limit switch and movement state variables
+bool limitGateClosed = false;
+bool limitGateOpen = false;
+bool limitBridgeClosed = false;
+bool limitBridgeOpen = false;
+
+bool gateMoving = false;
+bool bridgeMoving = false;
+
 
 // error codes:
 // 0: No Error
@@ -262,6 +296,20 @@ void setup() {
   delay(200);
   setVolume(0x1E); // set to max by default
 
+  // Initialize load cell
+  scale.initialize(LOADCELL_CLK_PIN, LOADCELL_DOUT_PIN);
+  Serial.println("Initializing load cell and taring...");
+  long tareSum = 0;
+  for (int i = 0; i < 20; i++) {
+    while (!scale.isReady());
+    scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+    tareSum += scale.getLastDifferentialInput();
+    delay(10);
+  }
+  loadcellTare = tareSum / 20;
+  Serial.print("Loadcell tared. Offset=");
+  Serial.println(loadcellTare);
+
   // esp timer
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
@@ -275,12 +323,28 @@ void setup() {
   gateServo.attach(SERVO_GATE_PIN, 500, 2500); // Attach servo with range
   gateServo.write(90);  // make sure motor is stopped
 
+  // Configure limit switch pins (use INPUT_PULLUP, switches expected to pull LOW when triggered)
+  pinMode(LIMIT_GATE_CLOSED_PIN, INPUT_PULLUP);
+  pinMode(LIMIT_GATE_OPEN_PIN, INPUT_PULLUP);
+  pinMode(LIMIT_BRIDGE_CLOSED_PIN, INPUT_PULLUP);
+  pinMode(LIMIT_BRIDGE_OPEN_PIN, INPUT_PULLUP);
+
   delay(1000);
 }
 
 // Main Loop
 void loop() {
-  //test();
+  // update limit switches every loop
+
+  //      ~tests~      //
+  test(); //deos all
+  testSpeaker();
+  testUltrasonics();
+  testLimitSwitches();
+  testActuators();
+  //  ~end of tests~  //
+
+  updateLimitSwitches();
   handleClient();
   controlBridge();
   sendHeartbeat();
@@ -414,6 +478,9 @@ void controlBridge() {
   // Don't run automatic control in manual or emergency mode
   if (currentMode != AUTO_MODE) return;
 
+  // ensure switches are up-to-date
+  updateLimitSwitches();
+
   static enum {
     WAIT_FOR_SHIPS,
     WAIT_FOR_CARS_CLEAR,
@@ -437,7 +504,8 @@ void controlBridge() {
     case WAIT_FOR_CARS_CLEAR:
       if (!checkForCars()) {
         Serial.println("No cars detected - closing gates...");
-        closeGates();
+        // start closing gates and wait for limit switch
+        startGateClose();
         currentState.roadLights = "STOP";
         currentState.waterwayLights = "STOP";
         stateStartTime = millis();
@@ -446,20 +514,43 @@ void controlBridge() {
       break;
 
     case GATES_CLOSING:
-      if (millis() - stateStartTime > 3000) {
-        Serial.println("Gates closed - opening bridge...");
-        currentState.waterwayLights = "GOGO";
-        openBridge();
-        stateStartTime = millis();
-        state = BRIDGE_OPENING;
+      // if gate reached closed limit, stop and proceed
+      if (limitGateClosed) {
+        if (gateMoving) {
+          stopGate();
+          Serial.println("Gates closed (limit switch)");
+        }
+        // before opening the bridge ensure no weight sits on the bridge
+        float mass = readLoadMass();
+        if (isnan(mass)) mass = 0;
+        if (mass > LOAD_THRESHOLD_GRAMS) {
+          Serial.println("Weight detected on bridge (" + String(mass,1) + " g) - delaying open");
+          currentState.roadLoad = "LOAD";
+          // go back to waiting for cars to clear so operator can react
+          state = WAIT_FOR_CARS_CLEAR;
+        } else {
+          Serial.println("Gates closed - starting bridge open (limit-driven)...");
+          currentState.waterwayLights = "GOGO";
+          startBridgeOpen();
+          stateStartTime = millis();
+          state = BRIDGE_OPENING;
+        }
+      } else {
+        // still moving or waiting for limit
+        if (!gateMoving) startGateClose();
       }
       break;
 
     case BRIDGE_OPENING:
-      if (millis() - stateStartTime > 2000) {
-        Serial.println("Bridge is open.");
+      if (limitBridgeOpen) {
+        if (bridgeMoving) {
+          stopBridge();
+          Serial.println("Bridge open (limit switch)");
+        }
         stateStartTime = millis();
         state = BRIDGE_OPEN;
+      } else {
+        if (!bridgeMoving) startBridgeOpen();
       }
       break;
 
@@ -474,7 +565,7 @@ void controlBridge() {
       if (!checkUnderBridge()) {
         Serial.println("No ship under bridge - closing bridge...");
         currentState.waterwayLights = "STOP";
-        closeBridge();
+        startBridgeClose();
         stateStartTime = millis();
         state = BRIDGE_CLOSING;
       } else {
@@ -484,19 +575,30 @@ void controlBridge() {
       break;
 
     case BRIDGE_CLOSING:
-      if (millis() - stateStartTime > 2000) {
-        Serial.println("Bridge closed - opening gates for traffic...");
-        openGates();
+      if (limitBridgeClosed) {
+        if (bridgeMoving) {
+          stopBridge();
+          Serial.println("Bridge closed (limit switch)");
+        }
+        // open gates after bridge fully closed
+        startGateOpen();
         currentState.roadLights = "GOGO";
         stateStartTime = millis();
         state = GATES_OPENING;
+      } else {
+        if (!bridgeMoving) startBridgeClose();
       }
       break;
 
     case GATES_OPENING:
-      if (millis() - stateStartTime > 2000) {
-        Serial.println("Gates open - waiting for next ship...");
+      if (limitGateOpen) {
+        if (gateMoving) {
+          stopGate();
+          Serial.println("Gates opened (limit switch)");
+        }
         state = WAIT_FOR_SHIPS;
+      } else {
+        if (!gateMoving) startGateOpen();
       }
       break;
   }
@@ -749,28 +851,136 @@ void bridgelights(String command){
   }
 }
 
-
-////////////// testing stuff /////////////////////
-
-void test(){
-  //test motor
-  Serial.println("testing motors");
-  testMotors();
-  Serial.println("finished testing motors");
-  // test sensor
-  Serial.println("testing sensor");
-  for(int i=0; i<=20; i++){
-    checkForShips();
-    delay(1000);
+// Read mass from loadcell in grams (uses calibration_factor and tare)
+float readLoadMass() {
+  if (!scale.isReady()) {
+    return NAN; // not ready
   }
-  //
-  Serial.println("finished all testing");
-    delay(10000);
+  scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+  long raw = scale.getLastDifferentialInput();
+  long net = raw - loadcellTare;
+  float mass = net / calibration_factor;
+  if (mass < 0) mass = 0;
+  return mass;
 }
 
-void testMotors(){
-  openBridge();
-  delay(5000);
-  closeBridge();
-  delay(5000);
+// Returns true if loadcell reports something on the bridge
+bool isWeightOnBridge() {
+  float m = readLoadMass();
+  if (isnan(m)) return false; // treat as no weight if read failed
+  return (m > LOAD_THRESHOLD_GRAMS);
+}
+
+
+//-----------------------------------Tests----------------------------------//
+
+// Test speaker: set volume and play open/close tracks
+void testSpeaker() {
+  Serial.println("[TEST] Speaker: setting volume and playing sample tracks...");
+  setVolume(0x1E);
+  delay(100);
+  playOpenAlarm();
+  delay(1200);
+  playCloseAlarm();
+  delay(1200);
+  Serial.println("[TEST] Speaker done.");
+}
+
+// Test ultrasonics: print distance readings for all four sensors
+void testUltrasonics(int samples = 3, int delayMs = 200) {
+  Serial.println("[TEST] Ultrasonics: reading sensors...");
+  for (int s = 0; s < samples; s++) {
+    int n = sonarNorth.ping_cm();
+    int so = sonarSouth.ping_cm();
+    int r = sonarRoad.ping_cm();
+    int u = sonarUnder.ping_cm();
+    Serial.println("North:" + String(n) + " cm, South:" + String(so) + " cm, Road:" + String(r) + " cm, Under:" + String(u) + " cm");
+    delay(delayMs);
+  }
+  Serial.println("[TEST] Ultrasonics done.");
+}
+
+// Test limit switches: read and print states
+void testLimitSwitches(int iterations = 10, int delayMs = 200) {
+  Serial.println("[TEST] Limit switches: polling states...");
+  for (int i = 0; i < iterations; i++) {
+    updateLimitSwitches();
+    Serial.print("GateClosed:"); Serial.print(limitGateClosed);
+    Serial.print(" GateOpen:"); Serial.print(limitGateOpen);
+    Serial.print(" BridgeClosed:"); Serial.print(limitBridgeClosed);
+    Serial.print(" BridgeOpen:"); Serial.println(limitBridgeOpen);
+    delay(delayMs);
+  }
+  Serial.println("[TEST] Limit switches done.");
+}
+
+// Test actuators: move gates and bridge using limit switches with timeout
+void testActuators(unsigned long timeoutMs = 8000) {
+  Serial.println("[TEST] Actuators: testing gates and bridge (using limits)...");
+  unsigned long t0;
+
+  // Gates: open then close
+  Serial.println("[TEST] Opening gates...");
+  startGateOpen();
+  t0 = millis();
+  while (!limitGateOpen && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    delay(20);
+  }
+  stopGate();
+  Serial.println(limitGateOpen ? "Gate open limit reached" : "Gate open timeout");
+  delay(500);
+
+  Serial.println("[TEST] Closing gates...");
+  startGateClose();
+  t0 = millis();
+  while (!limitGateClosed && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    delay(20);
+  }
+  stopGate();
+  Serial.println(limitGateClosed ? "Gate closed limit reached" : "Gate close timeout");
+  delay(500);
+
+  // Bridge: open then close
+  Serial.println("[TEST] Opening bridge...");
+  startBridgeOpen();
+  t0 = millis();
+  while (!limitBridgeOpen && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    delay(20);
+  }
+  stopBridge();
+  Serial.println(limitBridgeOpen ? "Bridge open limit reached" : "Bridge open timeout");
+  delay(500);
+
+  Serial.println("[TEST] Closing bridge...");
+  startBridgeClose();
+  t0 = millis();
+  while (!limitBridgeClosed && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    delay(20);
+  }
+  stopBridge();
+  Serial.println(limitBridgeClosed ? "Bridge closed limit reached" : "Bridge close timeout");
+  delay(500);
+
+  Serial.println("[TEST] Actuators done.");
+}
+
+// Run all tests in sequence
+void runAllTests() {
+  testSpeaker();
+  testUltrasonics();
+  testLimitSwitches();
+  testActuators();
+}
+
+
+void test() {
+  Serial.println("---------- BEGIN TEST SUITE ----------");
+  runAllTests();
+  Serial.println("---------- END TEST SUITE ----------");
+  // Pause long so routine is not re-run unless user triggers
+  delay(20000);
 }
