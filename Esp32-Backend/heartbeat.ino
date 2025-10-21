@@ -84,7 +84,7 @@ void readMssg(String mssg) {
   // POST: read the message and run the appropriate response command
   switch (mssg.substr(0,4)) {
     case "REDY":
-      processCommand("REDY")
+      processCommand("REDY");
 
     case "OKOK":
       processCommand("OKOK");
@@ -95,20 +95,96 @@ void readMssg(String mssg) {
         String extract = mssg.substr(i*5, 4);
         switch (extract) {
           case "OPEN": 
+            switch (i){ 
+              case 1:
 
-          case "SHIP":
+              case 2:
 
-          case "TRAF":
+            }
 
-          case "TRIG":
+            case "CLOS":
+              switch (i){
+                case 1:
 
-          case "GOGO":
+                case 2:
+              }
 
-          case "STOP":
+            case "SHIP":
+              switch (i){ 
+                case 3:
 
-          case "SLOW":
+                case 4:
 
-          case "NONE":
+                case 5:
+
+              }
+
+            case "TRAF":
+              switch (i){ 
+                case 6:
+
+                case 7:
+
+              }
+
+            case "TRIG":
+              switch (i){ 
+                case 8:
+
+                case 9:
+
+                case 10:
+
+                case 11:
+
+              }
+
+            case "GOGO":
+              switch (i){ 
+                case 12:
+
+                case 13:
+                
+              }
+
+            case "STOP":
+              switch (i){ 
+                case 12:
+
+                case 13:
+                
+              }
+
+            case "SLOW":
+              switch (i){ 
+                case 12:
+
+                case 13:
+                
+              }
+
+            case "NONE":
+              switch (i){ 
+                case 3:
+
+                case 4:
+
+                case 5:
+                
+                case 6:
+
+                case 7:
+
+                case 8:
+
+                case 9:
+
+                case 10:
+                
+                case 11:
+
+                case 14:
+              }
                     
         }
 
@@ -204,7 +280,7 @@ void setup() {
 
 // Main Loop
 void loop() {
-  test();
+  //test();
   handleClient();
   controlBridge();
   sendHeartbeat();
@@ -225,6 +301,7 @@ void handleClient() {
   if (clientConnected && client.available()) {
     String command = client.readStringUntil('\n');
     command.trim();
+    lastHeartbeat = 0;
     Serial.println(command);
     processCommand(command);
   }
@@ -295,10 +372,32 @@ void handleManualCommand(String command) {
 
 // Send heartbeat to client
 void sendHeartbeat() {
-  if (clientConnected && (millis() - lastHeartbeat >= heartbeatInterval)) {
-    String status = buildStatusMessage();
-    //client.println(status);
-    lastHeartbeat = millis();
+  // Attempt to accept a client if not already connected (just in case idk)
+  if (!clientConnected && WiFi.status() == WL_CONNECTED) {
+    WiFiClient newClient = server.available();
+    if (newClient) {
+      client = newClient;
+      clientConnected = true;
+      Serial.println("Client connected (heartbeat)");
+    }
+  }
+
+  // ensure client connected
+  if (clientConnected) {
+    if (!client || !client.connected()) {
+      clientConnected = false;
+      if (client) client.stop();
+      Serial.println("Client disconnected (heartbeat)");
+      return;
+    }
+
+    // Send heartbeat at the configured interval
+    if (millis() - lastHeartbeat >= heartbeatInterval) {
+      String status = buildStatusMessage();
+      client.println(status); // send to client
+      Serial.println("Heartbeat sent: " + status);
+      lastHeartbeat = millis();
+    }
   }
 }
 
