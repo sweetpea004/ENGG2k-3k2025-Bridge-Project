@@ -143,22 +143,26 @@ void readMssg(String mssg) {
           case "TRAF":
             switch (i){ 
               case 6:
-                currentState.roadUS = "TRAF";
-
-              case 7:
                 currentState.roadLoad = "TRAF";
 
             }
 
           case "TRIG":
             switch (i){ 
+              case 7:
+                currentState.roadUS = "TRIG";
+
               case 8:
+                // TNK Limit Switches
 
               case 9:
+                // TNK Limit Switches
 
               case 10:
+                // TNK Limit Switches
 
               case 11:
+                // TNK Limit Switches
 
             }
 
@@ -194,25 +198,44 @@ void readMssg(String mssg) {
           case "NONE":
             switch (i){ 
               case 3:
+                currentState.northUS = "NONE";
 
               case 4:
+                currentState.underUS = "NONE";
 
               case 5:
+                currentState.southUS = "NONE";
               
               case 6:
+                currentState.roadLoad = "NONE";
 
               case 7:
+                currentState.roadUS = "NONE";
 
               case 8:
+                // TNK Limit Switches
 
               case 9:
+                // TNK Limit Switches
 
               case 10:
+                // TNK Limit Switches
               
               case 11:
+                // TNK Limit Switches
 
               case 14:
+                currentState.speaker = "NONE";
             }
+          case "DONE":
+            currentState.speaker = "DONE";
+          
+          case "MOVN":
+            if (i = 14) currentState.speaker = "MOVN";
+
+          case "EMER":
+            if (i = 14) currentState.speaker = "EMER";
+          
         }       
       }
   }
@@ -229,10 +252,9 @@ struct BridgeState {
   String roadLoad = "NONE";
   String roadLights = "GOGO";
   String waterwayLights = "STOP";
-  String audioSys = "NONE";
-  String speaker = "placeholder";
+  String speaker = "NONE";
   int errorCode = 0;
-  // add sections for limit switches
+  // TNK Limit Switches
 };
 
 BridgeState currentState;
@@ -552,7 +574,6 @@ void emergencyStop() {
   currentState.gateStatus = "EMER";
   currentState.roadLights = "EMER";
   currentState.waterwayLights = "EMER";
-  currentState.audioSys = "EMER";
   currentState.speaker = "EMER";
   currentState.errorCode = 8; // Emergency error code
   
