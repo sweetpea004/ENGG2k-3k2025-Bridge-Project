@@ -830,7 +830,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       leds2 += 0b00011000;
 
     case 4:
-      //leds2 += 000b100000;  this line just said nah lmao
+      leds2 += 0b00100000;  this line just said nah lmao
 
     case 5:
       leds2 += 0b00101000;
