@@ -123,9 +123,16 @@ def handle_update():
     emit('update_stat_data', (commProg.status.toSerializable(), commProg.conn.value), broadcast=True)
 
 if __name__ == "__main__":
-    #commThread = threading.Thread(target=commProg.communication, daemon=True)
-    #commThread.start()
+    #comm_thread = threading.Thread(target=commProg.communication, daemon=True)
+    #comm_thread.start()
+
+    ''' TESTING Threads '''
+    #test_status_change = threading.Thread(target=commProg.test_status_change, daemon=True)
+    #test_status_change.start()
 
     run_app()
     
-    #commThread.join()
+    #comm_thread.join()
+
+    ''' CLOSE TESTING Threads '''
+    #test_status_change.join()

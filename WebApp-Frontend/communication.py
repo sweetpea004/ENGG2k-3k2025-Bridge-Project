@@ -118,6 +118,7 @@ def parse_message(message: str) -> Status:
 def communication():
     global status
     global conn
+    global to_be_sent
 
     print("Starting connection")
     while True:
@@ -161,5 +162,15 @@ def communication():
                                 send("OKOK")
                         case "OKOK": # to be removed
                             status.resetTime()
+
+def test_status_change():
+    global status
+    global default_status
+    while True:
+        time.sleep(2)
+        message = "STAT EMER EMER SHIP NONE NONE NONE NONE NONE NONE NONE NONE EMER EMER EMER 7"
+        status = Status(message.split(" "))
+        time.sleep(2)
+        status = Status(default_status.split(" "))
 
 
