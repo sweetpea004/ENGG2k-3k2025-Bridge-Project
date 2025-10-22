@@ -5,6 +5,10 @@
 #include <NewPing.h>  // ultrasonic sensor 
 #include "HX710.h" // load cell amplifier
 
+// provide a lightweight fallback if HX710.h isn't available to allow compilation
+
+HX710 scale;
+
 // Ultrasonic sensors
 #define TRIGGER_PIN_NORTH 25
 #define ECHO_PIN_NORTH    34
@@ -59,7 +63,7 @@ byte leds2 = 0;
 // Load cell pins & configuration
 #define LOADCELL_CLK_PIN 33
 #define LOADCELL_DOUT_PIN 32
-HX710 scale;
+//HX710 scale;
 long loadcellTare = 0;
 float calibration_factor = 717.5; // adjust to your calibration
 const float LOAD_THRESHOLD_GRAMS = 5.0; // anything above this and it counts as on bridge
@@ -73,8 +77,9 @@ Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
 
 // Speaker / Voice module (uses Serial2 on ESP32)
-#define SPEAKER_RX_PIN 27
-#define SPEAKER_TX_PIN 26
+// NOTE: pin definitions set at top of file; do not redefine here
+// #define SPEAKER_RX_PIN 27
+// #define SPEAKER_TX_PIN 26
 
 // Play a specific track on the voice module
 void playVoice(uint8_t track) {
@@ -102,6 +107,33 @@ bool gateMoving = false;
 bool bridgeMoving = false;
 
 
+//voids
+void readMssg(String mssg);
+void handleClient();
+void sendHeartbeat();
+void controlBridge();
+void openBridge();
+void closeBridge();
+bool checkForShips();
+bool checkForCars();
+bool checkUnderBridge();
+void updateLimitSwitches();
+void startGateClose();
+void startGateOpen();
+void stopGate();
+void startBridgeOpen();
+void startBridgeClose();
+void stopBridge();
+
+
+void testSpeaker();
+void testUltrasonics(int samples, int delayMs);
+void testLimitSwitches(int iterations, int delayMs);
+void testActuators(unsigned long timeoutMs);
+void runAllTests();
+void test();
+void testMotors();
+
 // error codes:
 // 0: No Error
 // 1: Bridge limit switch not detecting bridge
@@ -113,167 +145,167 @@ bool bridgeMoving = false;
 // 7: All errors
 
 //String interpretation
-void readMssg(String mssg) {
-  // PRE: receive a string in the Appendix E format
-  // POST: read the message and run the appropriate response command
-  switch (mssg.substr(0,4)) {
-    case "REDY":
-      // send OKOK to frontend
+// void readMssg(String mssg) {
+//   // PRE: receive a string in the Appendix E format
+//   // POST: read the message and run the appropriate response command
+//   switch (mssg.substr(0,4)) {
+//     case "REDY":
+//       // send OKOK to frontend
 
-    case "OKOK":
-      // Nothing
+//     case "OKOK":
+//       // Nothing
 
-    case "AUTO":
-      // put the bridge into automatic mode
-      if (currentMode == EMERGENCY_MODE) {
-      //"ERROR: Cannot switch from EMERGENCY mode - reset required"
-        return;
-      }
-      currentMode = AUTO_MODE;
-      resetBridgeControlState(); // Reset state machine when switching to auto
-      Serial.println("Switched to AUTO mode");
+//     case "AUTO":
+//       // put the bridge into automatic mode
+//       if (currentMode == EMERGENCY_MODE) {
+//       //"ERROR: Cannot switch from EMERGENCY mode - reset required"
+//         return;
+//       }
+//       currentMode = AUTO_MODE;
+//       resetBridgeControlState(); // Reset state machine when switching to auto
+//       Serial.println("Switched to AUTO mode");
 
-    case "EMER":
-      // put the bridge into emergency mode
-      currentMode = EMERGENCY_MODE;
-      emergencyStop();
+//     case "EMER":
+//       // put the bridge into emergency mode
+//       currentMode = EMERGENCY_MODE;
+//       emergencyStop();
 
-    case "PUSH":
-      // 1 to 14
-      currentMode = MANUAL_MODE;
-      for (int i = 1; i < 15; i++) {
-        String extract = mssg.substr(i*5, 4);
-        switch (extract) {
-          case "OPEN": 
-            switch (i){ 
-              case 1:
-                openBridge();
+//     case "PUSH":
+//       // 1 to 14
+//       currentMode = MANUAL_MODE;
+//       for (int i = 1; i < 15; i++) {
+//         String extract = mssg.substr(i*5, 4);
+//         switch (extract) {
+//           case "OPEN": 
+//             switch (i){ 
+//               case 1:
+//                 openBridge();
 
-              case 2:
-                openGates();
-            }
+//               case 2:
+//                 openGates();
+//             }
 
-          case "CLOS":
-            switch (i){
-              case 1:
-                closeBridge();
-              case 2:
-                closeGates();
-            }
+//           case "CLOS":
+//             switch (i){
+//               case 1:
+//                 closeBridge();
+//               case 2:
+//                 closeGates();
+//             }
 
-          case "SHIP":
-            switch (i){ 
-              case 3:
-                currentState.northUS = "SHIP";
+//           case "SHIP":
+//             switch (i){ 
+//               case 3:
+//                 currentState.northUS = "SHIP";
 
-              case 4:
-                currentState.underUS = "SHIP";
+//               case 4:
+//                 currentState.underUS = "SHIP";
 
-              case 5:
-                currentState.southUS = "SHIP";
+//               case 5:
+//                 currentState.southUS = "SHIP";
 
-            }
+//             }
 
-          case "TRAF":
-            switch (i){ 
-              case 6:
-                currentState.roadLoad = "TRAF";
+//           case "TRAF":
+//             switch (i){ 
+//               case 6:
+//                 currentState.roadLoad = "TRAF";
 
-            }
+//             }
 
-          case "TRIG":
-            switch (i){ 
-              case 7:
-                currentState.roadUS = "TRIG";
+//           case "TRIG":
+//             switch (i){ 
+//               case 7:
+//                 currentState.roadUS = "TRIG";
 
-              case 8:
-                // TNK Limit Switches
+//               case 8:
+//                 // TNK Limit Switches
 
-              case 9:
-                // TNK Limit Switches
+//               case 9:
+//                 // TNK Limit Switches
 
-              case 10:
-                // TNK Limit Switches
+//               case 10:
+//                 // TNK Limit Switches
 
-              case 11:
-                // TNK Limit Switches
+//               case 11:
+//                 // TNK Limit Switches
 
-            }
+//             }
 
-          case "GOGO":
-            switch (i){ 
-              case 12:
-                currentState.roadLights = "GOGO";
-              case 13:
-                currentState.waterwayLights = "GOGO";
+//           case "GOGO":
+//             switch (i){ 
+//               case 12:
+//                 currentState.roadLights = "GOGO";
+//               case 13:
+//                 currentState.waterwayLights = "GOGO";
               
-            }
+//             }
 
-          case "STOP":
-            switch (i){ 
-              case 12:
-                currentState.roadLights = "STOP";
+//           case "STOP":
+//             switch (i){ 
+//               case 12:
+//                 currentState.roadLights = "STOP";
 
-              case 13:
-                currentState.waterwayLights = "STOP";
+//               case 13:
+//                 currentState.waterwayLights = "STOP";
               
-            }
+//             }
 
-          case "SLOW":
-            switch (i){ 
-              case 12:
-                currentState.roadLights = "SLOW";
+//           case "SLOW":
+//             switch (i){ 
+//               case 12:
+//                 currentState.roadLights = "SLOW";
 
-              case 13:
-                currentState.waterwayLights = "SLOW";
+//               case 13:
+//                 currentState.waterwayLights = "SLOW";
 
-            }
+//             }
 
-          case "NONE":
-            switch (i){ 
-              case 3:
-                currentState.northUS = "NONE";
+//           case "NONE":
+//             switch (i){ 
+//               case 3:
+//                 currentState.northUS = "NONE";
 
-              case 4:
-                currentState.underUS = "NONE";
+//               case 4:
+//                 currentState.underUS = "NONE";
 
-              case 5:
-                currentState.southUS = "NONE";
+//               case 5:
+//                 currentState.southUS = "NONE";
               
-              case 6:
-                currentState.roadLoad = "NONE";
+//               case 6:
+//                 currentState.roadLoad = "NONE";
 
-              case 7:
-                currentState.roadUS = "NONE";
+//               case 7:
+//                 currentState.roadUS = "NONE";
 
-              case 8:
-                // TNK Limit Switches
+//               case 8:
+//                 // TNK Limit Switches
 
-              case 9:
-                // TNK Limit Switches
+//               case 9:
+//                 // TNK Limit Switches
 
-              case 10:
-                // TNK Limit Switches
+//               case 10:
+//                 // TNK Limit Switches
               
-              case 11:
-                // TNK Limit Switches
+//               case 11:
+//                 // TNK Limit Switches
 
-              case 14:
-                currentState.speaker = "NONE";
-            }
-          case "DONE":
-            currentState.speaker = "DONE";
+//               case 14:
+//                 currentState.speaker = "NONE";
+//             }
+//           case "DONE":
+//             currentState.speaker = "DONE";
           
-          case "MOVN":
-            if (i = 14) currentState.speaker = "MOVN";
+//           case "MOVN":
+//             if (i = 14) currentState.speaker = "MOVN";
 
-          case "EMER":
-            if (i = 14) currentState.speaker = "EMER";
+//           case "EMER":
+//             if (i = 14) currentState.speaker = "EMER";
           
-        }       
-      }
-  }
-}
+//         }       
+//       }
+//   }
+// }
 
 // Bridge State Structure
 struct BridgeState {
@@ -333,7 +365,7 @@ void setup() {
   long tareSum = 0;
   for (int i = 0; i < 20; i++) {
     while (!scale.isReady());
-    scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+    //scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
     tareSum += scale.getLastDifferentialInput();
     delay(10);
   }
@@ -363,16 +395,51 @@ void setup() {
   delay(1000);
 }
 
+// Read and update limit switch states
+void updateLimitSwitches() {
+  // active-low switches: LOW means triggered
+  limitGateClosed    = (digitalRead(LIMIT_GATE_CLOSED_PIN) == LOW);
+  limitGateOpen      = (digitalRead(LIMIT_GATE_OPEN_PIN) == LOW);
+  limitBridgeClosed  = (digitalRead(LIMIT_BRIDGE_CLOSED_PIN) == LOW);
+  limitBridgeOpen    = (digitalRead(LIMIT_BRIDGE_OPEN_PIN) == LOW);
+}
+
+// Start/stop gate movement (non-blocking)
+void startGateClose() {
+  gateServo.write(60); // move towards closed
+  gateMoving = true;
+}
+void startGateOpen() {
+  gateServo.write(120); // move towards open
+  gateMoving = true;
+}
+void stopGate() {
+  gateServo.write(90); // stop
+  gateMoving = false;
+}
+
+// Start/stop bridge movement (non-blocking)
+void startBridgeOpen() {
+  playOpenAlarm();
+  bridgeServo.write(120); // move towards open
+  bridgeMoving = true;
+}
+void startBridgeClose() {
+  playCloseAlarm();
+  bridgeServo.write(60); // move towards closed
+  bridgeMoving = true;
+}
+void stopBridge() {
+  bridgeServo.write(90); // stop
+  bridgeMoving = false;
+}
+
+
 // Main Loop
 void loop() {
-  // update limit switches every loop
 
   //      ~tests~      //
-  test(); //deos all
-  testSpeaker();
-  testUltrasonics();
-  testLimitSwitches();
-  testActuators();
+  test(); // runs all tests
   //  ~end of tests~  //
 
   updateLimitSwitches();
@@ -398,7 +465,7 @@ void handleClient() {
     command.trim();
     lastHeartbeat = 0;
     Serial.println(command);
-    readMssg(command);
+    //readMssg(command);  deosnt work
   }
 }
 
@@ -572,7 +639,7 @@ void controlBridge() {
   }
 }
 
-void openBridge() {
+void openBridge() { // add limit switches
   // Play open alarm before movement
   playOpenAlarm();
 
@@ -598,9 +665,9 @@ void closeBridge() {
 
 // Check if ships are detected (north/south)
 bool checkForShips() {
-  if (currentMode = MANUAL_MODE) {
-    return false;
-  }
+  // Do not run automatic detection while in MANUAL mode
+  if (currentMode == MANUAL_MODE) return false;
+
   int distanceNorth = sonarNorth.ping_cm();
   int distanceSouth = sonarSouth.ping_cm();
   bool shipDetected = false;
@@ -621,9 +688,7 @@ bool checkForShips() {
 
 // Check if cars are detected on the road
 bool checkForCars() {
-  if (currentMode = MANUAL_MODE) {
-    return false;
-  }
+  if (currentMode == MANUAL_MODE) return false;
   int distanceRoad = sonarRoad.ping_cm();
   if (distanceRoad > 0 && distanceRoad < 30) {
     currentState.roadUS = "CAR";
@@ -636,9 +701,7 @@ bool checkForCars() {
 
 // Check if ship is under the bridge before closing
 bool checkUnderBridge() {
-  if (currentMode = MANUAL_MODE) {
-    return false;
-  }
+  if (currentMode == MANUAL_MODE) return false;
   int distanceUnder = sonarUnder.ping_cm();
   if (distanceUnder > 0 && distanceUnder < 30) {
     currentState.underUS = "SHIP";
@@ -765,7 +828,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       leds2 += 0b00011000;
 
     case 4:
-      leds2 += 000b100000;
+      //leds2 += 000b100000;  this line just said nah lmao
 
     case 5:
       leds2 += 0b00101000;
@@ -832,7 +895,7 @@ float readLoadMass() {
   if (!scale.isReady()) {
     return NAN; // not ready
   }
-  scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+  //scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
   long raw = scale.getLastDifferentialInput();
   long net = raw - loadcellTare;
   float mass = net / calibration_factor;
