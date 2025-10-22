@@ -12,8 +12,8 @@ class Status:
         self.north_us = array[3].upper()
         self.under_us = array[4].upper()
         self.south_us = array[5].upper()
-        self.road_us = array[6].upper()
-        self.road_load = array[7].upper()
+        self.road_load = array[6].upper()
+        self.road_us = array[7].upper()
         self.bridge_top_limit = array[8].upper()
         self.bridge_bottom_limit = array[9].upper()
         self.gate_top_limit = array[10].upper()
@@ -25,7 +25,7 @@ class Status:
     
     def toString(self):
 
-        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_us} {self.road_load} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
+        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_us} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
 
         return message
     
@@ -37,8 +37,8 @@ class Status:
             "north_us": self.north_us,
             "under_us": self.under_us,
             "south_us": self.south_us,
-            "road_us": self.road_us,
             "road_load": self.road_load,
+            "road_us": self.road_us,
             "bridge_top_limit": self.bridge_top_limit,
             "bridge_bottom_limit": self.bridge_bottom_limit,
             "gate_top_limit": self.gate_top_limit,
@@ -77,7 +77,7 @@ STATUS_FREQUENCY = 2000000000
 # Globals
 sock = socket.socket()
 to_be_sent = ""
-default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRAF TRIG NONE TRIG NONE EMER EMER NONE 0"
+default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRIG TRIG NONE TRIG NONE EMER EMER NONE 0"
 status = Status(default_status.split(" "))
 conn = Connection()
 
@@ -118,6 +118,7 @@ def parse_message(message: str) -> Status:
 def communication():
     global status
     global conn
+    global to_be_sent
 
     print("Starting connection")
     while True:
@@ -161,5 +162,15 @@ def communication():
                                 send("OKOK")
                         case "OKOK": # to be removed
                             status.resetTime()
+
+def test_status_change():
+    global status
+    global default_status
+    while True:
+        time.sleep(2)
+        message = "STAT EMER EMER SHIP NONE NONE NONE NONE NONE NONE NONE NONE EMER EMER EMER 7"
+        status = Status(message.split(" "))
+        time.sleep(2)
+        status = Status(default_status.split(" "))
 
 

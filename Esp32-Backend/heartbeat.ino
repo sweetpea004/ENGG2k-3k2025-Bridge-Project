@@ -461,8 +461,10 @@ void handleClient() {
   }
   
   if (clientConnected && client.available()) {
+    // v receive message from client
     String command = client.readStringUntil('\n');
     command.trim();
+    // v update heartbeat timer
     lastHeartbeat = 0;
     Serial.println(command);
     //readMssg(command);  deosnt work
