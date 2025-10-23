@@ -38,8 +38,8 @@ NewPing* sonarBridgeTop = nullptr; // top-looking sensor
 #define DATA_PIN 19   // DATA
 
 // Speaker pins
-#define SPEAKER_RX_PIN 16 // RX2
-#define SPEAKER_TX_PIN 17 // TX2
+#define SPEAKER_RX_PIN 17 // RX2
+#define SPEAKER_TX_PIN 16 // TX2
 
 // Limit switches
 #define LIMIT_GATE_CLOSED_PIN 4   // LimitSwitch_1
@@ -253,8 +253,8 @@ void setup() {
     sonarUnder2 = new NewPing(TRIGGER_PIN_UNDER2, ECHO_PIN_UNDER2, MAX_DISTANCE);
     Serial.println("Initialized second under-bridge ultrasonic sensor");
   }
-  if (TRIGGER_PIN_BRIDGE_TOP != -1 && ECHO_PIN_BRIDGE_TOP != -1) {
-    sonarBridgeTop = new NewPing(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
+  if (TRIGGER_PIN_ROAD != -1 && ECHO_PIN_ROAD != -1) {
+    sonarBridgeTop = new NewPing(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
     Serial.println("Initialized bridge-top ultrasonic sensor");
   }
 
@@ -417,13 +417,13 @@ void updateLimitSwitches() {
   // active-low switches: LOW means triggered
   // TNK Limit Switches
   limitGateClosed    = (digitalRead(LIMIT_GATE_CLOSED_PIN) == LOW);
-  if (limitGateClosed) currentState.gateSwitchDown = "TRIG" else currentState.gateSwitchDown = "NONE";
+  if (limitGateClosed) currentState.gateSwitchDown = "TRIG"; else currentState.gateSwitchDown = "NONE";
   limitGateOpen      = (digitalRead(LIMIT_GATE_OPEN_PIN) == LOW);
-  if (limitGateClosed) currentState.gateSwitchUp = "TRIG" else currentState.gateSwitchUp = "NONE";
+  if (limitGateClosed) currentState.gateSwitchUp = "TRIG"; else currentState.gateSwitchUp = "NONE";
   limitBridgeClosed  = (digitalRead(LIMIT_BRIDGE_CLOSED_PIN) == LOW);
-  if (limitGateClosed) currentState.bridgeSwitchDown = "TRIG" else currentState.bridgeSwitchDown = "NONE";
+  if (limitGateClosed) currentState.bridgeSwitchDown = "TRIG"; else currentState.bridgeSwitchDown = "NONE";
   limitBridgeOpen    = (digitalRead(LIMIT_BRIDGE_OPEN_PIN) == LOW);
-  if (limitGateClosed) currentState.bridgeSwitchUp = "TRIG" else currentState.gateSwitchUp = "NONE";
+  if (limitGateClosed) currentState.bridgeSwitchUp = "TRIG"; else currentState.gateSwitchUp = "NONE";
 }
 
 // Start/stop gate movement (non-blocking)
@@ -468,7 +468,6 @@ void loop() {
   handleClient();
   controlBridge();
   sendHeartbeat();
-  testLEDs();
   delay(50);
 }
 
@@ -1096,12 +1095,51 @@ void testActuators(unsigned long timeoutMs = 8000) {
   Serial.println("[TEST] Actuators done.");
 }
 
+void testMotors(){
+    Serial.println("[TEST] motors: testing gates and bridge");
+  unsigned long t0;
+
+  // Gates: open then close
+  Serial.println("[TEST] Opening gates...");
+  startGateOpen();
+  delay(5000);
+  stopGate();
+  Serial.println("Gate open ");
+  delay(500);
+
+  Serial.println("[TEST] Closing gates...");
+  startGateClose();
+  delay(5000);
+  stopGate();
+  Serial.println("Gate closed ");
+  delay(500);
+
+  // Bridge: open then close
+  Serial.println("[TEST] Opening bridge...");
+  startBridgeOpen();
+  delay(5000);
+  stopBridge();
+  Serial.println("Bridge open ");
+  delay(500);
+
+  Serial.println("[TEST] Closing bridge...");
+  startBridgeClose();
+  delay(5000);
+  stopBridge();
+  Serial.println("Bridge closed ");
+  delay(500);
+
+  Serial.println("[TEST] motors done.");
+}
+
 // Run all tests in sequence
 void runAllTests() {
   testSpeaker();
-  testUltrasonics();
-  testLimitSwitches();
-  testActuators();
+  //testUltrasonics();
+  //testLimitSwitches();
+  //testActuators(); // motors with limit switches
+  //testLEDs();
+  testMotors();
 }
 
 
