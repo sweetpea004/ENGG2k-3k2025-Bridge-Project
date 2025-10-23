@@ -1142,12 +1142,12 @@ void testMotors(){
 
 // Run all tests in sequence
 void runAllTests() {
-  testSpeaker();
-  //testUltrasonics();
-  //testLimitSwitches();
+  //testSpeaker();
+  testUltrasonics();
+  testLimitSwitches();
   //testActuators(); // motors with limit switches
-  //testLEDs();
-  testMotors();
+  testLEDs();
+  //testMotors();
 }
 
 
