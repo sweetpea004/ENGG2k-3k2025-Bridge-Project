@@ -58,7 +58,7 @@ NewPing* sonarBridgeTop = nullptr; // top-looking sensor
 
 // Network Configuration
 const char* ssid = "Dragan’s iPhone (2)";
-const char* password = "bigpassword";
+const char* password = "BIGPASSWORD";
 const int serverPort = 5003;
 
 // Communication
