@@ -19,6 +19,24 @@ HX710 scale;
 #define TRIGGER_PIN_UNDER 14
 #define ECHO_PIN_UNDER    39
 
+// Optional additional ultrasonic sensors (set to -1 to disable)
+#ifndef TRIGGER_PIN_UNDER2
+#define TRIGGER_PIN_UNDER2 -1
+#endif
+#ifndef ECHO_PIN_UNDER2
+#define ECHO_PIN_UNDER2 -1
+#endif
+#ifndef TRIGGER_PIN_BRIDGE_TOP
+#define TRIGGER_PIN_BRIDGE_TOP -1
+#endif
+#ifndef ECHO_PIN_BRIDGE_TOP
+#define ECHO_PIN_BRIDGE_TOP -1
+#endif
+
+// Pointers for optional sensors (created in setup if pins valid)
+NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor
+NewPing* sonarBridgeTop = nullptr; // top-looking sensor
+
 // Servos
 #define SERVO_BRIDGE_PIN 23
 #define SERVO_GATE_PIN   22
@@ -76,11 +94,6 @@ NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
 
-// Speaker / Voice module (uses Serial2 on ESP32)
-// NOTE: pin definitions set at top of file; do not redefine here
-// #define SPEAKER_RX_PIN 27
-// #define SPEAKER_TX_PIN 26
-
 // Play a specific track on the voice module
 void playVoice(uint8_t track) {
   uint8_t playCmd[6] = {0xAA, 0x07, 0x02, 0x00, track, (uint8_t)(track + 0xB3)};
@@ -117,6 +130,7 @@ void closeBridge();
 bool checkForShips();
 bool checkForCars();
 bool checkUnderBridge();
+bool checkBridgeTop();
 void updateLimitSwitches();
 void startGateClose();
 void startGateOpen();
@@ -158,6 +172,10 @@ struct BridgeState {
   String speaker = "NONE";
   int errorCode = 0;
   // TNK Limit Switches
+
+  // Additional fields for optional sensors
+  String underUS2 = "NONE";
+  String bridgeTopUS = "NONE";
 };
 
 // Control Mode Enum
@@ -193,7 +211,7 @@ void setup() {
   // Initialize voice module serial (Serial2) on chosen pins
   Serial2.begin(9600, SERIAL_8N1, SPEAKER_RX_PIN, SPEAKER_TX_PIN);
   delay(200);
-  setVolume(0x1E); // set to max by default
+  setVolume(0x1E); // set to max by default 
 
   // Initialize load cell
   scale.initialize(LOADCELL_CLK_PIN, LOADCELL_DOUT_PIN);
@@ -227,6 +245,16 @@ void setup() {
   pinMode(LIMIT_GATE_OPEN_PIN, INPUT_PULLUP);
   pinMode(LIMIT_BRIDGE_CLOSED_PIN, INPUT_PULLUP);
   pinMode(LIMIT_BRIDGE_OPEN_PIN, INPUT_PULLUP);
+
+  // Initialize optional ultrasonic sensors if pins are valid
+  if (TRIGGER_PIN_UNDER2 != -1 && ECHO_PIN_UNDER2 != -1) {
+    sonarUnder2 = new NewPing(TRIGGER_PIN_UNDER2, ECHO_PIN_UNDER2, MAX_DISTANCE);
+    Serial.println("Initialized second under-bridge ultrasonic sensor");
+  }
+  if (TRIGGER_PIN_BRIDGE_TOP != -1 && ECHO_PIN_BRIDGE_TOP != -1) {
+    sonarBridgeTop = new NewPing(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
+    Serial.println("Initialized bridge-top ultrasonic sensor");
+  }
 
   delay(1000);
 }
@@ -494,7 +522,7 @@ String buildStatusMessage() {
   return "STAT " + currentState.bridgeStatus + " " + currentState.gateStatus + " " + 
          currentState.northUS + " " + currentState.underUS + " " + currentState.southUS + " " +
          currentState.roadLoad + " " + currentState.roadLights + " " + currentState.waterwayLights + " " + 
-         String(currentState.errorCode);
+         String(currentState.errorCode) + " " + currentState.underUS2 + " " + currentState.bridgeTopUS;
 }
 
 // Control the bridge states (open/close)
@@ -691,14 +719,65 @@ bool checkForCars() {
 // Check if ship is under the bridge before closing
 bool checkUnderBridge() {
   if (currentMode == MANUAL_MODE) return false;
-  int distanceUnder = sonarUnder.ping_cm();
-  if (distanceUnder > 0 && distanceUnder < 30) {
+
+  bool detected = false;
+
+  int distanceUnder1 = sonarUnder.ping_cm();der1 = sonarUnder.ping_cm();
+  if (distanceUnder1 > 0 && distanceUnder1 < 30) {anceUnder1 > 0 && distanceUnder1 < 30) {
     currentState.underUS = "SHIP";
-    return true;
+    detected = true;ue;
+  } else { else {
+    currentState.underUS = "NONE";   currentState.underUS = "NONE";
+  }  }
+
+  if (sonarUnder2 != nullptr) {tr) {
+    int distanceUnder2 = sonarUnder2->ping_cm();;
+    if (distanceUnder2 > 0 && distanceUnder2 < 30) {
+      currentState.underUS2 = "SHIP";
+      detected = true;
+    } else {
+      currentState.underUS2 = "NONE";te.underUS2 = "NONE";
+    }
   } else {
-    currentState.underUS = "NONE";
+    currentState.underUS2 = "NONE";underUS2 = "NONE";
+  }
+
+  return detected;  return detected;
+}
+
+// Bridge-top thresholds (cm)
+#define BRIDGE_TOP_CLOSED_THRESHOLD_CM 15  // reading <= this -> bridge closed (near)
+#define BRIDGE_TOP_OPEN_THRESHOLD_CM   60  // reading >= this or out-of-range -> bridge open (raised)
+
+// Check if there is anything on top of the bridge (interpreted as bridge height: open/closed)
+bool checkBridgeTop() {
+  // If no sensor or in manual mode, we don't auto-evaluate
+  if (currentMode == MANUAL_MODE) return false;
+  if (sonarBridgeTop == nullptr) {
+    currentState.bridgeTopUS = "NONE";
     return false;
   }
+
+  int distanceTop = sonarBridgeTop->ping_cm();
+  // distanceTop == 0 means no echo (out of range) — treat as OPEN (bridge high)
+  if (distanceTop == 0) {
+    currentState.bridgeTopUS = "OPEN";
+    return true;
+  }
+
+  if (distanceTop <= BRIDGE_TOP_CLOSED_THRESHOLD_CM) {
+    currentState.bridgeTopUS = "CLOSED";
+    return false;
+  }
+
+  if (distanceTop >= BRIDGE_TOP_OPEN_THRESHOLD_CM) {
+    currentState.bridgeTopUS = "OPEN";
+    return true;
+  }
+
+  // Between thresholds -> partially open/transitioning
+  currentState.bridgeTopUS = "PART"; // partial
+  return false;
 }
 
 void closeGates(){
@@ -922,7 +1001,12 @@ void testUltrasonics(int samples = 3, int delayMs = 200) {
     int so = sonarSouth.ping_cm();
     int r = sonarRoad.ping_cm();
     int u = sonarUnder.ping_cm();
-    Serial.println("North:" + String(n) + " cm, South:" + String(so) + " cm, Road:" + String(r) + " cm, Under:" + String(u) + " cm");
+    int u2 = (sonarUnder2 != nullptr) ? sonarUnder2->ping_cm() : -1;
+    int t = (sonarBridgeTop != nullptr) ? sonarBridgeTop->ping_cm() : -1;
+    Serial.print("North:" + String(n) + " cm, South:" + String(so) + " cm, Road:" + String(r) + " cm, Under:" + String(u) + " cm");
+    if (u2 != -1) Serial.print(", Under2:" + String(u2) + " cm");
+    if (t != -1) Serial.print(", Top:" + String(t) + " cm");
+    Serial.println();
     delay(delayMs);
   }
   Serial.println("[TEST] Ultrasonics done.");
