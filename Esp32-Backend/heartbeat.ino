@@ -144,169 +144,6 @@ void testMotors();
 // 6: Gates & Road Traffic 
 // 7: All errors
 
-//String interpretation
-// void readMssg(String mssg) {
-//   // PRE: receive a string in the Appendix E format
-//   // POST: read the message and run the appropriate response command
-//   switch (mssg.substr(0,4)) {
-//     case "REDY":
-//       // send OKOK to frontend
-
-//     case "OKOK":
-//       // Nothing
-
-//     case "AUTO":
-//       // put the bridge into automatic mode
-//       if (currentMode == EMERGENCY_MODE) {
-//       //"ERROR: Cannot switch from EMERGENCY mode - reset required"
-//         return;
-//       }
-//       currentMode = AUTO_MODE;
-//       resetBridgeControlState(); // Reset state machine when switching to auto
-//       Serial.println("Switched to AUTO mode");
-
-//     case "EMER":
-//       // put the bridge into emergency mode
-//       currentMode = EMERGENCY_MODE;
-//       emergencyStop();
-
-//     case "PUSH":
-//       // 1 to 14
-//       currentMode = MANUAL_MODE;
-//       for (int i = 1; i < 15; i++) {
-//         String extract = mssg.substr(i*5, 4);
-//         switch (extract) {
-//           case "OPEN": 
-//             switch (i){ 
-//               case 1:
-//                 openBridge();
-
-//               case 2:
-//                 openGates();
-//             }
-
-//           case "CLOS":
-//             switch (i){
-//               case 1:
-//                 closeBridge();
-//               case 2:
-//                 closeGates();
-//             }
-
-//           case "SHIP":
-//             switch (i){ 
-//               case 3:
-//                 currentState.northUS = "SHIP";
-
-//               case 4:
-//                 currentState.underUS = "SHIP";
-
-//               case 5:
-//                 currentState.southUS = "SHIP";
-
-//             }
-
-//           case "TRAF":
-//             switch (i){ 
-//               case 6:
-//                 currentState.roadLoad = "TRAF";
-
-//             }
-
-//           case "TRIG":
-//             switch (i){ 
-//               case 7:
-//                 currentState.roadUS = "TRIG";
-
-//               case 8:
-//                 // TNK Limit Switches
-
-//               case 9:
-//                 // TNK Limit Switches
-
-//               case 10:
-//                 // TNK Limit Switches
-
-//               case 11:
-//                 // TNK Limit Switches
-
-//             }
-
-//           case "GOGO":
-//             switch (i){ 
-//               case 12:
-//                 currentState.roadLights = "GOGO";
-//               case 13:
-//                 currentState.waterwayLights = "GOGO";
-              
-//             }
-
-//           case "STOP":
-//             switch (i){ 
-//               case 12:
-//                 currentState.roadLights = "STOP";
-
-//               case 13:
-//                 currentState.waterwayLights = "STOP";
-              
-//             }
-
-//           case "SLOW":
-//             switch (i){ 
-//               case 12:
-//                 currentState.roadLights = "SLOW";
-
-//               case 13:
-//                 currentState.waterwayLights = "SLOW";
-
-//             }
-
-//           case "NONE":
-//             switch (i){ 
-//               case 3:
-//                 currentState.northUS = "NONE";
-
-//               case 4:
-//                 currentState.underUS = "NONE";
-
-//               case 5:
-//                 currentState.southUS = "NONE";
-              
-//               case 6:
-//                 currentState.roadLoad = "NONE";
-
-//               case 7:
-//                 currentState.roadUS = "NONE";
-
-//               case 8:
-//                 // TNK Limit Switches
-
-//               case 9:
-//                 // TNK Limit Switches
-
-//               case 10:
-//                 // TNK Limit Switches
-              
-//               case 11:
-//                 // TNK Limit Switches
-
-//               case 14:
-//                 currentState.speaker = "NONE";
-//             }
-//           case "DONE":
-//             currentState.speaker = "DONE";
-          
-//           case "MOVN":
-//             if (i = 14) currentState.speaker = "MOVN";
-
-//           case "EMER":
-//             if (i = 14) currentState.speaker = "EMER";
-          
-//         }       
-//       }
-//   }
-// }
-
 // Bridge State Structure
 struct BridgeState {
   String bridgeStatus = "CLOS";
@@ -323,8 +160,6 @@ struct BridgeState {
   // TNK Limit Switches
 };
 
-BridgeState currentState;
-
 // Control Mode Enum
 enum ControlMode {
   AUTO_MODE,
@@ -333,6 +168,7 @@ enum ControlMode {
 };
 
 ControlMode currentMode = AUTO_MODE;
+BridgeState currentState;
 
 // Setup
 void setup() {
@@ -393,6 +229,157 @@ void setup() {
   pinMode(LIMIT_BRIDGE_OPEN_PIN, INPUT_PULLUP);
 
   delay(1000);
+}
+
+// String interpretation
+void readMssg(String mssg) {
+  // PRE: receive a string in the Appendix E format
+  // POST: read the message and run the appropriate response command
+  String extract = mssg.substring(0,4);
+  if (extract == "REDY") {
+    // TNK send OKOK to frontend
+
+    return;
+  } else if (extract == "OKOK") {
+    // Nothing
+    return;
+  } else if (extract == "AUTO") {
+    // put the bridge into automatic mode
+    if (currentMode == EMERGENCY_MODE) {
+    //"ERROR: Cannot switch from EMERGENCY mode - reset required"
+      return;
+    }
+    currentMode = AUTO_MODE;
+    resetBridgeControlState(); // Reset state machine when switching to auto
+    Serial.println("Switched to AUTO mode");
+  } else if (extract == "EMER") {
+    // put the bridge into emergency mode
+    currentMode = EMERGENCY_MODE;
+    emergencyStop();
+  } else if (extract == "PUSH") {
+    currentMode = MANUAL_MODE;
+    for (int i = 1; i < 15; i++) {
+      extract = mssg.substring(i*5, 4);
+      if (extract == "OPEN") {
+        switch (i){ 
+          case 1:
+            openBridge();
+
+          case 2:
+            openGates();
+        }
+      } else if (extract == "CLOS"){
+        switch (i){
+          case 1:
+            closeBridge();
+          case 2:
+            closeGates();
+        }
+      } else if (extract == "SHIP"){
+        switch (i){ 
+          case 3:
+            currentState.northUS = "SHIP";
+
+          case 4:
+            currentState.underUS = "SHIP";
+
+          case 5:
+            currentState.southUS = "SHIP";
+        }
+      } else if (extract == "TRAF"){
+        currentState.roadLoad = "TRAF";
+        
+      } else if (extract == "TRIG"){
+        switch (i){ 
+          case 7:
+            currentState.roadUS = "TRIG";
+
+          //case 8:
+            // TNK Limit Switches
+
+          //case 9:
+            // TNK Limit Switches
+
+          //case 10:
+            // TNK Limit Switches
+
+          //case 11:
+            // TNK Limit Switches
+        }
+        
+      } else if (extract == "GOGO"){
+        switch (i){ 
+          case 12:
+            currentState.roadLights = "GOGO";
+          case 13:
+            currentState.waterwayLights = "GOGO";
+          
+        }
+        
+      } else if (extract == "STOP"){
+        switch (i){ 
+          case 12:
+            currentState.roadLights = "STOP";
+
+          case 13:
+            currentState.waterwayLights = "STOP";
+          
+        }
+        
+      } else if (extract == "SLOW"){
+        switch (i){ 
+          case 12:
+            currentState.roadLights = "SLOW";
+
+          case 13:
+            currentState.waterwayLights = "SLOW";
+
+        }
+        
+      } else if (extract == "NONE"){
+        switch (i){ 
+          case 3:
+            currentState.northUS = "NONE";
+
+          case 4:
+            currentState.underUS = "NONE";
+
+          case 5:
+            currentState.southUS = "NONE";
+          
+          case 6:
+            currentState.roadLoad = "NONE";
+
+          case 7:
+            currentState.roadUS = "NONE";
+
+          case 8:
+            // TNK Limit Switches
+
+          case 9:
+            // TNK Limit Switches
+
+          case 10:
+            // TNK Limit Switches
+          
+          case 11:
+            // TNK Limit Switches
+
+          case 14:
+            currentState.speaker = "NONE";
+        }
+        
+      } else if (extract == "DONE"){
+        currentState.speaker = "DONE";
+        
+      } else if (extract == "MOVN"){
+        if (i = 14) currentState.speaker = "MOVN";
+        
+      } else if (extract == "EMER"){
+        if (i = 14) currentState.speaker = "EMER";
+      }
+    }
+  }
 }
 
 // Read and update limit switch states
@@ -830,7 +817,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       leds2 += 0b00011000;
 
     case 4:
-      //leds2 += 000b100000;  this line just said nah lmao
+      leds2 += 0b00100000;
 
     case 5:
       leds2 += 0b00101000;
