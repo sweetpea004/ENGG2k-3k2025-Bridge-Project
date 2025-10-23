@@ -120,6 +120,7 @@ bool gateMoving = false;
 bool bridgeMoving = false;
 
 
+
 //voids
 void readMssg(String mssg);
 void handleClient();
@@ -138,16 +139,22 @@ void stopGate();
 void startBridgeOpen();
 void startBridgeClose();
 void stopBridge();
+void resetBridgeControlState();
+void emergencyStop();
+void openGates();
+void closeGates();
+// forward declaration for load mass reader
+float readLoadMass();
 
 
-void testSpeaker();
 void testUltrasonics(int samples, int delayMs);
 void testLimitSwitches(int iterations, int delayMs);
 void testActuators(unsigned long timeoutMs);
 void runAllTests();
 void test();
 void testMotors();
-
+void testLEDs();
+void testSpeaker();
 // error codes:
 // 0: No Error
 // 1: Bridge limit switch not detecting bridge
@@ -594,7 +601,16 @@ void controlBridge() {
       break;
 
     case BRIDGE_OPENING:
-      if (limitBridgeOpen) {
+      // Safety: If the closed-limit is active while attempting to open, stop and raise an error
+      if (limitBridgeClosed) {
+        if (bridgeMoving) {
+          stopBridge();
+        }
+        Serial.println("ERROR: Bridge closed limit active while opening - emergency stop");
+        currentState.errorCode = 1; // bridge limit error
+        emergencyStop();
+        state = WAIT_FOR_SHIPS; // reset state until manual/auto cleared
+      } else if (limitBridgeOpen) {
         if (bridgeMoving) {
           stopBridge();
           Serial.println("Bridge open (limit switch)");
@@ -722,27 +738,27 @@ bool checkUnderBridge() {
 
   bool detected = false;
 
-  int distanceUnder1 = sonarUnder.ping_cm();der1 = sonarUnder.ping_cm();
-  if (distanceUnder1 > 0 && distanceUnder1 < 30) {anceUnder1 > 0 && distanceUnder1 < 30) {
+  int distanceUnder1 = sonarUnder.ping_cm();
+  if (distanceUnder1 > 0 && distanceUnder1 < 30) {
     currentState.underUS = "SHIP";
-    detected = true;ue;
-  } else { else {
-    currentState.underUS = "NONE";   currentState.underUS = "NONE";
-  }  }
+    detected = true;
+  } else {
+    currentState.underUS = "NONE";
+  }
 
-  if (sonarUnder2 != nullptr) {tr) {
-    int distanceUnder2 = sonarUnder2->ping_cm();;
+  if (sonarUnder2 != nullptr) {
+    int distanceUnder2 = sonarUnder2->ping_cm();
     if (distanceUnder2 > 0 && distanceUnder2 < 30) {
       currentState.underUS2 = "SHIP";
       detected = true;
     } else {
-      currentState.underUS2 = "NONE";te.underUS2 = "NONE";
+      currentState.underUS2 = "NONE";
     }
   } else {
-    currentState.underUS2 = "NONE";underUS2 = "NONE";
+    currentState.underUS2 = "NONE";
   }
 
-  return detected;  return detected;
+  return detected;
 }
 
 // Bridge-top thresholds (cm)
