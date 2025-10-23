@@ -176,9 +176,12 @@ struct BridgeState {
   String roadLoad = "NONE";
   String roadLights = "GOGO";
   String waterwayLights = "STOP";
+  String gateSwitchUp = "NONE";
+  String gateSwitchDown = "NONE";
+  String bridgeSwitchUp = "NONE";
+  String bridgeSwitchDown = "NONE";
   String speaker = "NONE";
   int errorCode = 0;
-  // TNK Limit Switches
 
   // Additional fields for optional sensors
   String underUS2 = "NONE";
@@ -329,17 +332,17 @@ void readMssg(String mssg) {
           case 7:
             currentState.roadUS = "TRIG";
 
-          //case 8:
-            // TNK Limit Switches
+          case 8:
+            currentState.bridgeSwitchUp = "TRIG";
 
-          //case 9:
-            // TNK Limit Switches
+          case 9:
+            currentState.bridgeSwitchDown = "TRIG";
 
-          //case 10:
-            // TNK Limit Switches
+          case 10:
+            currentState.gateSwitchUp = "TRIG";
 
-          //case 11:
-            // TNK Limit Switches
+          case 11:
+            currentState.gateSwitchDown = "TRIG";
         }
         
       } else if (extract == "GOGO"){
@@ -389,16 +392,16 @@ void readMssg(String mssg) {
             currentState.roadUS = "NONE";
 
           case 8:
-            // TNK Limit Switches
+            currentState.bridgeSwitchUp = "NONE";
 
           case 9:
-            // TNK Limit Switches
+            currentState.bridgeSwitchDown = "NONE";
 
           case 10:
-            // TNK Limit Switches
+            currentState.gateSwitchUp = "NONE";
           
           case 11:
-            // TNK Limit Switches
+            currentState.gateSwitchDown = "NONE";
 
           case 14:
             currentState.speaker = "NONE";
@@ -420,10 +423,15 @@ void readMssg(String mssg) {
 // Read and update limit switch states
 void updateLimitSwitches() {
   // active-low switches: LOW means triggered
+  // TNK Limit Switches
   limitGateClosed    = (digitalRead(LIMIT_GATE_CLOSED_PIN) == LOW);
+  if (limitGateClosed) currentState.gateSwitchDown = "TRIG" else currentState.gateSwitchDown = "NONE";
   limitGateOpen      = (digitalRead(LIMIT_GATE_OPEN_PIN) == LOW);
+  if (limitGateClosed) currentState.gateSwitchUp = "TRIG" else currentState.gateSwitchUp = "NONE";
   limitBridgeClosed  = (digitalRead(LIMIT_BRIDGE_CLOSED_PIN) == LOW);
+  if (limitGateClosed) currentState.bridgeSwitchDown = "TRIG" else currentState.bridgeSwitchDown = "NONE";
   limitBridgeOpen    = (digitalRead(LIMIT_BRIDGE_OPEN_PIN) == LOW);
+  if (limitGateClosed) currentState.bridgeSwitchUp = "TRIG" else currentState.gateSwitchUp = "NONE";
 }
 
 // Start/stop gate movement (non-blocking)
