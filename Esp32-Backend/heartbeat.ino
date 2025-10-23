@@ -10,28 +10,19 @@
 HX710 scale;
 
 // Ultrasonic sensors
-#define TRIGGER_PIN_NORTH 25
-#define ECHO_PIN_NORTH    34
-#define TRIGGER_PIN_SOUTH 26
-#define ECHO_PIN_SOUTH    35
-#define TRIGGER_PIN_ROAD  27
-#define ECHO_PIN_ROAD     36
-#define TRIGGER_PIN_UNDER 14
-#define ECHO_PIN_UNDER    39
+#define TRIGGER_PIN_NORTH 33 // trig 1
+#define ECHO_PIN_NORTH    36 // echo 1
+#define TRIGGER_PIN_SOUTH 25 // trig 2
+#define ECHO_PIN_SOUTH    39 // echo 2
+#define TRIGGER_PIN_ROAD  26 // trig 3
+#define ECHO_PIN_ROAD     34 // echo 3
+#define TRIGGER_PIN_UNDER 27 // trig 4
+#define ECHO_PIN_UNDER    35 // echo 4
 
-// Optional additional ultrasonic sensors (set to -1 to disable)
-#ifndef TRIGGER_PIN_UNDER2
-#define TRIGGER_PIN_UNDER2 -1
-#endif
-#ifndef ECHO_PIN_UNDER2
-#define ECHO_PIN_UNDER2 -1
-#endif
-#ifndef TRIGGER_PIN_BRIDGE_TOP
-#define TRIGGER_PIN_BRIDGE_TOP -1
-#endif
-#ifndef ECHO_PIN_BRIDGE_TOP
-#define ECHO_PIN_BRIDGE_TOP -1
-#endif
+// double check implimentation
+#define TRIGGER_PIN_UNDER2 14 // trig 5
+#define ECHO_PIN_UNDER2    32 // echo 5
+
 
 // Pointers for optional sensors (created in setup if pins valid)
 NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor
@@ -52,9 +43,13 @@ NewPing* sonarBridgeTop = nullptr; // top-looking sensor
 
 // Limit switches
 #define LIMIT_GATE_CLOSED_PIN 4   // LimitSwitch_1
-#define LIMIT_GATE_OPEN_PIN   13  // LimitSwitch_2
-#define LIMIT_BRIDGE_CLOSED_PIN 12 // LimitSwitch_3
+#define LIMIT_GATE_OPEN_PIN   0  // LimitSwitch_2
+#define LIMIT_BRIDGE_CLOSED_PIN 2 // LimitSwitch_3
 #define LIMIT_BRIDGE_OPEN_PIN   15 // LimitSwitch_4
+
+// Load cell pins & configuration
+#define LOADCELL_CLK_PIN 13
+#define LOADCELL_DOUT_PIN 12
 
 // Network Configuration
 const char* ssid = "Dragan’s iPhone (2)";
@@ -78,9 +73,6 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 byte leds1 = 0;
 byte leds2 = 0;
 
-// Load cell pins & configuration
-#define LOADCELL_CLK_PIN 33
-#define LOADCELL_DOUT_PIN 32
 //HX710 scale;
 long loadcellTare = 0;
 float calibration_factor = 717.5; // adjust to your calibration
