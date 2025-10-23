@@ -928,21 +928,29 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
 }
 
 void testLEDs(){
-  setLEDs(LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, LEDS_GREEN, 7);
+  setLEDs(LEDS_RED, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
   delay(1000);
+  setLEDs(LEDS_OFF, LEDS_RED, LEDS_OFF, LEDS_OFF, 0);
+  delay(1000);
+  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_RED, LEDS_OFF, 0);
+  delay(1000);
+  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_RED, 0);
+  delay(1000);
+  setLEDs(LEDS_GREEN, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
+  delay(1000);
+  setLEDs(LEDS_OFF, LEDS_GREEN, LEDS_OFF, LEDS_OFF, 0);
+  delay(1000);
+  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_GREEN, LEDS_OFF, 0);
+  delay(1000);
+  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
+  delay(1000);
+  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_GREEN, 0);
+  delay(1000);
+  // count up from 0 to 7
   for (int i = 0 ; i < 8 ; i ++) {
-    setLEDs(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_RED, i);
+    setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_OFF, i);
     delay(1000);
   }
-  setLEDs(LEDS_GREEN, LEDS_RED, LEDS_RED, LEDS_RED, 0);
-  delay(500);
-  setLEDs(LEDS_RED, LEDS_GREEN, LEDS_RED, LEDS_RED, 0);
-  delay(500);
-  setLEDs(LEDS_RED, LEDS_RED, LEDS_GREEN, LEDS_RED, 0);
-  delay(500);
-  setLEDs(LEDS_RED, LEDS_RED, LEDS_RED, LEDS_GREEN, 0);
-  delay(500);
-  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
 }
 
 void ErrorDisplay(){
