@@ -70,8 +70,8 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define LEDS_OFF 0
 #define LEDS_RED 1
 #define LEDS_GREEN 2
-byte leds1 = 0;
-byte leds2 = 0;
+unsigned byte leds1 = 0;
+unsigned byte leds2 = 0;
 
 //HX710 scale;
 long loadcellTare = 0;
@@ -862,69 +862,73 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       break;
     
     case LEDS_RED:
-      leds1 += 0b01000000;
+      //leds1 += 0b01000000;
+      bitSet(leds1, 7);
 
     case LEDS_GREEN:
-      leds1 += 0b10000000;
+      bitSet(leds1, 8);
   }
   switch (south) {
     case LEDS_OFF:
       break;
     
     case LEDS_RED:
-      leds1 += 0b00010000;
+      bitSet(leds1, 5);
 
     case LEDS_GREEN:
-      leds1 += 0b00100000;
+      bitSet(leds1, 6);
   }
   switch (west) {
     case LEDS_OFF:
       break;
     
     case LEDS_RED:
-      leds1 += 0b00000100;
+      bitSet(leds1, 3);
 
     case LEDS_GREEN:
-      leds1 += 0b00001000;
+      bitSet(leds1, 4);
   }
   switch (east) {
     case LEDS_OFF:
       break;
     
     case LEDS_RED:
-      leds1 += 0b00000001;
+      bitSet(leds1, 1);
 
     case LEDS_GREEN:
-      leds1 += 0b00000010;
+      bitSet(leds1, 2);
   }
   switch (errorCode) {
     case 0:
       break;
     
     case 1:
-      leds2 += 0b00001000;
+      bitSet(leds2, 4);
 
     case 2:
-      leds2 += 0b00010000;
+      bitSet(leds2, 5);
 
     case 3:
-      leds2 += 0b00011000;
+      bitSet(leds2, 4);
+      bitSet(leds2, 5);
 
     case 4:
-      leds2 += 0b00100000;
+      bitSet(leds2, 6);
 
     case 5:
-      leds2 += 0b00101000;
+      bitSet(leds2, 4);
+      bitSet(leds2, 6);
 
     case 6:
-      leds2 += 0b00110000;
+      bitSet(leds2, 5);
+      bitSet(leds2, 6);
 
     case 7:
-      leds2 += 0b00111000;
+      bitSet(leds2, 4);
+      bitSet(leds2, 5);
+      bitSet(leds2, 6);
   }
   updateShiftRegister();
-  leds1 = 0;
-  leds2 = 0;
 }
 
 void testLEDs(){
@@ -941,8 +945,6 @@ void testLEDs(){
   setLEDs(LEDS_OFF, LEDS_GREEN, LEDS_OFF, LEDS_OFF, 0);
   delay(1000);
   setLEDs(LEDS_OFF, LEDS_OFF, LEDS_GREEN, LEDS_OFF, 0);
-  delay(1000);
-  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
   delay(1000);
   setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_GREEN, 0);
   delay(1000);
