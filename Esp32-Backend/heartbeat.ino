@@ -70,8 +70,8 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define LEDS_OFF 0
 #define LEDS_RED 1
 #define LEDS_GREEN 2
-unsigned byte leds1 = 0;
-unsigned byte leds2 = 0;
+byte leds1 = 0;
+byte leds2 = 0;
 
 //HX710 scale;
 long loadcellTare = 0;
