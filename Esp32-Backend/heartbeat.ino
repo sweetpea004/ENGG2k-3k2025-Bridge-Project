@@ -410,6 +410,7 @@ void readMssg(String mssg) {
       }
     }
   }
+  // TNK Update lights & sensors, etc currentstate based stuff.
 }
 
 // Read and update limit switch states
