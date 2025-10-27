@@ -269,7 +269,7 @@ void readMssg(String mssg) {
   String extract = mssg.substring(0,4);
   if (extract == "REDY") {
     // TNK send OKOK to frontend
-
+    client.println("OKOK");
     return;
   } else if (extract == "OKOK") {
     // Nothing
