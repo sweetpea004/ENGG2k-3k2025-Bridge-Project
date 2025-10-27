@@ -984,14 +984,17 @@ void testLEDs(){
   currentState.waterwayLights = "GOGO";
   currentState.roadLights = "STOP";
   updateLEDs();
-  delay(1000);
+  delay(3000);
   currentState.waterwayLights = "STOP";
   currentState.roadLights = "GOGO";
   updateLEDs();
-  delay(1000);
+  delay(3000);
   currentState.waterwayLights = "SLOW";
   currentState.roadLights = "SLOW";
-  updateLEDs();
+  uint8_t start = millis();
+  while (millis() < start + 12000) {
+    updateLEDs();
+  }
 }
 
 void ErrorDisplay(){
@@ -1006,7 +1009,7 @@ void updateLEDs() {
     roadLights = LEDS_GREEN;
   } else if (currentState.roadLights == "STOP") {
     roadLights = LEDS_RED;
-  } else if (currentState.roadlights = "SLOW") {
+  } else if (currentState.roadLights = "SLOW") {
     if ((millis()/1000) % 2 == 0) {
      roadLights = LEDS_RED; 
     } else roadLights = LEDS_OFF;
