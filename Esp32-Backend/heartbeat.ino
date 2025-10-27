@@ -295,55 +295,72 @@ void readMssg(String mssg) {
         switch (i){ 
           case 1:
             openBridge();
+            break;
 
           case 2:
             openGates();
+            break;
+
         }
       } else if (extract == "CLOS"){
         switch (i){
           case 1:
             closeBridge();
+            break;
+
           case 2:
             closeGates();
+            break;
         }
       } else if (extract == "SHIP"){
         switch (i){ 
           case 3:
             currentState.northUS = "SHIP";
+            break;
 
           case 4:
             currentState.underUS = "SHIP";
+            break;
 
           case 5:
             currentState.southUS = "SHIP";
+            break;
         }
       } else if (extract == "TRAF"){
         currentState.roadLoad = "TRAF";
+        break;
         
       } else if (extract == "TRIG"){
         switch (i){ 
           case 7:
             currentState.roadUS = "TRIG";
+            break;
 
           case 8:
             currentState.bridgeSwitchUp = "TRIG";
+            break;
 
           case 9:
             currentState.bridgeSwitchDown = "TRIG";
+            break;
 
           case 10:
             currentState.gateSwitchUp = "TRIG";
+            break;
 
           case 11:
             currentState.gateSwitchDown = "TRIG";
+            break;
         }
         
       } else if (extract == "GOGO"){
         switch (i){ 
           case 12:
             currentState.roadLights = "GOGO";
+            break;
           case 13:
             currentState.waterwayLights = "GOGO";
+            break;
           
         }
         
@@ -351,9 +368,11 @@ void readMssg(String mssg) {
         switch (i){ 
           case 12:
             currentState.roadLights = "STOP";
+            break;
 
           case 13:
             currentState.waterwayLights = "STOP";
+            break;
           
         }
         
@@ -361,9 +380,11 @@ void readMssg(String mssg) {
         switch (i){ 
           case 12:
             currentState.roadLights = "SLOW";
+            break;
 
           case 13:
             currentState.waterwayLights = "SLOW";
+            break;
 
         }
         
@@ -371,33 +392,43 @@ void readMssg(String mssg) {
         switch (i){ 
           case 3:
             currentState.northUS = "NONE";
+            break;
 
           case 4:
             currentState.underUS = "NONE";
+            break;
 
           case 5:
             currentState.southUS = "NONE";
+            break;
           
           case 6:
             currentState.roadLoad = "NONE";
+            break;
 
           case 7:
             currentState.roadUS = "NONE";
+            break;
 
           case 8:
             currentState.bridgeSwitchUp = "NONE";
+            break;
 
           case 9:
             currentState.bridgeSwitchDown = "NONE";
+            break;
 
           case 10:
             currentState.gateSwitchUp = "NONE";
+            break;
           
           case 11:
             currentState.gateSwitchDown = "NONE";
+            break;
 
           case 14:
             currentState.speaker = "NONE";
+            break;
         }
         
       } else if (extract == "DONE"){
@@ -866,9 +897,11 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
     case LEDS_RED:
       //leds1 += 0b01000000;
       bitSet(leds1, 6);
+      break;
 
     case LEDS_GREEN:
       bitSet(leds1, 7);
+      break;
   }
   switch (south) {
     case LEDS_OFF:
@@ -876,9 +909,11 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
     
     case LEDS_RED:
       bitSet(leds1, 4);
+      break;
 
     case LEDS_GREEN:
       bitSet(leds1, 5);
+      break;
   }
   switch (west) {
     case LEDS_OFF:
@@ -886,9 +921,11 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
     
     case LEDS_RED:
       bitSet(leds1, 2);
+      break;
 
     case LEDS_GREEN:
       bitSet(leds1, 3);
+      break;
   }
   switch (east) {
     case LEDS_OFF:
@@ -896,9 +933,11 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
     
     case LEDS_RED:
       bitSet(leds1, 0);
+      break;
 
     case LEDS_GREEN:
       bitSet(leds1, 1);
+      break;
   }
   switch (errorCode) {
     case 0:
@@ -906,29 +945,36 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
     
     case 1:
       bitSet(leds2, 3);
+      break;
 
     case 2:
       bitSet(leds2, 4);
+      break;
 
     case 3:
       bitSet(leds2, 3);
       bitSet(leds2, 4);
+      break;
 
     case 4:
       bitSet(leds2, 5);
+      break;
 
     case 5:
       bitSet(leds2, 3);
       bitSet(leds2, 5);
+      break;
 
     case 6:
       bitSet(leds2, 4);
       bitSet(leds2, 5);
+      break;
 
     case 7:
       bitSet(leds2, 3);
       bitSet(leds2, 4);
       bitSet(leds2, 5);
+      break;
   }
   updateShiftRegister();
 }
