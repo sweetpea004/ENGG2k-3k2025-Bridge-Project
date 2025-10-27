@@ -500,6 +500,7 @@ void loop() {
   updateLimitSwitches();
   handleClient();
   controlBridge();
+  updateLEDs();
   sendHeartbeat();
   delay(50);
 }
