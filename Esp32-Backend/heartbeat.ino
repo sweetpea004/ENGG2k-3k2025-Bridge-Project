@@ -991,10 +991,6 @@ void testLEDs(){
   delay(3000);
   currentState.waterwayLights = "SLOW";
   currentState.roadLights = "SLOW";
-  uint8_t start = millis();
-  while (millis() < start + 12000) {
-    updateLEDs();
-  }
 }
 
 void ErrorDisplay(){
