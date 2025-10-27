@@ -135,6 +135,7 @@ void resetBridgeControlState();
 void emergencyStop();
 void openGates();
 void closeGates();
+void updateLEDs();
 // forward declaration for load mass reader
 float readLoadMass();
 
@@ -824,7 +825,7 @@ void emergencyStop() {
   currentState.roadLights = "EMER";
   currentState.waterwayLights = "EMER";
   currentState.speaker = "EMER";
-  currentState.errorCode = 8; // Emergency error code
+  currentState.errorCode = 7; // Emergency error code
   
   // Reset any ongoing operations
   resetBridgeControlState();
@@ -864,70 +865,70 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
     
     case LEDS_RED:
       //leds1 += 0b01000000;
-      bitSet(leds1, 7);
+      bitSet(leds1, 6);
 
     case LEDS_GREEN:
-      bitSet(leds1, 8);
+      bitSet(leds1, 7);
   }
   switch (south) {
     case LEDS_OFF:
       break;
     
     case LEDS_RED:
-      bitSet(leds1, 5);
+      bitSet(leds1, 4);
 
     case LEDS_GREEN:
-      bitSet(leds1, 6);
+      bitSet(leds1, 5);
   }
   switch (west) {
     case LEDS_OFF:
       break;
     
     case LEDS_RED:
-      bitSet(leds1, 3);
+      bitSet(leds1, 2);
 
     case LEDS_GREEN:
-      bitSet(leds1, 4);
+      bitSet(leds1, 3);
   }
   switch (east) {
     case LEDS_OFF:
       break;
     
     case LEDS_RED:
-      bitSet(leds1, 1);
+      bitSet(leds1, 0);
 
     case LEDS_GREEN:
-      bitSet(leds1, 2);
+      bitSet(leds1, 1);
   }
   switch (errorCode) {
     case 0:
       break;
     
     case 1:
-      bitSet(leds2, 4);
+      bitSet(leds2, 3);
 
     case 2:
-      bitSet(leds2, 5);
+      bitSet(leds2, 4);
 
     case 3:
+      bitSet(leds2, 3);
       bitSet(leds2, 4);
-      bitSet(leds2, 5);
 
     case 4:
-      bitSet(leds2, 6);
+      bitSet(leds2, 5);
 
     case 5:
-      bitSet(leds2, 4);
-      bitSet(leds2, 6);
+      bitSet(leds2, 3);
+      bitSet(leds2, 5);
 
     case 6:
-      bitSet(leds2, 5);
-      bitSet(leds2, 6);
-
-    case 7:
       bitSet(leds2, 4);
       bitSet(leds2, 5);
-      bitSet(leds2, 6);
+
+    case 7:
+      bitSet(leds2, 3);
+      bitSet(leds2, 4);
+      bitSet(leds2, 5);
   }
   updateShiftRegister();
 }
@@ -960,27 +961,28 @@ void ErrorDisplay(){
 
 }
 
-void waterwayLights(String command){
-  if(command == "STOP"){
-    // turn on red light
-  }
-  else if(command == "GOGO"){
-    // turn on green light
-  }
-  else if(command == "WARN"){
-    // turn on yellow light
-  }
-}
+void updateLEDs() {
+  char roadLights;
+  char waterwayLights;
 
-void bridgelights(String command){
-  if(command == "STOP"){
-    // turn on red light
+  if (currentState.roadLights == "GOGO") {
+    roadLights = LEDS_GREEN;
+  } else if (currentState.roadLights == "STOP") {
+    roadLights = LEDS_RED;
+  } else if (currentState.roadlights = "SLOW") {
+    if (int (millis()/1000) % 2 == 0) {
+     roadLights = LEDS_RED; 
+    } else roadLights = LEDS_OFF;
+    
   }
-  else if(command == "GOGO"){
-    // turn on green light
-  }
-  else if(command == "WARN"){
-    // turn on yellow light
+  if (currentState.waterwayLights == "GOGO") {
+    waterwayLights = LEDS_GREEN;
+  } else if (currentState.waterwayLights == "STOP") {
+    waterwayLights = LEDS_RED;
+  } else if (currentState.waterwayLights == "SLOW") {
+    if (int (millis()/1000) % 2 == 0) {
+     waterwayLights = LEDS_RED; 
+    } else waterwayLights = LEDS_OFF;
   }
 }
 
