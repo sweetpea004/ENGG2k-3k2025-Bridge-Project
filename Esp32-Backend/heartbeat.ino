@@ -981,27 +981,17 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
 }
 
 void testLEDs(){
-  setLEDs(LEDS_RED, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
+  currentState.waterwayLights = "GOGO";
+  currentState.roadLights = "STOP";
+  updateLEDs();
   delay(1000);
-  setLEDs(LEDS_OFF, LEDS_RED, LEDS_OFF, LEDS_OFF, 0);
+  currentState.waterwayLights = "STOP";
+  currentState.roadLights = "GOGO";
+  updateLEDs();
   delay(1000);
-  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_RED, LEDS_OFF, 0);
-  delay(1000);
-  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_RED, 0);
-  delay(1000);
-  setLEDs(LEDS_GREEN, LEDS_OFF, LEDS_OFF, LEDS_OFF, 0);
-  delay(1000);
-  setLEDs(LEDS_OFF, LEDS_GREEN, LEDS_OFF, LEDS_OFF, 0);
-  delay(1000);
-  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_GREEN, LEDS_OFF, 0);
-  delay(1000);
-  setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_GREEN, 0);
-  delay(1000);
-  // count up from 0 to 7
-  for (int i = 0 ; i < 8 ; i ++) {
-    setLEDs(LEDS_OFF, LEDS_OFF, LEDS_OFF, LEDS_OFF, i);
-    delay(1000);
-  }
+  currentState.waterwayLights = "SLOW";
+  currentState.roadLights = "SLOW";
+  updateLEDs();
 }
 
 void ErrorDisplay(){
@@ -1017,7 +1007,7 @@ void updateLEDs() {
   } else if (currentState.roadLights == "STOP") {
     roadLights = LEDS_RED;
   } else if (currentState.roadlights = "SLOW") {
-    if (int (millis()/1000) % 2 == 0) {
+    if ((millis()/1000) % 2 == 0) {
      roadLights = LEDS_RED; 
     } else roadLights = LEDS_OFF;
     
@@ -1027,10 +1017,11 @@ void updateLEDs() {
   } else if (currentState.waterwayLights == "STOP") {
     waterwayLights = LEDS_RED;
   } else if (currentState.waterwayLights == "SLOW") {
-    if (int (millis()/1000) % 2 == 0) {
+    if ((millis()/1000) % 2 == 0) {
      waterwayLights = LEDS_RED; 
     } else waterwayLights = LEDS_OFF;
   }
+  setLEDs(waterwayLights,waterwayLights,roadLights,roadLights,currentState.errorCode);
 }
 
 // Read mass from loadcell in grams (uses calibration_factor and tare)
