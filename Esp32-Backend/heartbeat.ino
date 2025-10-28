@@ -596,9 +596,12 @@ void sendHeartbeat() {
 String buildStatusMessage() {
   return "STAT " + currentState.bridgeStatus + " " + currentState.gateStatus + " " + 
          currentState.northUS + " " + currentState.underUS + " " + currentState.southUS + " " +
-         currentState.roadLoad + " " + currentState.roadLights + " " + currentState.waterwayLights + " " + 
-         String(currentState.errorCode) + " " + currentState.underUS2 + " " + currentState.bridgeTopUS;
+         currentState.roadLoad + " " + currentState.roadUS + " " + currentState.bridgeSwitchUp + " " +
+         currentState.bridgeSwitchDown + " " + currentState.gateSwitchUp + " " + currentState.gateSwitchDown + " " +
+         currentState.roadLights + " " + currentState.waterwayLights + " " + currentState.speaker + " " +
+         String(currentState.errorCode);
 }
+
 
 // Control the bridge states (open/close)
 void controlBridge() {
