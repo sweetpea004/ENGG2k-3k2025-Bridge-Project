@@ -111,6 +111,7 @@ bool limitBridgeOpen = false;
 bool gateMoving = false;
 bool bridgeMoving = false;
 
+bool initializationComplete = false;
 
 
 //voids
@@ -269,6 +270,7 @@ void readMssg(String mssg) {
   String extract = mssg.substring(0,4);
   if (extract == "REDY") {
     // TNK send OKOK to frontend
+    initializationComplete = true;
     client.println("OKOK");
     return;
   } else if (extract == "OKOK") {
@@ -501,7 +503,9 @@ void loop() {
   handleClient();
   controlBridge();
   updateLEDs();
-  sendHeartbeat();
+  if(initializationComplete == true){
+    sendHeartbeat();
+  }
   delay(50);
 }
 
@@ -522,7 +526,7 @@ void handleClient() {
     // v update heartbeat timer
     lastHeartbeat = 0;
     Serial.println(command);
-    //readMssg(command);  deosnt work
+    readMssg(command);
   }
 }
 
