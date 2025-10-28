@@ -60,6 +60,11 @@ socket.on('connect', function() {
 });
 
 socket.on('update_stat_data', function(status, conn) {
+    // print to console
+    let dateObject = new Date();
+    let timestampFromObject = Math.floor(dateObject.getTime() / 1000);;
+    console.log("message: " + status.bridge_status + ", timestamp: " + timestampFromObject); // Same as Date.now()
+    
     // bridge status text
     switch (status.bridge_status) {
         case "OPEN":

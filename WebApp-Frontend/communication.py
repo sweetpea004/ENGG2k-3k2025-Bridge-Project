@@ -119,49 +119,44 @@ def communication():
     global status
     global conn
     global to_be_sent
+    global sock
 
     print("Starting connection")
-    while True:
-        if conn.value == False:
-            # Connection with ESP32
-            #sock.connect((ESP_IP, ESP_PORT))
 
-            # Connection with Tester
-            sock.connect((TEST_IP, TEST_PORT))
-            time.sleep(1) # small delay
+    # Connection with ESP32
+    sock.connect((ESP_IP, ESP_PORT))
+    conn.toTrue()
+    time.sleep(1) # small delay
 
-            send("REDY")
+    # Connection with Tester
+    #sock.connect((TEST_IP, TEST_PORT))
 
-            m = receive(status)
-            if (m == "OKOK"):
-                status.resetTime()
+    send("REDY")
 
-            conn.toTrue()
-            time.sleep(1) # small delay
-    
+    m = receive(status)
+    if (m == "OKOK"):
+        status.resetTime()
+
+    time.sleep(1) # small delay
+    print(conn.value)
+
+    while conn.value:
+        received_string = receive(status)
+        if (received_string != ""):
+            received_string = received_string.split(" ")
+            match received_string[0]:
+                case "STAT":
+                    status = Status(received_string) # auto resets time
+
+                    if (to_be_sent != ""):
+                        send(to_be_sent)
+                        to_be_sent = "" # reset to empty
+                    else: 
+                        send("OKOK")
         else:
-            time_passed = time.time_ns() - status.recieved_status 
-            if(time_passed > STATUS_FREQUENCY):
-                print ("not connected")
-                sock.close()
-                conn.toFalse()
-                # attempt Reconnect
-            else:
-                print ("connected")
-                received_string = receive(status)
-                if (received_string != ""):
-                    received_string = received_string.split(" ")
-                    match received_string[0]:
-                        case "STAT":
-                            status = Status(received_string) # auto resets time
-
-                            if (to_be_sent != ""):
-                                send(to_be_sent)
-                                to_be_sent = "" # reset to empty
-                            else: 
-                                send("OKOK")
-                        case "OKOK": # to be removed
-                            status.resetTime()
+            # recieved empty = assume connection
+            sock.close()
+            conn.toFalse()
 
 def test_status_change():
     global status

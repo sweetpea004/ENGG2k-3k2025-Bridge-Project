@@ -297,10 +297,12 @@ void readMssg(String mssg) {
         switch (i){ 
           case 1:
             openBridge();
+            Serial.println("MANUAL MODE: Opening Bridge");
             break;
 
           case 2:
             openGates();
+            Serial.println("MANUAL MODE: Opening Gates");
             break;
 
         }
@@ -308,50 +310,61 @@ void readMssg(String mssg) {
         switch (i){
           case 1:
             closeBridge();
+            Serial.println("MANUAL MODE: Closing Bridge");
             break;
 
           case 2:
             closeGates();
+            Serial.println("MANUAL MODE: Closing Gates");
             break;
         }
       } else if (extract == "SHIP"){
         switch (i){ 
           case 3:
             currentState.northUS = "SHIP";
+            Serial.println("MANUAL MODE: Sensor Override North US");
             break;
 
           case 4:
             currentState.underUS = "SHIP";
+            Serial.println("MANUAL MODE: Sensor Override Under US");
             break;
 
           case 5:
             currentState.southUS = "SHIP";
+            Serial.println("MANUAL MODE: Sensor Override South US");
             break;
         }
       } else if (extract == "TRAF"){
         currentState.roadLoad = "TRAF";
+        Serial.println("MANUAL MODE: Sensor Override Load Cell");
         break;
         
       } else if (extract == "TRIG"){
         switch (i){ 
           case 7:
             currentState.roadUS = "TRIG";
+            Serial.println("MANUAL MODE: Sensor Override Road US");
             break;
 
           case 8:
             currentState.bridgeSwitchUp = "TRIG";
+            Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Up");
             break;
 
           case 9:
             currentState.bridgeSwitchDown = "TRIG";
+            Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Down");
             break;
 
           case 10:
             currentState.gateSwitchUp = "TRIG";
+            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Up");
             break;
 
           case 11:
             currentState.gateSwitchDown = "TRIG";
+            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Down");
             break;
         }
         
@@ -359,9 +372,11 @@ void readMssg(String mssg) {
         switch (i){ 
           case 12:
             currentState.roadLights = "GOGO";
+            Serial.println("MANUAL MODE: Road Lights Green");
             break;
           case 13:
             currentState.waterwayLights = "GOGO";
+            Serial.println("MANUAL MODE: Water Lights Green");
             break;
           
         }
@@ -369,11 +384,12 @@ void readMssg(String mssg) {
       } else if (extract == "STOP"){
         switch (i){ 
           case 12:
-            currentState.roadLights = "STOP";
+            Serial.println("MANUAL MODE: Road Lights Red");
             break;
 
           case 13:
             currentState.waterwayLights = "STOP";
+            Serial.println("MANUAL MODE: Water Lights Red");
             break;
           
         }
@@ -382,10 +398,12 @@ void readMssg(String mssg) {
         switch (i){ 
           case 12:
             currentState.roadLights = "SLOW";
+            Serial.println("MANUAL MODE: Road Lights Slow");
             break;
 
           case 13:
             currentState.waterwayLights = "SLOW";
+            Serial.println("MANUAL MODE: Water Lights Slow");
             break;
 
         }
@@ -394,53 +412,66 @@ void readMssg(String mssg) {
         switch (i){ 
           case 3:
             currentState.northUS = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override North US OFF");
             break;
 
           case 4:
             currentState.underUS = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override Under US OFF");
             break;
 
           case 5:
             currentState.southUS = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override South US OFF");
             break;
           
           case 6:
             currentState.roadLoad = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override Load Cell OFF");
             break;
 
           case 7:
             currentState.roadUS = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override Road US OFF");
             break;
 
           case 8:
             currentState.bridgeSwitchUp = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Up OFF");
             break;
 
           case 9:
             currentState.bridgeSwitchDown = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Down OFF");
             break;
 
           case 10:
             currentState.gateSwitchUp = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Up OFF");
             break;
           
           case 11:
             currentState.gateSwitchDown = "NONE";
+            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Down OFF");
             break;
 
           case 14:
             currentState.speaker = "NONE";
+            Serial.println("MANUAL MODE: Speaker OFF");
             break;
         }
         
       } else if (extract == "DONE"){
         currentState.speaker = "DONE";
+        Serial.println("MANUAL MODE: Speaker playing DONE");
         
       } else if (extract == "MOVN"){
         if (i = 14) currentState.speaker = "MOVN";
+        Serial.println("MANUAL MODE: Speaker playing MOVN");
         
       } else if (extract == "EMER"){
         if (i = 14) currentState.speaker = "EMER";
+        Serial.println("MANUAL MODE: Speaker playing EMER");
       }
     }
   }
@@ -565,8 +596,10 @@ void sendHeartbeat() {
 String buildStatusMessage() {
   return "STAT " + currentState.bridgeStatus + " " + currentState.gateStatus + " " + 
          currentState.northUS + " " + currentState.underUS + " " + currentState.southUS + " " +
-         currentState.roadLoad + " " + currentState.roadLights + " " + currentState.waterwayLights + " " + 
-         String(currentState.errorCode) + " " + currentState.underUS2 + " " + currentState.bridgeTopUS;
+         currentState.roadLoad + " " + currentState.roadUS + " " + currentState.bridgeSwitchUp + " " +
+         currentState.bridgeSwitchDown + " " + currentState.gateSwitchUp + " " + currentState.gateSwitchDown + " " +
+         currentState.roadLights + " " + currentState.waterwayLights + " " + currentState.speaker + " " +
+         String(currentState.errorCode);
 }
 
 // Control the bridge states (open/close)
