@@ -384,7 +384,7 @@ void readMssg(String mssg) {
       } else if (extract == "STOP"){
         switch (i){ 
           case 12:
-            Serial.println("MANUAL MODE: Road Lights Red");
+            currentState.roadLights = "STOP";
             break;
 
           case 13:
@@ -601,6 +601,7 @@ String buildStatusMessage() {
          currentState.roadLights + " " + currentState.waterwayLights + " " + currentState.speaker + " " +
          String(currentState.errorCode);
 }
+
 
 // Control the bridge states (open/close)
 void controlBridge() {
