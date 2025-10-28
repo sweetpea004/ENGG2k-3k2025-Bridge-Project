@@ -113,14 +113,15 @@ def redirect_dashboard():
                 flash('Changed To Automatic Mode', 'info')
 
         print(new_message)
-        commProg.newMessage(new_message) # sets to_be_sent global to new message to respond with
+        commProg.save_to_be_sent(new_message) # sets to_be_sent global to new message to respond with
 
     # Load page
     return render_template("dashboard.html")
 
 @socketio.on("retrieve_stat_data")
 def handle_update():
-    emit('update_stat_data', (commProg.status.toSerializable(), commProg.conn.value), broadcast=True)
+    status = commProg.read_status()
+    emit('update_stat_data', (status.toSerializable(), commProg.conn.value), broadcast=True)
 
 if __name__ == "__main__":
     comm_thread = threading.Thread(target=commProg.communication, daemon=True)
