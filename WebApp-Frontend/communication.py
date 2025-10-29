@@ -69,8 +69,8 @@ VERBOSE = True # Controls whether messages are printed to console
 TEST_IP = "10.126.242.252"
 TEST_PORT = 5005
 
-#ESP_IP = "172.20.10.2"
-ESP_IP = "10.236.167.40"
+ESP_IP = "172.20.10.2" #Dragans hotspot
+#ESP_IP = "10.236.167.40" #Persephone's hotspot
 ESP_PORT = 5003
 
 # Globals
