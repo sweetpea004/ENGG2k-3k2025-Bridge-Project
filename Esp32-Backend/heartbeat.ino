@@ -244,11 +244,11 @@ void setup() {
   gateServo.attach(SERVO_GATE_PIN, 500, 2500); // Attach servo with range
   gateServo.write(90);  // make sure motor is stopped
 
-  // Configure limit switch pins (use INPUT_PULLUP, switches expected to pull LOW when triggered)
-  pinMode(LIMIT_GATE_CLOSED_PIN, INPUT_PULLUP);
-  pinMode(LIMIT_GATE_OPEN_PIN, INPUT_PULLUP);
-  pinMode(LIMIT_BRIDGE_CLOSED_PIN, INPUT_PULLUP);
-  pinMode(LIMIT_BRIDGE_OPEN_PIN, INPUT_PULLUP);
+  // Configure limit switch pins
+  pinMode(LIMIT_GATE_CLOSED_PIN, INPUT);
+  pinMode(LIMIT_GATE_OPEN_PIN, INPUT);
+  pinMode(LIMIT_BRIDGE_CLOSED_PIN, INPUT);
+  pinMode(LIMIT_BRIDGE_OPEN_PIN, INPUT);
 
   // Initialize optional ultrasonic sensors if pins are valid
   if (TRIGGER_PIN_UNDER2 != -1 && ECHO_PIN_UNDER2 != -1) {
@@ -291,6 +291,12 @@ void readMssg(String mssg) {
     emergencyStop();
   } else if (extract == "PUSH") {
     currentMode = MANUAL_MODE;
+    // Immediately stop any automatic movements when switching to MANUAL
+    stopBridge();
+    stopGate();
+    // bridgeMoving = false; //redundant?
+    // gateMoving = false;
+    Serial.println("Switched to MANUAL mode - motors stopped");
     for (int i = 1; i < 15; i++) {
       extract = mssg.substring(i*5, 4);
       if (extract == "OPEN") {
@@ -480,16 +486,23 @@ void readMssg(String mssg) {
 
 // Read and update limit switch states
 void updateLimitSwitches() {
-  // active-low switches: LOW means triggered
-  // TNK Limit Switches
-  limitGateClosed    = (digitalRead(LIMIT_GATE_CLOSED_PIN) == LOW);
-  if (limitGateClosed) currentState.gateSwitchDown = "TRIG"; else currentState.gateSwitchDown = "NONE";
-  limitGateOpen      = (digitalRead(LIMIT_GATE_OPEN_PIN) == LOW);
-  if (limitGateClosed) currentState.gateSwitchUp = "TRIG"; else currentState.gateSwitchUp = "NONE";
-  limitBridgeClosed  = (digitalRead(LIMIT_BRIDGE_CLOSED_PIN) == LOW);
-  if (limitGateClosed) currentState.bridgeSwitchDown = "TRIG"; else currentState.bridgeSwitchDown = "NONE";
-  limitBridgeOpen    = (digitalRead(LIMIT_BRIDGE_OPEN_PIN) == LOW);
-  if (limitGateClosed) currentState.bridgeSwitchUp = "TRIG"; else currentState.gateSwitchUp = "NONE";
+  const int THRESH_MV = 3000; 
+
+  int mv1 = analogReadMilliVolts(LIMIT_GATE_CLOSED_PIN);
+  limitGateClosed = (mv1 > THRESH_MV);
+  currentState.gateSwitchDown = limitGateClosed ? "TRIG" : "NONE";
+
+  int mv2 = analogReadMilliVolts(LIMIT_GATE_OPEN_PIN);
+  limitGateOpen = (mv2 > THRESH_MV);
+  currentState.gateSwitchUp = limitGateOpen ? "TRIG" : "NONE";
+
+  int mv3 = analogReadMilliVolts(LIMIT_BRIDGE_CLOSED_PIN);
+  limitBridgeClosed = (mv3 > THRESH_MV);
+  currentState.bridgeSwitchDown = limitBridgeClosed ? "TRIG" : "NONE";
+
+  int mv4 = analogReadMilliVolts(LIMIT_BRIDGE_OPEN_PIN);
+  limitBridgeOpen = (mv4 > THRESH_MV);
+  currentState.bridgeSwitchUp = limitBridgeOpen ? "TRIG" : "NONE";
 }
 
 // Start/stop gate movement (non-blocking)
@@ -701,15 +714,35 @@ void controlBridge() {
       break;
 
     case WAIT_FOR_UNDER_CLEAR:
-      if (!checkUnderBridge()) {
-        Serial.println("No ship under bridge - closing bridge...");
-        currentState.waterwayLights = "STOP";
-        startBridgeClose();
-        stateStartTime = millis();
-        state = BRIDGE_CLOSING;
-      } else {
-        Serial.println("Ship still under bridge - waiting...");
-        stateStartTime = millis(); // reset timer
+      // Wait until under-bridge sensors AND approach sensors (north/south) are clear,
+      // and the bridge is in the OPEN position (confirmed by limit switch or bridge-top sensor).
+      {
+        bool underClear = !checkUnderBridge();        // true when no ship under (both under sensors clear)
+        bool approachesClear = !checkForShips();      // true when north/south approach sensors clear
+
+        if (underClear && approachesClear) {
+          // no ship detected under bridge and no approaching ships
+          // confirm bridge is fully open before attempting to close
+          bool bridgeConfirmedOpen = limitBridgeOpen;
+          if (!bridgeConfirmedOpen) {
+            bridgeConfirmedOpen = checkBridgeTop(); // this updates bridgeTopUS and returns true when OPEN
+          }
+
+          if (bridgeConfirmedOpen) {
+            Serial.println("Under & approach sensors clear and bridge confirmed open - closing bridge...");
+            currentState.waterwayLights = "STOP";
+            startBridgeClose();
+            stateStartTime = millis();
+            state = BRIDGE_CLOSING;
+          } else {
+            // Bridge not confirmed open yet keep waiting
+            Serial.println("Bridge not yet confirmed open; waiting before close...");
+            stateStartTime = millis();
+          }
+        } else {
+          Serial.println("Waiting for under-bridge and approach sensors to clear...");
+          stateStartTime = millis(); // reset timer
+        }
       }
       break;
 
@@ -743,152 +776,132 @@ void controlBridge() {
   }
 }
 
-void openBridge() { // add limit switches
-  // Play open alarm before movement
-  playOpenAlarm();
-
-  currentState.bridgeStatus = "OPEN";
-  bridgeServo.write(120);
-  delay(2000);
-  bridgeServo.write(90);
-  currentState.bridgeStatus = "OPEN";  // Update heartbeat status
-  Serial.println("Bridge opened");
-}
-
-void closeBridge() {
-  // Play close alarm before movement
-  playCloseAlarm();
-
-  currentState.bridgeStatus = "CLOS";
-  bridgeServo.write(60);
-  delay(2000);
-  bridgeServo.write(90);
-  currentState.bridgeStatus = "CLOS";  // Update heartbeat status
-  Serial.println("Bridge closed");
-}
-
-// Check if ships are detected (north/south)
-bool checkForShips() {
-  // Do not run automatic detection while in MANUAL mode
-  if (currentMode == MANUAL_MODE) return false;
-
-  int distanceNorth = sonarNorth.ping_cm();
-  int distanceSouth = sonarSouth.ping_cm();
-  bool shipDetected = false;
-  if (distanceNorth > 0 && distanceNorth < 30) {
-    currentState.northUS = "SHIP";
-    shipDetected = true;
-  } else {
-    currentState.northUS = "NONE";
+void openBridge() { // limit-driven manual open
+  const unsigned long timeoutMs = 10000;
+  Serial.println("Manual: Opening bridge (limit-driven)...");
+  if (currentMode == EMERGENCY_MODE) {
+    Serial.println("Manual open blocked: EMERGENCY mode");
+    return;
   }
-  if (distanceSouth > 0 && distanceSouth < 30) {
-    currentState.southUS = "SHIP";
-    shipDetected = true;
-  } else {
-    currentState.southUS = "NONE";
-  }
-  return shipDetected;
-}
-
-// Check if cars are detected on the road
-bool checkForCars() {
-  if (currentMode == MANUAL_MODE) return false;
-  int distanceRoad = sonarRoad.ping_cm();
-  if (distanceRoad > 0 && distanceRoad < 30) {
-    currentState.roadUS = "CAR";
-    return true;
-  } else {
-    currentState.roadUS = "NONE";
-    return false;
-  }
-}
-
-// Check if ship is under the bridge before closing
-bool checkUnderBridge() {
-  if (currentMode == MANUAL_MODE) return false;
-
-  bool detected = false;
-
-  int distanceUnder1 = sonarUnder.ping_cm();
-  if (distanceUnder1 > 0 && distanceUnder1 < 30) {
-    currentState.underUS = "SHIP";
-    detected = true;
-  } else {
-    currentState.underUS = "NONE";
-  }
-
-  if (sonarUnder2 != nullptr) {
-    int distanceUnder2 = sonarUnder2->ping_cm();
-    if (distanceUnder2 > 0 && distanceUnder2 < 30) {
-      currentState.underUS2 = "SHIP";
-      detected = true;
-    } else {
-      currentState.underUS2 = "NONE";
+  startBridgeOpen();
+  unsigned long t0 = millis();
+  while (!limitBridgeOpen && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    if (currentMode == EMERGENCY_MODE) {
+      Serial.println("Manual open aborted: EMERGENCY mode");
+      stopBridge();
+      return;
     }
+    delay(20);
+  }
+  stopBridge();
+  if (limitBridgeOpen) {
+    currentState.bridgeStatus = "OPEN";
+    Serial.println("Manual: Bridge opened (limit)");
   } else {
-    currentState.underUS2 = "NONE";
+    Serial.println("Manual: Bridge open timed out");
   }
-
-  return detected;
 }
 
-// Bridge-top thresholds (cm)
-#define BRIDGE_TOP_CLOSED_THRESHOLD_CM 15  // reading <= this -> bridge closed (near)
-#define BRIDGE_TOP_OPEN_THRESHOLD_CM   60  // reading >= this or out-of-range -> bridge open (raised)
-
-// Check if there is anything on top of the bridge (interpreted as bridge height: open/closed)
-bool checkBridgeTop() {
-  // If no sensor or in manual mode, we don't auto-evaluate
-  if (currentMode == MANUAL_MODE) return false;
-  if (sonarBridgeTop == nullptr) {
-    currentState.bridgeTopUS = "NONE";
-    return false;
+void closeBridge() { // limit-driven manual close
+  const unsigned long timeoutMs = 10000;
+  Serial.println("Manual: Closing bridge (limit-driven)...");
+  if (currentMode == EMERGENCY_MODE) {
+    Serial.println("Manual close blocked: EMERGENCY mode");
+    return;
   }
-
-  int distanceTop = sonarBridgeTop->ping_cm();
-  // distanceTop == 0 means no echo (out of range) — treat as OPEN (bridge high)
-  if (distanceTop == 0) {
-    currentState.bridgeTopUS = "OPEN";
-    return true;
+  startBridgeClose();
+  unsigned long t0 = millis();
+  while (!limitBridgeClosed && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    if (currentMode == EMERGENCY_MODE) {
+      Serial.println("Manual close aborted: EMERGENCY mode");
+      stopBridge();
+      return;
+    }
+    delay(20);
   }
-
-  if (distanceTop <= BRIDGE_TOP_CLOSED_THRESHOLD_CM) {
-    currentState.bridgeTopUS = "CLOSED";
-    return false;
+  stopBridge();
+  if (limitBridgeClosed) {
+    currentState.bridgeStatus = "CLOS";
+    Serial.println("Manual: Bridge closed (limit)");
+  } else {
+    Serial.println("Manual: Bridge close timed out");
   }
-
-  if (distanceTop >= BRIDGE_TOP_OPEN_THRESHOLD_CM) {
-    currentState.bridgeTopUS = "OPEN";
-    return true;
-  }
-
-  // Between thresholds -> partially open/transitioning
-  currentState.bridgeTopUS = "PART"; // partial
-  return false;
 }
 
-void closeGates(){
-  currentState.gateStatus = "CLOS";
-  gateServo.write(60);
-  delay(2000); 
-  gateServo.write(90);
-  Serial.println("Gates closed");
+void closeGates(){ // limit-driven manual close
+  const unsigned long timeoutMs = 8000;
+  Serial.println("Manual: Closing gates (limit-driven)...");
+  if (currentMode == EMERGENCY_MODE) {
+    Serial.println("Manual gate close blocked: EMERGENCY mode");
+    return;
+  }
+  startGateClose();
+  unsigned long t0 = millis();
+  while (!limitGateClosed && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    if (currentMode == EMERGENCY_MODE) {
+      Serial.println("Manual gate close aborted: EMERGENCY mode");
+      stopGate();
+      return;
+    }
+    delay(20);
+  }
+  stopGate();
+  if (limitGateClosed) {
+    currentState.gateStatus = "CLOS";
+    Serial.println("Manual: Gates closed (limit)");
+  } else {
+    Serial.println("Manual: Gates close timed out");
+  }
 }
 
-void openGates(){
-  currentState.gateStatus = "OPEN";
-  gateServo.write(120);
-  delay(2000);
-  gateServo.write(90);
-  Serial.println("Gates opened");
+void openGates(){ // limit-driven manual open
+  const unsigned long timeoutMs = 8000;
+  Serial.println("Manual: Opening gates (limit-driven)...");
+  if (currentMode == EMERGENCY_MODE) {
+    Serial.println("Manual gate open blocked: EMERGENCY mode");
+    return;
+  }
+  startGateOpen();
+  unsigned long t0 = millis();
+  while (!limitGateOpen && (millis() - t0) < timeoutMs) {
+    updateLimitSwitches();
+    if (currentMode == EMERGENCY_MODE) {
+      Serial.println("Manual gate open aborted: EMERGENCY mode");
+      stopGate();
+      return;
+    }
+    delay(20);
+  }
+  stopGate();
+  if (limitGateOpen) {
+    currentState.gateStatus = "OPEN";
+    Serial.println("Manual: Gates opened (limit)");
+  } else {
+    Serial.println("Manual: Gates open timed out");
+  }
 }
 
 // Emergency stop function
 void emergencyStop() {
   // Immediately stop all motors
-  bridgeServo.write(90); // Stop bridge motor
-  gateServo.write(90);   // Stop gate motor
-  
+  stopBridge(); // Stop bridge motor
+  stopGate();   // Stop gate motor
+
+  // Set current mode to EMERGENCY
+  currentMode = EMERGENCY_MODE;
+
+
+// just in case we want to disconnect clients during emergency 
+  // Close client connection if present (prevent further commands)
+  // if (clientConnected) {
+  //   if (client) client.stop();
+  //   clientConnected = false;
+  //   Serial.println("Client disconnected due to EMERGENCY");
+  // }
+
   // Set all status to emergency
   currentState.bridgeStatus = "EMER";
   currentState.gateStatus = "EMER";
@@ -896,10 +909,13 @@ void emergencyStop() {
   currentState.waterwayLights = "EMER";
   currentState.speaker = "EMER";
   currentState.errorCode = 7; // Emergency error code
-  
+
+  // Update LEDs to reflect emergency state
+  updateLEDs();
+
   // Reset any ongoing operations
   resetBridgeControlState();
-  
+
   Serial.println("EMERGENCY STOP ACTIVATED!");
   Serial.println("All systems halted - Manual intervention required");
 }
@@ -1232,6 +1248,11 @@ void runAllTests() {
 
 
 void test() {
+  // Do not run tests in emergency mode
+  if (currentMode == EMERGENCY_MODE) {
+    Serial.println("Test skipped: system in EMERGENCY mode");
+    return;
+  }
   Serial.println("---------- BEGIN TEST SUITE ----------");
   runAllTests();
   Serial.println("---------- END TEST SUITE ----------");
