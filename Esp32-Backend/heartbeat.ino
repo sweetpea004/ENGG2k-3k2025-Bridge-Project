@@ -74,7 +74,7 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define MAX_DISTANCE 500
 
 // Timed bridge movement (ms) hard coded time for bridge movement
-#define BRIDGE_MOVE_MS 8000
+#define BRIDGE_MOVE_MS 2000
 
 /// add led stuff below here
 #define LEDS_OFF 0
@@ -671,6 +671,7 @@ void controlBridge() {
       if (limitGateClosed || (millis() - stateStartTime) > 2000) {
         if (gateMoving) {
           stopGate();
+          currentState.gateStatus = "CLOS";
           Serial.println("Gates closed (limit/time)");
         }
         // before opening the bridge ensure no weight sits on the bridge
@@ -769,6 +770,7 @@ void controlBridge() {
       if (limitGateOpen || (millis() - stateStartTime) > 2000) {
         if (gateMoving) {
           stopGate();
+          currentState.gateStatus = "OPEN";
           Serial.println("Gates opened");
         }
         state = WAIT_FOR_SHIPS;
@@ -1101,26 +1103,26 @@ void ErrorDisplay(){
 }
 
 void updateLEDs() {
-  char roadLights;
-  char waterwayLights;
+  char roadLights = LEDS_OFF;
+  char waterwayLights = LEDS_OFF;
 
   if (currentState.roadLights == "GOGO") {
     roadLights = LEDS_GREEN;
   } else if (currentState.roadLights == "STOP") {
     roadLights = LEDS_RED;
-  } else if (currentState.roadLights = "SLOW") {
+  } else if (currentState.roadLights == "SLOW") {
     if ((millis()/1000) % 2 == 0) {
-     roadLights = LEDS_RED; 
+      roadLights = LEDS_RED; 
     } else roadLights = LEDS_OFF;
-    
   }
+
   if (currentState.waterwayLights == "GOGO") {
     waterwayLights = LEDS_GREEN;
   } else if (currentState.waterwayLights == "STOP") {
     waterwayLights = LEDS_RED;
   } else if (currentState.waterwayLights == "SLOW") {
     if ((millis()/1000) % 2 == 0) {
-     waterwayLights = LEDS_RED; 
+      waterwayLights = LEDS_RED; 
     } else waterwayLights = LEDS_OFF;
   }
   setLEDs(waterwayLights,waterwayLights,roadLights,roadLights,currentState.errorCode);
