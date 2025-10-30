@@ -23,6 +23,13 @@ HX710 scale;
 #define TRIGGER_PIN_UNDER2 14 // trig 5
 #define ECHO_PIN_UNDER2    32 // echo 5
 
+// Bridge-top sensor (set to -1 to disable)
+#ifndef TRIGGER_PIN_BRIDGE_TOP
+#define TRIGGER_PIN_BRIDGE_TOP -1
+#endif
+#ifndef ECHO_PIN_BRIDGE_TOP
+#define ECHO_PIN_BRIDGE_TOP -1
+#endif
 
 // Pointers for optional sensors (created in setup if pins valid)
 NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor
@@ -42,10 +49,10 @@ NewPing* sonarBridgeTop = nullptr; // top-looking sensor
 #define SPEAKER_TX_PIN 16 // TX2
 
 // Limit switches
-#define LIMIT_GATE_CLOSED_PIN 4   // LimitSwitch_1
-#define LIMIT_GATE_OPEN_PIN   0  // LimitSwitch_2
-#define LIMIT_BRIDGE_CLOSED_PIN 2 // LimitSwitch_3
-#define LIMIT_BRIDGE_OPEN_PIN   15 // LimitSwitch_4
+#define LIMIT_GATE_CLOSED_PIN 0   // LimitSwitch_1  // names are wrong
+#define LIMIT_GATE_OPEN_PIN   4  // LimitSwitch_2 
+#define LIMIT_BRIDGE_CLOSED_PIN 15 // LimitSwitch_3
+#define LIMIT_BRIDGE_OPEN_PIN   2 // LimitSwitch_4
 
 // Load cell pins & configuration
 #define LOADCELL_CLK_PIN 13
@@ -255,8 +262,8 @@ void setup() {
     sonarUnder2 = new NewPing(TRIGGER_PIN_UNDER2, ECHO_PIN_UNDER2, MAX_DISTANCE);
     Serial.println("Initialized second under-bridge ultrasonic sensor");
   }
-  if (TRIGGER_PIN_ROAD != -1 && ECHO_PIN_ROAD != -1) {
-    sonarBridgeTop = new NewPing(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
+  if (TRIGGER_PIN_BRIDGE_TOP != -1 && ECHO_PIN_BRIDGE_TOP != -1) {
+    sonarBridgeTop = new NewPing(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
     Serial.println("Initialized bridge-top ultrasonic sensor");
   }
 
@@ -540,7 +547,7 @@ void stopBridge() {
 void loop() {
 
   //      ~tests~      //
-  test(); // runs all tests
+  //test(); // runs all tests
   //  ~end of tests~  //
 
   updateLimitSwitches();
@@ -641,12 +648,14 @@ void controlBridge() {
       if (checkForShips()) {
         Serial.println("Ship detected - waiting for cars to clear...");
         state = WAIT_FOR_CARS_CLEAR;
+        stateStartTime = millis();
       }
       break;
 
     case WAIT_FOR_CARS_CLEAR:
-      if (!checkForCars()) {
-        Serial.println("No cars detected - closing gates...");
+      // Wait a fixed grace period for cars to clear before closing gates
+      if (millis() - stateStartTime >= 5000) {
+        Serial.println("Grace period elapsed - closing gates...");
         // start closing gates and wait for limit switch
         startGateClose();
         currentState.roadLights = "STOP";
@@ -671,6 +680,7 @@ void controlBridge() {
           currentState.roadLoad = "LOAD";
           // go back to waiting for cars to clear so operator can react
           state = WAIT_FOR_CARS_CLEAR;
+          stateStartTime = millis();
         } else {
           Serial.println("Gates closed - starting bridge open (limit-driven)...");
           currentState.waterwayLights = "GOGO";
@@ -929,6 +939,112 @@ void resetBridgeControlState() {
     // The next call to controlBridge() will start fresh
     forceReset = false;
   }
+}
+
+// all cm are placeholders
+// Detection thresholds (cm)
+#define SHIP_DETECT_CM 30
+#define CAR_DETECT_CM 5
+#define UNDER_DETECT_CM 20
+
+#define BRIDGE_TOP_CLOSED_THRESHOLD_CM 5  // reading <= this -> bridge closed (near)
+#define BRIDGE_TOP_OPEN_THRESHOLD_CM   15  // reading >= this or out-of-range -> bridge open (raised)
+
+// Check if ships are detected (north/south)
+bool checkForShips() {
+  if (currentMode == MANUAL_MODE) return false;
+
+  int distanceNorth = sonarNorth.ping_cm();
+  int distanceSouth = sonarSouth.ping_cm();
+  bool shipDetected = false;
+
+  if (distanceNorth > 0 && distanceNorth < SHIP_DETECT_CM) {
+    currentState.northUS = "SHIP";
+    shipDetected = true;
+  } else {
+    currentState.northUS = "NONE";
+  }
+
+  if (distanceSouth > 0 && distanceSouth < SHIP_DETECT_CM) {
+    currentState.southUS = "SHIP";
+    shipDetected = true;
+  } else {
+    currentState.southUS = "NONE";
+  }
+
+  return shipDetected;
+}
+
+// Check if cars are detected on the road
+bool checkForCars() {
+  if (currentMode == MANUAL_MODE) return false;
+
+  int distanceRoad = sonarRoad.ping_cm();
+  if (distanceRoad > 0 && distanceRoad < CAR_DETECT_CM) {
+    currentState.roadUS = "CAR";
+    return true;
+  } else {
+    currentState.roadUS = "NONE";
+    return false;
+  }
+}
+
+// Check if ship is under the bridge before closing 
+bool checkUnderBridge() {
+  if (currentMode == MANUAL_MODE) return false;
+
+  bool detected = false;
+
+  int distanceUnder1 = sonarUnder.ping_cm();
+  if (distanceUnder1 > 0 && distanceUnder1 < UNDER_DETECT_CM) {
+    currentState.underUS = "SHIP";
+    detected = true;
+  } else {
+    currentState.underUS = "NONE";
+  }
+
+  if (sonarUnder2 != nullptr) {
+    int distanceUnder2 = sonarUnder2->ping_cm();
+    if (distanceUnder2 > 0 && distanceUnder2 < UNDER_DETECT_CM) {
+      currentState.underUS2 = "SHIP";
+      detected = true;
+    } else {
+      currentState.underUS2 = "NONE";
+    }
+  } else {
+    currentState.underUS2 = "NONE";
+  }
+
+  return detected;
+}
+
+// Check bridge-top sensor to determine bridge height (OPEN/CLOSED/PART/NONE)
+bool checkBridgeTop() {
+  if (currentMode == MANUAL_MODE) return false;
+  if (sonarBridgeTop == nullptr) {
+    currentState.bridgeTopUS = "NONE";
+    return false;
+  }
+
+  int distanceTop = sonarBridgeTop->ping_cm();
+  // distanceTop == 0 means no echo (out of range) — treat as OPEN (bridge high)
+  if (distanceTop == 0) {
+    currentState.bridgeTopUS = "OPEN";
+    return true;
+  }
+
+  if (distanceTop <= BRIDGE_TOP_CLOSED_THRESHOLD_CM) {
+    currentState.bridgeTopUS = "CLOSED";
+    return false;
+  }
+
+  if (distanceTop >= BRIDGE_TOP_OPEN_THRESHOLD_CM) {
+    currentState.bridgeTopUS = "OPEN";
+    return true;
+  }
+
+  currentState.bridgeTopUS = "PART"; // partial
+  return false;
 }
 
 /////// LED functions ///////
