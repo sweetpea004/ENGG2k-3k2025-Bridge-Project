@@ -163,7 +163,7 @@
                 </label>
             </div>
 
-            <!-- Limit Switch Override -->
+            <!-- Limit Override -->
             <div>
                 <p>Bridge Lift Limit Detection Override</p>
                 <label class="switch">
@@ -177,15 +177,27 @@
             <div>
                 <p>Audio Announcement Override * <span class="hidden error" id="audio-error-text">Please Select an Instruction for the Audio.</span></p>
                 <label class="switch">
-                    <input type="radio" id="start-complete-audio" name="audio" value="DONE">
+                    <input type="radio" id="start-complete-audio" name="audio" value="OPEN">
                     <span class="slider round"></span>
-                    <br><br>Terminus
+                    <br><br>Openning
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="start-complete-audio" name="audio" value="CLOS">
+                    <span class="slider round"></span>
+                    <br><br>Closing
                 </label>
 
                 <label class="switch">
                     <input type="radio" id="moving-audio" name="audio" value="MOVN">
                     <span class="slider round"></span>
                     <br><br>Moving
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="moving-audio" name="audio" value="DONE">
+                    <span class="slider round"></span>
+                    <br><br>Terminated
                 </label>
 
                 <label class="switch">

@@ -298,13 +298,21 @@ socket.on('update_stat_data', function(status, conn) {
 
     // audio text
     switch (status.audio) {
-        case "DONE":
-            textAudio.innerText = "BRIDGE STARTING OR COMPLETING MOVEMENT";
+        case "OPEN":
+            textAudio.innerText = "BRIDGE WILL BEGIN OPENNING";
+            textAudio.classList = "orange-text";
+            break;
+        case "CLOS":
+            textAudio.innerText = "BRIDGE WILL BEGIN CLOSING";
             textAudio.classList = "orange-text";
             break;
         case "MOVN":
             textAudio.innerText = "BRIDGE MOVING";
             textAudio.classList = "orange-text";
+            break;
+        case "DONE":
+            textAudio.innerText = "BRIDGE HAS TERMINATED PROCESS";
+            textAudio.classList = "green-text";
             break;
         case "EMER":
             textAudio.innerText = "EMERGENCY WITH BRIDGE";
