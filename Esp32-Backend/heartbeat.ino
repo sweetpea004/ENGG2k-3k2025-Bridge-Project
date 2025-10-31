@@ -16,12 +16,11 @@ HX710 scale;
 #define ECHO_PIN_SOUTH    32 // echo 5
 #define TRIGGER_PIN_ROAD  26 // trig 3
 #define ECHO_PIN_ROAD     34 // echo 3
-#define TRIGGER_PIN_UNDER 33 // trig 1
-#define ECHO_PIN_UNDER    36 // echo 1
+#define TRIGGER_PIN_UNDER -1 // trig 1 (disabled)
+#define ECHO_PIN_UNDER    -1 // echo 1 (disabled)
 
 // double check implimentation
-#define TRIGGER_PIN_UNDER2 25 // trig 2
-#define ECHO_PIN_UNDER2    39 // echo 2
+// (second under-bridge sensor removed)
 
 // Bridge-top sensor (set to -1 to disable)
 #ifndef TRIGGER_PIN_BRIDGE_TOP
@@ -32,8 +31,9 @@ HX710 scale;
 #endif
 
 // Pointers for optional sensors (created in setup if pins valid)
-NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor
+// NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor (removed)
 NewPing* sonarBridgeTop = nullptr; // top-looking sensor
+NewPing* sonarUnder = nullptr;     // primary under-bridge sensor
 
 // Servos
 #define SERVO_BRIDGE_PIN 23
@@ -55,8 +55,8 @@ NewPing* sonarBridgeTop = nullptr; // top-looking sensor
 #define LIMIT_BRIDGE_OPEN_PIN   4 
 
 // Load cell pins & configuration
-#define LOADCELL_CLK_PIN 13
-#define LOADCELL_DOUT_PIN 12
+#define LOADCELL_CLK_PIN 33
+#define LOADCELL_DOUT_PIN 36
 
 // Network Configuration
 const char* ssid = "Dragan’s iPhone (2)";
@@ -92,7 +92,7 @@ const float LOAD_THRESHOLD_GRAMS = 5.0; // anything above this and it counts as 
 NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
 NewPing sonarSouth(TRIGGER_PIN_SOUTH, ECHO_PIN_SOUTH, MAX_DISTANCE);
 NewPing sonarRoad(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
-NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
+//NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
 
@@ -188,7 +188,6 @@ struct BridgeState {
   int errorCode = 0;
 
   // Additional fields for optional sensors
-  String underUS2 = "NONE";
   String bridgeTopUS = "NONE";
 };
 
@@ -264,10 +263,11 @@ void setup() {
   analogReadResolution(12);
 
   // Initialize optional ultrasonic sensors if pins are valid
-  if (TRIGGER_PIN_UNDER2 != -1 && ECHO_PIN_UNDER2 != -1) {
-    sonarUnder2 = new NewPing(TRIGGER_PIN_UNDER2, ECHO_PIN_UNDER2, MAX_DISTANCE);
-    Serial.println("Initialized second under-bridge ultrasonic sensor");
+  if (TRIGGER_PIN_UNDER != -1 && ECHO_PIN_UNDER != -1) {
+    sonarUnder = new NewPing(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
+    Serial.println("Initialized under-bridge ultrasonic sensor");
   }
+  // removed sonarUnder2 initialization
   if (TRIGGER_PIN_BRIDGE_TOP != -1 && ECHO_PIN_BRIDGE_TOP != -1) {
     sonarBridgeTop = new NewPing(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
     Serial.println("Initialized bridge-top ultrasonic sensor");
@@ -546,12 +546,12 @@ void stopBridge() {
 void loop() {
 
   //      ~tests~      //
-  //test(); // runs all tests
+  test(); // runs all tests
   //  ~end of tests~  //
 
   updateLimitSwitches();
   handleClient();
-  controlBridge();
+  //controlBridge();
   updateLEDs();
   if(initializationComplete == true){
     sendHeartbeat();
@@ -686,6 +686,8 @@ void controlBridge() {
         } else {
           Serial.println("Gates closed - starting bridge open (limit-driven)...");
           currentState.waterwayLights = "GOGO";
+          // small pause to allow gate motor to settle and avoid high current when starting bridge
+          delay(500);
           startBridgeOpen();
           stateStartTime = millis();
           state = BRIDGE_OPENING;
@@ -758,6 +760,8 @@ void controlBridge() {
           Serial.println("Bridge closed (timed)");
         }
         currentState.bridgeStatus = "CLOS";
+        // small pause to allow bridge motor to settle before starting gate movement
+        delay(500);
         // open gates after bridge fully closed
         startGateOpen();
         currentState.roadLights = "GOGO";
@@ -930,7 +934,8 @@ bool checkUnderBridge() {
 
   bool detected = false;
 
-  int distanceUnder1 = sonarUnder.ping_cm();
+  int distanceUnder1 = -1;
+  if (sonarUnder != nullptr) distanceUnder1 = sonarUnder->ping_cm();
   if (distanceUnder1 > 0 && distanceUnder1 < UNDER_DETECT_CM) {
     currentState.underUS = "SHIP";
     detected = true;
@@ -938,17 +943,7 @@ bool checkUnderBridge() {
     currentState.underUS = "NONE";
   }
 
-  if (sonarUnder2 != nullptr) {
-    int distanceUnder2 = sonarUnder2->ping_cm();
-    if (distanceUnder2 > 0 && distanceUnder2 < UNDER_DETECT_CM) {
-      currentState.underUS2 = "SHIP";
-      detected = true;
-    } else {
-      currentState.underUS2 = "NONE";
-    }
-  } else {
-    currentState.underUS2 = "NONE";
-  }
+  // second under-bridge sensor removed
 
   return detected;
 }
@@ -1170,11 +1165,9 @@ void testUltrasonics(int samples = 3, int delayMs = 200) {
     int n = sonarNorth.ping_cm();
     int so = sonarSouth.ping_cm();
     int r = sonarRoad.ping_cm();
-    int u = sonarUnder.ping_cm();
-    int u2 = (sonarUnder2 != nullptr) ? sonarUnder2->ping_cm() : -1;
+    int u = (sonarUnder != nullptr) ? sonarUnder->ping_cm() : -1;
     int t = (sonarBridgeTop != nullptr) ? sonarBridgeTop->ping_cm() : -1;
     Serial.print("North:" + String(n) + " cm, South:" + String(so) + " cm, Road:" + String(r) + " cm, Under:" + String(u) + " cm");
-    if (u2 != -1) Serial.print(", Under2:" + String(u2) + " cm");
     if (t != -1) Serial.print(", Top:" + String(t) + " cm");
     Serial.println();
     delay(delayMs);
@@ -1288,14 +1281,14 @@ void testMotors(){
   delay(5000);
   stopGate();
   Serial.println("Gate open ");
-  delay(500);
+  delay(2000);
 
   Serial.println("[TEST] Closing gates...");
   startGateClose();
   delay(5000);
   stopGate();
   Serial.println("Gate closed ");
-  delay(500);
+  delay(2000);
 
   // Bridge: open then close
   Serial.println("[TEST] Opening bridge...");
@@ -1319,10 +1312,10 @@ void testMotors(){
 void runAllTests() {
   //testSpeaker();
   //testUltrasonics();
-  testLimitSwitches();
+  //testLimitSwitches();
   //testActuators(); // motors with limit switches
   //testLEDs();
-  //testMotors();
+  testMotors();
 }
 
 
