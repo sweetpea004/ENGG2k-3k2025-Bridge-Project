@@ -11,10 +11,6 @@ const textUnderUS = document.getElementById("text-under-us");
 const textSouthUS = document.getElementById("text-south-us");
 const textRoadUS = document.getElementById("text-road-us");
 const textLoadCell = document.getElementById("text-load-cell");
-const textBridgeTopLimitSwitch = document.getElementById("text-bridge-top-limit");
-const textBridgeBottomLimitSwitch = document.getElementById("text-bridge-bottom-limit");
-const textGateTopLimitSwitch = document.getElementById("text-gate-top-limit");
-const textGateBottomLimitSwitch = document.getElementById("text-gate-bottom-limit");
 const textAudio = document.getElementById("text-audio");
 
 // set global querie variables for form
@@ -30,10 +26,6 @@ const underUS = document.querySelector("#under-us");
 const southUS = document.querySelector("#south-us");
 const roadUS = document.querySelector("#road-us");
 const loadCell = document.querySelector("#loadcell");
-const bTopLimit = document.querySelector("#bridge-top");
-const bBottomLimit = document.querySelector("#bridge-bottom");
-const gTopLimit = document.querySelector("#gate-top");
-const gBottomLimit = document.querySelector("#gate-bottom");
 const audioError = document.querySelector("#audio-error-text");
 const audio = document.getElementsByName('audio');
 const gates = document.getElementsByName('gates');
@@ -95,6 +87,11 @@ socket.on('update_stat_data', function(status, conn) {
             // bridge image
             bridgeImage.src = "/static/Images/emergency.gif";
             break;
+        default: 
+            textBridgeStat.innerText = "ERR: " + status.bridge_status;
+            textBridgeStat.classList = "black-text";
+            break;
+
     }
 
     // gate Status text
@@ -114,6 +111,10 @@ socket.on('update_stat_data', function(status, conn) {
         case "EMER":
             textGateStat.innerText = "EMERGENCY";
             textGateStat.classList = "yellow-text";
+            break;
+        default:
+            textGateStat.innerText = "ERR: " + status.gate_status;
+            textGateStat.classList = "black-text";
             break;
     }
 
@@ -163,6 +164,10 @@ socket.on('update_stat_data', function(status, conn) {
             textErrorCode.innerText = "7 - All errors";
             textErrorCode.classList = "red-text";
             break;
+        default:
+            textErrorCode.innerText = "ERR: " + status.error_code;
+            textErrorCode.classList = "black-text";
+            break;
     }
 
     // road traffic light text
@@ -182,6 +187,10 @@ socket.on('update_stat_data', function(status, conn) {
         case "EMER":
             textRoadTrafficLights.innerText = "EMERGENCY";
             textRoadTrafficLights.classList = "yellow-text";
+            break;
+        default:
+            textRoadTrafficLights.innerText = "ERR: " + status.road_lights;
+            textRoadTrafficLights.classList = "black-text";
             break;
     }
 
@@ -203,6 +212,10 @@ socket.on('update_stat_data', function(status, conn) {
             textWaterwayTrafficLights.innerText = "EMERGENCY";
             textWaterwayTrafficLights.classList = "yellow-text";
             break;
+        default:
+            textWaterwayTrafficLights.innerText = "ERR: " + status.waterway_lights;
+            textWaterwayTrafficLights.classList = "black-text";
+            break;
     }
 
     // ultrasonics text
@@ -215,6 +228,10 @@ socket.on('update_stat_data', function(status, conn) {
             textNorthUS.innerText = "NOTHING DETECTED";
             textNorthUS.classList = "green-text";
             break;
+        default:
+            textNorthUS.innerText = "ERR: " + status.north_us;
+            textNorthUS.classList = "black-text";
+            break;
     }
 
     switch (status.under_us) {
@@ -226,6 +243,10 @@ socket.on('update_stat_data', function(status, conn) {
             textUnderUS.innerText = "NOTHING DETECTED";
             textUnderUS.classList = "green-text";
             break;
+        default:
+            textUnderUS.innerText = "ERR: " + status.under_us;
+            textUnderUS.classList = "black-text";
+            break;
     }
 
     switch (status.south_us) {
@@ -236,6 +257,10 @@ socket.on('update_stat_data', function(status, conn) {
         case "NONE":
             textSouthUS.innerText = "NOTHING DETECTED";
             textSouthUS.classList = "green-text";
+            break;
+        default:
+            textSouthUS.innerText = "ERR: " + status.south_us;
+            textSouthUS.classList = "black-text";
             break;
     }
 
@@ -249,9 +274,13 @@ socket.on('update_stat_data', function(status, conn) {
             textLoadCell.innerText = "NOTHING DETECTED";
             textLoadCell.classList = "green-text";
             break;
+        default:
+            textLoadCell.innerText = "ERR: " + status.road_load;
+            textLoadCell.classList = "black-text";
+            break;
     }
 
-    // limit switches
+    // Road Ultrasonic
     switch(status.road_us) {
         case "TRIG":
             textRoadUS.innerText = "MAXIMUM REACHED";
@@ -261,49 +290,9 @@ socket.on('update_stat_data', function(status, conn) {
             textRoadUS.innerText = "NOTHING DETECTED";
             textRoadUS.classList = "green-text";
             break;
-    }
-
-    switch (status.bridge_top_limit) {
-        case "TRIG":
-            textBridgeTopLimitSwitch.innerText = "TRIGGERED";
-            textBridgeTopLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textBridgeTopLimitSwitch.innerText = "NOTHING DETECTED";
-            textBridgeTopLimitSwitch.classList = "green-text";
-            break;
-    }
-
-    switch (status.bridge_bottom_limit) {
-        case "TRIG":
-            textBridgeBottomLimitSwitch.innerText = "TRIGGERED";
-            textBridgeBottomLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textBridgeBottomLimitSwitch.innerText = "NOTHING DETECTED";
-            textBridgeBottomLimitSwitch.classList = "green-text";
-            break;
-    }
-
-    switch (status.gate_top_limit) {
-        case "TRIG":
-            textGateTopLimitSwitch.innerText = "TRIGGERED";
-            textGateTopLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textGateTopLimitSwitch.innerText = "NOTHING DETECTED";
-            textGateTopLimitSwitch.classList = "green-text";
-            break;
-    }
-
-    switch (status.gate_bottom_limit) {
-        case "TRIG":
-            textGateBottomLimitSwitch.innerText = "TRIGGERED";
-            textGateBottomLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textGateBottomLimitSwitch.innerText = "NOTHING DETECTED";
-            textGateBottomLimitSwitch.classList = "green-text";
+        default:
+            textRoadUS.innerText = "ERR: " + status.road_us;
+            textRoadUS.classList = "black-text";
             break;
     }
 
@@ -324,6 +313,10 @@ socket.on('update_stat_data', function(status, conn) {
         case "NONE":
             textAudio.innerText = "NO AUDIO";
             textAudio.classList = "green-text";
+            break;
+        default:
+            textAudio.innerText = "ERR: " + status.audio;
+            textAudio.classList = "black-text";
             break;
     }
 });
@@ -492,19 +485,6 @@ function disableInputs() {
     loadCell.disabled = true;
     loadCell.checked = false;
 
-    // disable Limit Switches inputs
-    bTopLimit.disabled = true;
-    bTopLimit.checked = false;
-
-    bBottomLimit.disabled = true;
-    bBottomLimit.checked = false;
-
-    gTopLimit.disabled = true;
-    gTopLimit.checked = false;
-    
-    gBottomLimit.disabled = true;
-    gBottomLimit.checked = false;
-
     // disable audio inputs
     audio.forEach(input => {
         input.disabled = true;
@@ -550,12 +530,6 @@ function enableInputs() {
     // enable road detection sensor inputs
     roadUS.disabled = false;
     loadCell.disabled = false;
-
-    // enable Limit Switches inputs
-    bTopLimit.disabled = false;
-    bBottomLimit.disabled = false;
-    gTopLimit.disabled = false;
-    gBottomLimit.disabled = false;
 
     // enable audio inputs
     audio.forEach(input => {

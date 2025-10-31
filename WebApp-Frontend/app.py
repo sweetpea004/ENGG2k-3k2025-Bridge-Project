@@ -64,24 +64,8 @@ def redirect_dashboard():
                     push.append("NONE")
 
                 # determine Limit Switch Inputs
-                limit_switches = request.form.getlist('limit-switch')
+                limit_switches = request.form.getlist('bridge-limit')
                 if "road-us" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "bridge-top" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "bridge-bottom" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "gate-top" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "gate-bottom" in limit_switches:
                     push.append("TRIG")
                 else:
                     push.append("NONE")

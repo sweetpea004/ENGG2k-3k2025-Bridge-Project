@@ -14,18 +14,14 @@ class Status:
         self.south_us = array[5].upper()
         self.road_load = array[6].upper()
         self.road_us = array[7].upper()
-        self.bridge_top_limit = array[8].upper()
-        self.bridge_bottom_limit = array[9].upper()
-        self.gate_top_limit = array[10].upper()
-        self.gate_bottom_limit = array[11].upper()
-        self.road_lights = array[12].upper()
-        self.waterway_lights = array[13].upper()
-        self.audio = array[14].upper()
-        self.error_code = array[15].upper()
+        self.road_lights = array[8].upper()
+        self.waterway_lights = array[9].upper()
+        self.audio = array[10].upper()
+        self.error_code = array[11].upper()
     
     def toString(self):
 
-        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_us} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
+        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_us} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
 
         return message
     
@@ -39,10 +35,6 @@ class Status:
             "south_us": self.south_us,
             "road_load": self.road_load,
             "road_us": self.road_us,
-            "bridge_top_limit": self.bridge_top_limit,
-            "bridge_bottom_limit": self.bridge_bottom_limit,
-            "gate_top_limit": self.gate_top_limit,
-            "gate_bottom_limit": self.gate_bottom_limit,
             "road_lights": self.road_lights,
             "waterway_lights": self.waterway_lights,
             "audio": self.audio,

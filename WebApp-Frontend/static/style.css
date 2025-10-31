@@ -139,6 +139,10 @@ aside {
   color: var(--yellow)
 }
 
+.black-text {
+  color: black;
+}
+
 select {
   appearance: base-select;
   border-radius: var(--radius);
