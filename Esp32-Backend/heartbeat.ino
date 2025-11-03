@@ -690,7 +690,7 @@ void controlBridge() {
           startGateClose();
           stateStartTime = millis();
           state = GATES_CLOSING;
-          currentstate.stateCode = 1;
+          currentState.stateCode = 1;
         }
       }
       break;
@@ -728,7 +728,7 @@ void controlBridge() {
         currentState.bridgeStatus = "OPEN";
         stateStartTime = millis();
         state = BRIDGE_OPEN;
-        currentstate.stateCode = 3;
+        currentState.stateCode = 3;
       }
       break;
 
@@ -736,7 +736,7 @@ void controlBridge() {
       if (millis() - stateStartTime > 10000) {
         Serial.println("Waiting for ship under bridge to clear...");
         state = WAIT_FOR_UNDER_CLEAR;
-        currentstate.stateCode = 3;
+        currentState.stateCode = 3;
       }
       break;
 
@@ -760,7 +760,7 @@ void controlBridge() {
             startBridgeClose();
             stateStartTime = millis();
             state = BRIDGE_CLOSING;
-            currentstate.stateCode = 4;
+            currentState.stateCode = 4;
           } else {
             // Bridge not confirmed open yet; keep waiting
             Serial.println("Bridge not yet confirmed open; waiting before close...");
@@ -789,7 +789,7 @@ void controlBridge() {
         currentState.roadLights = "GOGO";
         stateStartTime = millis();
         state = GATES_OPENING;
-        currentstate.stateCode = 5;
+        currentState.stateCode = 5;
       }
       break;
 
@@ -801,7 +801,7 @@ void controlBridge() {
           Serial.println("Gates opened");
         }
         state = WAIT_FOR_SHIPS;
-        currentstate.stateCode = 1;
+        currentState.stateCode = 1;
       } else {
         if (!gateMoving) startGateOpen();
       }
