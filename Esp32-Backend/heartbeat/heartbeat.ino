@@ -662,6 +662,8 @@ void controlBridge() {
     GATES_OPENING
   } state = WAIT_FOR_SHIPS;
   static unsigned long stateStartTime = 0;
+  static unsigned long clearConfirmStart = 0; // timer to confirm under/approach clear
+  const unsigned long CLEAR_CONFIRM_MS = 3000;
 
   switch (state) {
     case WAIT_FOR_SHIPS:
@@ -763,27 +765,41 @@ void controlBridge() {
         bool approachesClear = !checkForShips();      // true when north/south approach sensors clear
 
         if (underClear && approachesClear) {
-          // confirm bridge is fully open before attempting to close
-          bool bridgeConfirmedOpen = (currentState.bridgeStatus == "OPEN");
-          if (!bridgeConfirmedOpen) {
-            bridgeConfirmedOpen = checkBridgeTop(); // check bridge-top sensor if present
+          // start or continue confirmation timer
+          if (clearConfirmStart == 0) {
+            clearConfirmStart = millis();
+            Serial.println("Clear detected - confirming for " + String(CLEAR_CONFIRM_MS/1000) + "s before closing...");
           }
 
-          if (bridgeConfirmedOpen) {
-            Serial.println("Under & approach sensors clear and bridge confirmed open - closing bridge...");
-            currentState.waterwayLights = "SLOW";
-            playCloseAlarm();
-            if ((millis() - stateStartTime) > 4000 )
+          // If sensors remain clear for configured interval, proceed
+          if (millis() - clearConfirmStart >= CLEAR_CONFIRM_MS) {
+            // confirm bridge is fully open before attempting to close
+            bool bridgeConfirmedOpen = (currentState.bridgeStatus == "OPEN");
+            if (!bridgeConfirmedOpen) {
+              bridgeConfirmedOpen = checkBridgeTop(); // check bridge-top sensor if present
+            }
+
+            if (bridgeConfirmedOpen) {
+              Serial.println("Under & approach sensors confirmed clear - closing bridge...");
+              currentState.waterwayLights = "STOP";
               startBridgeClose();
               stateStartTime = millis();
               state = BRIDGE_CLOSING;
               currentState.stateCode = 4;
-          } else {
-            // Bridge not confirmed open yet; keep waiting
-            Serial.println("Bridge not yet confirmed open; waiting before close...");
-            stateStartTime = millis();
+              // reset confirmation timer
+              clearConfirmStart = 0;
+            } else {
+              // Bridge not confirmed open yet; keep waiting but keep the confirmation timer running
+              Serial.println("Bridge not yet confirmed open; waiting before close...");
+              // leave clearConfirmStart as-is so it continues counting
+            }
           }
         } else {
+          // sensors not clear - reset confirmation timer and keep waiting
+          if (clearConfirmStart != 0) {
+            Serial.println("Clear lost - aborting confirmation, will retry");
+          }
+          clearConfirmStart = 0;
           Serial.println("Waiting for under-bridge and approach sensors to clear...");
           stateStartTime = millis(); // reset timer
         }
