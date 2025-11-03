@@ -91,7 +91,7 @@ const float LOAD_THRESHOLD_GRAMS = 5.0; // anything above this and it counts as 
 // Servo & Ultrasonic sensor setup
 NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
 NewPing sonarSouth(TRIGGER_PIN_SOUTH, ECHO_PIN_SOUTH, MAX_DISTANCE);
-//NewPing sonarRoad(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
+NewPing sonarRoad(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
 //NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
@@ -558,7 +558,6 @@ void stopBridge() {
 
 // Main Loop
 void loop() {
-  Serial.println(sonarRoad.ping_cm());
   //      ~tests~      //  <--- This is a test
   //test(); // runs all tests
   //  ~end of tests~  //
