@@ -30,6 +30,16 @@ HX710 scale;
 #define ECHO_PIN_BRIDGE_TOP 34
 #endif
 
+// all cm are placeholders maybe need adjusting
+// Detection thresholds (cm)
+#define SHIP_DETECT_CM 30
+#define CAR_DETECT_CM 5
+#define UNDER_DETECT_CM 20
+
+// Bridge-top thresholds (moved here so available before controlBridge uses them)
+#define BRIDGE_TOP_CLOSED_THRESHOLD_CM 15  // reading >= this -> bridge closed (near)
+#define BRIDGE_TOP_OPEN_THRESHOLD_CM 6  // reading <= this or out-of-range -> bridge open (raised)
+
 // Pointers for optional sensors (created in setup if pins valid)
 // NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor (removed)
 // replace pointer with comment to avoid duplicate declarations
@@ -731,11 +741,11 @@ void controlBridge() {
       }
       break;
 
-    case BRIDGE_OPENING:
+    case BRIDGE_OPENING: {
       // Attempt to detect bridge fully open using top sensor (with quick confirmation)
       playMovingAlarm();
       if (!bridgeMoving) startBridgeOpen();
-      
+
       int topOpenDist = sonarBridgeTop.ping_cm();
       bool topIndicatesOpen = (topOpenDist == 0) || (topOpenDist > 0 && topOpenDist <= BRIDGE_TOP_OPEN_THRESHOLD_CM);
       if (topIndicatesOpen) {
@@ -768,7 +778,8 @@ void controlBridge() {
         state = BRIDGE_OPEN;
         currentState.stateCode = 3;
       }
-      break;
+    }
+    break;
 
     case BRIDGE_OPEN:
       if (millis() - stateStartTime > 10000) {
@@ -829,11 +840,11 @@ void controlBridge() {
       }
       break;
 
-    case BRIDGE_CLOSING:
-      // Try to stop when top sensor sees
+    case BRIDGE_CLOSING: {
+      // Try to stop when top sensor indicates closed (with confirmation), else use timed fallback
       playMovingAlarm();
       if (!bridgeMoving) startBridgeClose();
-      
+
       int topCloseDist = sonarBridgeTop.ping_cm();
       bool topIndicatesClosed = (topCloseDist > 0 && topCloseDist >= BRIDGE_TOP_CLOSED_THRESHOLD_CM);
       if (topIndicatesClosed) {
@@ -844,7 +855,7 @@ void controlBridge() {
             Serial.println("Bridge closed (sensor)");
           }
           currentState.bridgeStatus = "CLOS";
-          // open gates after bridge fully closed
+          // open gates after bridge fully closed (small pause already elapsed conceptually)
           startGateOpen();
           currentState.waterwayLights = "STOP";
           stateStartTime = millis();
@@ -875,7 +886,8 @@ void controlBridge() {
           currentState.stateCode = 5;
         }
       }
-      break;
+    }
+    break;
 
     case GATES_OPENING:
       if (limitGateOpen || (millis() - stateStartTime) > 2000) {
@@ -989,15 +1001,6 @@ void resetBridgeControlState() {
     forceReset = false;
   }
 }
-
-// all cm are placeholders maybe need adjusting
-// Detection thresholds (cm)
-#define SHIP_DETECT_CM 30
-#define CAR_DETECT_CM 5
-#define UNDER_DETECT_CM 20
-
-#define BRIDGE_TOP_CLOSED_THRESHOLD_CM 15  // reading >= this -> bridge closed (near)
-#define BRIDGE_TOP_OPEN_THRESHOLD_CM    6  // reading <= this or out-of-range -> bridge open (raised)
 
 // Check if ships are detected (north/south)
 bool checkForShips() {
@@ -1328,61 +1331,6 @@ void testUltrasonics(int samples = 1, int delayMs = 200) {
   }
   Serial.println("[TEST] Ultrasonics test done.");
 }
-
-// Test actuators: move gates and bridge using limit switches with timeout
-void testActuators(unsigned long timeoutMs = 8000) {
-  Serial.println("[TEST] Actuators: testing gates and bridge (using limits)...");
-  unsigned long t0;
-
-  // Gates: open then close
-  Serial.println("[TEST] Opening gates...");
-  startGateOpen();
-  t0 = millis();
-  while (!limitGateOpen && (millis() - t0) < timeoutMs) {
-    updateLimitSwitches();
-    delay(20);
-  }
-  stopGate();
-  Serial.println(limitGateOpen ? "Gate open limit reached" : "Gate open timeout");
-  delay(500);
-
-  Serial.println("[TEST] Closing gates...");
-  startGateClose();
-  t0 = millis();
-  while (!limitGateClosed && (millis() - t0) < timeoutMs) {
-    updateLimitSwitches();
-    delay(20);
-  }
-  stopGate();
-  Serial.println(limitGateClosed ? "Gate closed limit reached" : "Gate close timeout");
-  delay(500);
-
-  // Bridge: open then close
-  Serial.println("[TEST] Opening bridge...");
-  startBridgeOpen();
-  t0 = millis();
-  while (!limitBridgeOpen && (millis() - t0) < timeoutMs) {
-    updateLimitSwitches();
-    delay(20);
-  }
-  stopBridge();
-  Serial.println(limitBridgeOpen ? "Bridge open limit reached" : "Bridge open timeout");
-  delay(500);
-
-  Serial.println("[TEST] Closing bridge...");
-  startBridgeClose();
-  t0 = millis();
-  while (!limitBridgeClosed && (millis() - t0) < timeoutMs) {
-    updateLimitSwitches();
-    delay(20);
-  }
-  stopBridge();
-  Serial.println(limitBridgeClosed ? "Bridge closed limit reached" : "Bridge close timeout");
-  delay(500);
-
-  Serial.println("[TEST] Actuators done.");
-}
-
 void testMotors(){
     Serial.println("[TEST] motors: testing gates and bridge");
   unsigned long t0;
@@ -1424,8 +1372,6 @@ void testMotors(){
 void runAllTests() {
   //testSpeaker();
   testUltrasonics();
-  //testLimitSwitches();
-  //testActuators(); // motors with limit switches
   //testLEDs();
   //testMotors();
 }
