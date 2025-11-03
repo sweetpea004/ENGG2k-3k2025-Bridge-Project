@@ -1194,7 +1194,6 @@ void testSpeaker() {
   delay(1200);
   Serial.println("[TEST] Speaker done.");
 }
-
 // Test ultrasonics: print distance readings for all four sensors
 void testUltrasonics(int samples = 3, int delayMs = 200) {
   Serial.println("[TEST] Ultrasonics: reading sensors...");
@@ -1209,23 +1208,23 @@ void testUltrasonics(int samples = 3, int delayMs = 200) {
     Serial.print("["); Serial.print(ts); Serial.print("] ");
 
     Serial.print("North:");
-    if (n <= 0) Serial.print("OOR"); else Serial.print(n);
+    if (n <= 0) Serial.print("Out of range"); else Serial.print(n);
     Serial.print(" cm  ");
 
     Serial.print("South:");
-    if (so <= 0) Serial.print("OOR"); else Serial.print(so);
+    if (so <= 0) Serial.print("Out of range"); else Serial.print(so);
     Serial.print(" cm  ");
 
     Serial.print("Road:");
-    if (r <= 0) Serial.print("OOR"); else Serial.print(r);
+    if (r <= 0) Serial.print("Out of range"); else Serial.print(r);
     Serial.print(" cm  ");
 
     Serial.print("Under:");
-    if (u == -1) Serial.print("NONE"); else if (u <= 0) Serial.print("OOR"); else Serial.print(u);
+    if (u == -1) Serial.print("NONE"); else if (u <= 0) Serial.print("Out of range"); else Serial.print(u);
     Serial.print(" cm  ");
 
     Serial.print("Top:");
-    if (t == -1) Serial.print("NONE"); else if (t <= 0) Serial.print("OOR"); else Serial.print(t);
+    if (t == -1) Serial.print("NONE"); else if (t <= 0) Serial.print("Out of range"); else Serial.print(t);
     Serial.print(" cm");
 
     Serial.println();
