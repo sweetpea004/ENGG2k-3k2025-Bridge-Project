@@ -284,11 +284,6 @@ void setup() {
     sonarUnder = new NewPing(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
     Serial.println("Initialized under-bridge ultrasonic sensor");
   }
-  // removed sonarUnder2 initialization
-  if (TRIGGER_PIN_BRIDGE_TOP != -1 && ECHO_PIN_BRIDGE_TOP != -1) {
-    // sonarBridgeTop declared as a global NewPing object; no dynamic init required
-    Serial.println("Bridge-top ultrasonic sensor configured");
-  }
 
   delay(1000);
 }
@@ -569,7 +564,7 @@ void loop() {
   }
 
   //      ~tests~      //
-  //test(); // runs all tests
+  test(); // runs all tests
   //  ~end of tests~  //
 
   //updateLimitSwitches();
@@ -664,6 +659,10 @@ void controlBridge() {
   } state = WAIT_FOR_SHIPS;
   static unsigned long stateStartTime = 0;
   static unsigned long clearConfirmStart = 0; // timer to confirm under/approach clear
+  static unsigned long openConfirmStart = 0;  // confirm bridge-open reading
+  static unsigned long closeConfirmStart = 0; // confirm bridge-closed reading
+  const unsigned long OPEN_CONFIRM_MS = 200;  // require 200ms stable
+  const unsigned long CLOSE_CONFIRM_MS = 200; // require 200ms stable
   const unsigned long CLEAR_CONFIRM_MS = 3000;
 
   switch (state) {
@@ -733,9 +732,32 @@ void controlBridge() {
       break;
 
     case BRIDGE_OPENING:
-      // Timed open (limits disabled)
+      // Attempt to detect bridge fully open using top sensor (with quick confirmation)
       playMovingAlarm();
       if (!bridgeMoving) startBridgeOpen();
+      
+      int topOpenDist = sonarBridgeTop.ping_cm();
+      bool topIndicatesOpen = (topOpenDist == 0) || (topOpenDist > 0 && topOpenDist <= BRIDGE_TOP_OPEN_THRESHOLD_CM);
+      if (topIndicatesOpen) {
+        if (openConfirmStart == 0) openConfirmStart = millis();
+        if (millis() - openConfirmStart >= OPEN_CONFIRM_MS) {
+          if (bridgeMoving) {
+            stopBridge();
+            Serial.println("Bridge open (sensor)");
+          }
+          currentState.bridgeStatus = "OPEN";
+          stateStartTime = millis();
+          state = BRIDGE_OPEN;
+          currentState.stateCode = 3;
+          openConfirmStart = 0;
+          closeConfirmStart = 0;
+          break;
+        }
+      } else {
+        openConfirmStart = 0;
+      }
+
+      // Timed fallback if sensor doesn't trigger
       if (millis() - stateStartTime >= BRIDGE_MOVE_MS) {
         if (bridgeMoving) {
           stopBridge();
@@ -808,9 +830,35 @@ void controlBridge() {
       break;
 
     case BRIDGE_CLOSING:
-      // Timed close (limits disabled)
+      // Try to stop when top sensor indicates closed (with confirmation), else use timed fallback
       playMovingAlarm();
       if (!bridgeMoving) startBridgeClose();
+      
+      int topCloseDist = sonarBridgeTop.ping_cm();
+      bool topIndicatesClosed = (topCloseDist > 0 && topCloseDist >= BRIDGE_TOP_CLOSED_THRESHOLD_CM);
+      if (topIndicatesClosed) {
+        if (closeConfirmStart == 0) closeConfirmStart = millis();
+        if (millis() - closeConfirmStart >= CLOSE_CONFIRM_MS) {
+          if (bridgeMoving) {
+            stopBridge();
+            Serial.println("Bridge closed (sensor)");
+          }
+          currentState.bridgeStatus = "CLOS";
+          // open gates after bridge fully closed (small pause already elapsed conceptually)
+          startGateOpen();
+          currentState.waterwayLights = "STOP";
+          stateStartTime = millis();
+          state = GATES_OPENING;
+          currentState.stateCode = 5;
+          closeConfirmStart = 0;
+          openConfirmStart = 0;
+          break;
+        }
+      } else {
+        closeConfirmStart = 0;
+      }
+
+      // Timed fallback
       if (millis() - stateStartTime >= BRIDGE_MOVE_MS) {
         if (bridgeMoving) {
           stopBridge();
@@ -948,8 +996,8 @@ void resetBridgeControlState() {
 #define CAR_DETECT_CM 5
 #define UNDER_DETECT_CM 20
 
-#define BRIDGE_TOP_CLOSED_THRESHOLD_CM 5  // reading <= this -> bridge closed (near)
-#define BRIDGE_TOP_OPEN_THRESHOLD_CM   15  // reading >= this or out-of-range -> bridge open (raised)
+#define BRIDGE_TOP_CLOSED_THRESHOLD_CM 15  // reading >= this -> bridge closed (near)
+#define BRIDGE_TOP_OPEN_THRESHOLD_CM    6  // reading <= this or out-of-range -> bridge open (raised)
 
 // Check if ships are detected (north/south)
 bool checkForShips() {
@@ -1253,60 +1301,32 @@ void testSpeaker() {
 }
 
 // Test ultrasonics: print distance readings for all four sensors
-void testUltrasonics(int samples = 3, int delayMs = 200) {
+void testUltrasonics(int samples = 1, int delayMs = 200) {
   Serial.println("[TEST] Ultrasonics: reading sensors...");
   for (int s = 0; s < samples; s++) {
+    unsigned long ts = millis();
     int n = sonarNorth.ping_cm();
     int so = sonarSouth.ping_cm();
-    int r = sonarBridgeTop.ping_cm();
+    int t = sonarBridgeTop.ping_cm();
     int u = (sonarUnder != nullptr) ? sonarUnder->ping_cm() : -1;
-    Serial.print("North:" + String(n) + " cm, South:" + String(so) + " cm, Top:" + String(r) + " cm, Under:" + String(u) + " cm");
-    Serial.println();
-    delay(delayMs);
+
+    Serial.println("----------------------------------------");
+
+    Serial.print("- North:    ");
+    if (n <= 0) Serial.println("Nothing there"); else { Serial.print(n); Serial.println(" cm"); }
+
+    Serial.print("- South:    ");
+    if (so <= 0) Serial.println("Nothing there"); else { Serial.print(so); Serial.println(" cm"); }
+
+    Serial.print("- Top:      ");
+    if (t <= 0) Serial.println("Nothing there"); else { Serial.print(t); Serial.println(" cm"); }
+
+    Serial.print("- Under:    ");
+    if (u == -1) Serial.println("NONE"); else if (u <= 0) Serial.println("Nothing there"); else { Serial.print(u); Serial.println(" cm"); }
+
+    //delay(delayMs);
   }
-  Serial.println("[TEST] Ultrasonics done.");
-}
-
-// Test limit switches: read and print states
-void testLimitSwitches(int iterations = 1, int delayMs = 200) {
-  Serial.println("[TEST] Limit switches: polling states (digital)...");
-  for (int i = 0; i < iterations; i++) {
-    // Read raw digital values (active-low)
-    int rawGateClosed = digitalRead(LIMIT_GATE_CLOSED_PIN);
-    int rawGateOpen = digitalRead(LIMIT_GATE_OPEN_PIN);
-    int rawBridgeClosed = digitalRead(LIMIT_BRIDGE_CLOSED_PIN);
-    int rawBridgeOpen = digitalRead(LIMIT_BRIDGE_OPEN_PIN);
-
-    // Interpret (LOW == triggered)
-    bool gateClosedTrig = (rawGateClosed == LOW);
-    bool gateOpenTrig = (rawGateOpen == LOW);
-    bool bridgeClosedTrig = (rawBridgeClosed == LOW);
-    bool bridgeOpenTrig = (rawBridgeOpen == LOW);
-
-    // Update internal states as well
-    limitGateClosed = gateClosedTrig;
-    limitGateOpen = gateOpenTrig;
-    limitBridgeClosed = bridgeClosedTrig;
-    limitBridgeOpen = bridgeOpenTrig;
-
-    currentState.gateSwitchDown = limitGateClosed ? "TRIG" : "NONE";
-    currentState.gateSwitchUp = limitGateOpen ? "TRIG" : "NONE";
-    currentState.bridgeSwitchDown = limitBridgeClosed ? "TRIG" : "NONE";
-    currentState.bridgeSwitchUp = limitBridgeOpen ? "TRIG" : "NONE";
-
-    // Print diagnostic
-    Serial.print("gate closed limit switch:"); Serial.println(rawGateClosed);
-    //Serial.print(" GC_TRIG:"); Serial.print(limitGateClosed);
-    Serial.print("gate open limit switch:"); Serial.println(rawGateOpen);
-    //Serial.print(" GO_TRIG:"); Serial.print(limitGateOpen);
-    Serial.print("bridge closed limit switch:"); Serial.println(rawBridgeClosed);
-    //Serial.print(" BC_TRIG:"); Serial.print(limitBridgeClosed);
-    Serial.print("bridge open limit switch:"); Serial.println(rawBridgeOpen);
-    //Serial.print(" BO_TRIG:"); Serial.println(limitBridgeOpen);
-
-    delay(delayMs);
-  }
-  Serial.println("[TEST] Limit switches done.");
+  Serial.println("[TEST] Ultrasonics test done.");
 }
 
 // Test actuators: move gates and bridge using limit switches with timeout
