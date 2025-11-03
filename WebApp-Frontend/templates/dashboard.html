@@ -35,7 +35,7 @@
         <h3>Connection Status: <span id="text-conn-status"></span></h3>
         
         <!-- Error Code -->
-        <h3>Error Code: <span id="text-error-code"></span></h3>
+        <h3>State Code: <span id="text-state-code"></span></h3>
 
         <!-- INSERT BRIDGE IMAGE/GRAPHIC -->
 
@@ -239,17 +239,17 @@
 
             <!-- Error Code Override -->
             <div>
-                <p>Error Code Override *</p>
+                <p>State Code Override *</p>
                 
-                <select name="error-code" id="error-code">
-                    <option value="0" selected>0: No Error</option>
-                    <option value="1">1: Bridge Servo position misaligned with limit switch</option>
-                    <option value="2">2: Gate Servo position misaligned with limit switch</option>
-                    <option value="3">3: Bridge and Gate Servo position misaligned with limit switch</option>
-                    <option value="4">4: Road traffic detection error</option>
-                    <option value="5">5: Road traffic detection error and Bridge Servo position misaligned with limit switch</option>
-                    <option value="6">6: Road traffic detection error and Gate Servo position misaligned with limit switch</option>
-                    <option value="7">7: All errors</option>
+                <select name="state-code" id="state-code">
+                    <option value="0" selected>0: Bridge Operating Roadway Traffic</option>
+                    <option value="1">1: Detects Ship, Stop Roadway Traffic and Wait Until Cleared</option>
+                    <option value="2">2: Closing Gates then Openning Bridge</option>
+                    <option value="3">3: Bridge Operating Waterway Traffic</option>
+                    <option value="4">4: Waterway Traffic Cleared, Stop Waterway Traffic</option>
+                    <option value="5">5: Closing Bridge then Openning Gates</option>
+                    <option value="6">6: Manual Mode</option>
+                    <option value="7">7: EMERGENCY</option>
                 </select>
             </div>
         </div>

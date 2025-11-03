@@ -17,11 +17,11 @@ class Status:
         self.road_lights = array[8].upper()
         self.waterway_lights = array[9].upper()
         self.audio = array[10].upper()
-        self.error_code = array[11].upper()
+        self.state_code = array[11].upper()
     
     def toString(self):
 
-        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_us} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
+        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_us} {self.road_lights} {self.waterway_lights} {self.audio} {self.state_code}"
 
         return message
     
@@ -38,7 +38,7 @@ class Status:
             "road_lights": self.road_lights,
             "waterway_lights": self.waterway_lights,
             "audio": self.audio,
-            "error_code": self.error_code
+            "state_code": self.state_code
         }
     
     def resetTime(self):
@@ -80,7 +80,6 @@ def read_to_be_sent() -> str:
     return message
 
 def parse_message(message: str):
-
     split_message = message.split(" ")
     if(split_message[0] == "STAT"):
         with open("WebApp-Frontend\\files/status.txt", "w") as f:
@@ -154,8 +153,8 @@ def communication():
 def test_status_change():
     while True:
         time.sleep(1)
-        parse_message("STAT CLOS OPEN NONE NONE NONE NONE NONE NONE TRIG NONE TRIG STOP GOGO NONE 0")
+        parse_message("STAT CLOS OPEN NONE NONE NONE NONE NONE STOP GOGO NONE 0")
         time.sleep(1)
-        parse_message("STAT EMER EMER SHIP NONE NONE NONE NONE NONE NONE NONE NONE EMER EMER EMER 7")
+        parse_message("STAT EMER EMER SHIP NONE NONE NONE NONE EMER EMER EMER 7")
 
 
