@@ -84,10 +84,13 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 // Pins
 #define MAX_DISTANCE 500
 
-// Timed bridge movement (ms) hard coded time for bridge movement
+// Timed bridge movement
 #define BRIDGE_MOVE_MS 2000
 
-/// add led stuff below here
+// Manual confirmation timings
+#define MANUAL_CONFIRM_MS 200
+
+/// add led stuff below1 here
 #define LEDS_OFF 0
 #define LEDS_RED 1
 #define LEDS_GREEN 2
@@ -905,49 +908,92 @@ void controlBridge() {
       break;
   }
 }
-
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Manual motor control functions~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // manual mode functions for motor control
 void openBridge() {
-  // Timed manual open
+  // Manual open using top sensor with timed fallback
   const unsigned long timeoutMs = BRIDGE_MOVE_MS;
-  Serial.println("Manual: Opening bridge (timed)...");
+  Serial.println("Manual: Opening bridge (sensor-assisted)...");
   if (currentMode == EMERGENCY_MODE) {
     Serial.println("Manual open blocked: EMERGENCY mode");
     return;
   }
-  bridgeServo.write(120);
-  delay(timeoutMs);
-  bridgeServo.write(90);
+
+  // start movement and sound
+  startBridgeOpen();
+  unsigned long t0 = millis();
+  unsigned long confirmStart = 0;
+  playMovingAlarm();
+
+  while (millis() - t0 < timeoutMs) {
+    int topDist = sonarBridgeTop.ping_cm();
+    bool topOpen = (topDist == 0) || (topDist > 0 && topDist <= BRIDGE_TOP_OPEN_THRESHOLD_CM);
+    if (topOpen) {
+      if (confirmStart == 0) confirmStart = millis();
+      if (millis() - confirmStart >= MANUAL_CONFIRM_MS) {
+        stopBridge();
+        playOpenAlarm();
+        currentState.bridgeStatus = "OPEN";
+        Serial.println("Manual: Bridge opened (sensor)");
+        return;
+      }
+    } else {
+      confirmStart = 0;
+    }
+    delay(50);
+  }
+
+  // timeout fallback
+  if (bridgeMoving) stopBridge();
+  playOpenAlarm();
   currentState.bridgeStatus = "OPEN";
-  Serial.println("Manual: Bridge opened (timed)");
+  Serial.println("Manual: Bridge opened (timed fallback)");
 }
 
 void closeBridge() {
-  // Timed manual close
-  const unsigned long timeoutMs = BRIDGE_MOVE_MS;
-  Serial.println("Manual: Closing bridge (timed)...");
+  // Manual close using top sensor with timed fallback
+  const unsigned long timeoutMs = BRIDGE_MOVE_MS * 2; // allow a longer timeout for manual
+  Serial.println("Manual: Closing bridge (sensor-assisted)...");
   if (currentMode == EMERGENCY_MODE) {
     Serial.println("Manual close blocked: EMERGENCY mode");
     return;
   }
-  bridgeServo.write(60);
-  delay(timeoutMs);
-  bridgeServo.write(90);
-  currentState.bridgeStatus = "CLOS";
-  Serial.println("Manual: Bridge closed (timed)");
-}
 
-void closeGates(){ 
-  // Timed gate close (2 seconds)
-  currentState.gateStatus = "CLOS";
-  gateServo.write(60);
-  delay(1000);
-  gateServo.write(90);
-  Serial.println("Gates closed");
+  // start movement and sound
+  startBridgeClose();
+  unsigned long t0 = millis();
+  unsigned long confirmStart = 0;
+  playMovingAlarm();
+
+  while (millis() - t0 < timeoutMs) {
+    int topDist = sonarBridgeTop.ping_cm();
+    bool topClosed = (topDist > 0 && topDist >= BRIDGE_TOP_CLOSED_THRESHOLD_CM);
+    if (topClosed) {
+      if (confirmStart == 0) confirmStart = millis();
+      if (millis() - confirmStart >= MANUAL_CONFIRM_MS) {
+        stopBridge();
+        playCloseAlarm();
+        currentState.bridgeStatus = "CLOS";
+        Serial.println("Manual: Bridge closed (sensor)");
+        // open gates after close in manual as in automatic
+        startGateOpen();
+        return;
+      }
+    } else {
+      confirmStart = 0;
+    }
+    delay(50);
+  }
+
+  // timeout fallback
+  if (bridgeMoving) stopBridge();
+  playCloseAlarm();
+  currentState.bridgeStatus = "CLOS";
+  startGateOpen();
+  Serial.println("Manual: Bridge closed (timed fallback)");
 }
 
 void openGates(){
-  // Timed gate open (2 seconds)
   currentState.gateStatus = "OPEN";
   gateServo.write(120);
   delay(1000);
@@ -955,6 +1001,15 @@ void openGates(){
   Serial.println("Gates opened");
 }
 
+void closeGates(){ 
+  currentState.gateStatus = "CLOS";
+  gateServo.write(60);
+  delay(1000);
+  gateServo.write(90);
+  Serial.println("Gates closed");
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 // Emergency stop function
 void emergencyStop() {
   // Immediately stop all motors
