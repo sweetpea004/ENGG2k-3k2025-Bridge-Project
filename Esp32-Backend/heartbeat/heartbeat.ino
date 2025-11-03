@@ -1158,10 +1158,6 @@ void testLEDs(){
   currentState.roadLights = "SLOW";
 }
 
-void ErrorDisplay(){
-
-}
-
 void updateLEDs() {
   char roadLights = LEDS_OFF;
   char waterwayLights = LEDS_OFF;
