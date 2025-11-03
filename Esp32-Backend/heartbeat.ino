@@ -246,7 +246,10 @@ void setup() {
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
 
-  // Setup the servo
+  // Setup the servo // maybe not?
+  // digitalWrite(SERVO_BRIDGE_PIN, LOW);
+  // digitalWrite(SERVO_GATE_PIN, LOW);
+
   bridgeServo.attach(SERVO_BRIDGE_PIN, 500, 2500); // Attach servo with range
   bridgeServo.write(90);  // ake sure motor is stopped
 
@@ -1004,7 +1007,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       bitSet(leds1, 7);
       break;
   }
-  switch (south) {
+  switch (west) {
     case LEDS_OFF:
       break;
     
@@ -1016,7 +1019,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       bitSet(leds1, 5);
       break;
   }
-  switch (west) {
+  switch (south) {
     case LEDS_OFF:
       break;
     
