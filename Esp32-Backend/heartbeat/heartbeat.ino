@@ -830,7 +830,7 @@ void controlBridge() {
       break;
 
     case BRIDGE_CLOSING:
-      // Try to stop when top sensor indicates closed (with confirmation), else use timed fallback
+      // Try to stop when top sensor sees
       playMovingAlarm();
       if (!bridgeMoving) startBridgeClose();
       
@@ -844,7 +844,7 @@ void controlBridge() {
             Serial.println("Bridge closed (sensor)");
           }
           currentState.bridgeStatus = "CLOS";
-          // open gates after bridge fully closed (small pause already elapsed conceptually)
+          // open gates after bridge fully closed
           startGateOpen();
           currentState.waterwayLights = "STOP";
           stateStartTime = millis();
