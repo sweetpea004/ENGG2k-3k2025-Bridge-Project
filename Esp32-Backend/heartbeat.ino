@@ -231,8 +231,17 @@ void setup() {
   Serial.println("Initializing load cell and taring...");
   long tareSum = 0;
   for (int i = 0; i < 20; i++) {
-    while (!scale.isReady());
-    //scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+    // wait for a new sample
+    while (!scale.isReady()) {
+      delay(1);
+    }
+    // request & select the next differential input reading (match example usage)
+#ifdef HX710_DIFFERENTIAL_INPUT_40HZ
+    scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+#else
+    scale.readAndSelectNextData();
+#endif
+    // then read the last differential input value
     tareSum += scale.getLastDifferentialInput();
     delay(10);
   }
@@ -549,12 +558,12 @@ void stopBridge() {
 void loop() {
 
   //      ~tests~      //
-  test(); // runs all tests
+  //test(); // runs all tests
   //  ~end of tests~  //
 
-  updateLimitSwitches();
+  //updateLimitSwitches();
   handleClient();
-  //controlBridge();
+  controlBridge();
   updateLEDs();
   if(initializationComplete == true){
     sendHeartbeat();
@@ -788,6 +797,7 @@ void controlBridge() {
   }
 }
 
+// manual mode functions for motor control
 void openBridge() {
   // Timed manual open
   const unsigned long timeoutMs = BRIDGE_MOVE_MS;
@@ -883,7 +893,7 @@ void resetBridgeControlState() {
   }
 }
 
-// all cm are placeholders
+// all cm are placeholders maybe need adjusting
 // Detection thresholds (cm)
 #define SHIP_DETECT_CM 30
 #define CAR_DETECT_CM 5
@@ -917,7 +927,7 @@ bool checkForShips() {
   return shipDetected;
 }
 
-// Check if cars are detected on the road
+// Check if cars are detected on the road (not used in current logic)
 bool checkForCars() {
   if (currentMode == MANUAL_MODE) return false;
 
@@ -1128,13 +1138,25 @@ void updateLEDs() {
 
 // Read mass from loadcell in grams (uses calibration_factor and tare)
 float readLoadMass() {
+  // ensure scale has a fresh sample
   if (!scale.isReady()) {
     return NAN; // not ready
   }
-  //scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+#ifdef HX710_DIFFERENTIAL_INPUT_40HZ
+  scale.readAndSelectNextData(HX710_DIFFERENTIAL_INPUT_40HZ);
+#else
+  scale.readAndSelectNextData();
+#endif
   long raw = scale.getLastDifferentialInput();
   long net = raw - loadcellTare;
   float mass = net / calibration_factor;
+  // debug log - remove or comment out after calibration/verification
+  Serial.print("Loadcell raw=");
+  Serial.print(raw);
+  Serial.print(" net=");
+  Serial.print(net);
+  Serial.print(" mass=");
+  Serial.println(mass, 2);
   if (mass < 0) mass = 0;
   return mass;
 }
