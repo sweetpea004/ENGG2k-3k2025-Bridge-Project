@@ -86,7 +86,7 @@ byte leds2 = 0;
 //HX710 scale;
 long loadcellTare = 0;
 float calibration_factor = 717.5; // adjust to your calibration
-const float LOAD_THRESHOLD_GRAMS = 5.0; // anything above this and it counts as on bridge
+const float LOAD_THRESHOLD_GRAMS = 20.0; // anything above this and it counts as on bridge
 
 // Servo & Ultrasonic sensor setup
 NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
@@ -682,7 +682,7 @@ void controlBridge() {
         if (isnan(mass)) mass = 0;
         if (mass > LOAD_THRESHOLD_GRAMS) {
           Serial.println("Weight detected on bridge (" + String(mass,1) + " g) - delaying gate close");
-          currentState.roadLoad = "LOAD";
+          currentState.roadLoad = "TRAF";
           // reset timer to wait and recheck
           stateStartTime = millis();
         } else {
