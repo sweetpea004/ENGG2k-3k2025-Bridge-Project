@@ -111,6 +111,8 @@ void setVolume(uint8_t vol) {
 // Convenience wrappers for open/close alarms
 void playOpenAlarm() { playVoice(0x01); }
 void playCloseAlarm() { playVoice(0x02); }
+void playMovingAlarm() { playVoice(0x03); }
+void playEmergencyAlarm() { playVoice(0x04); }
 
 // Limit switch and movement state variables
 bool limitGateClosed = false;
@@ -543,12 +545,12 @@ void stopGate() {
 
 // Start/stop bridge movement (non-blocking)
 void startBridgeOpen() {
-  playOpenAlarm();
+  //playOpenAlarm();
   bridgeServo.write(120); // move towards open
   bridgeMoving = true;
 }
 void startBridgeClose() {
-  playCloseAlarm();
+  //playCloseAlarm();
   bridgeServo.write(60); // move towards closed
   bridgeMoving = true;
 }
@@ -560,6 +562,9 @@ void stopBridge() {
 
 // Main Loop
 void loop() {
+  if(currentMode == EMERGENCY_MODE){
+    playEmergencyAlarm();
+  }
 
   //      ~tests~      //
   //test(); // runs all tests
@@ -710,6 +715,8 @@ void controlBridge() {
         currentState.waterwayLights = "GOGO";
         // small pause to allow gate motor to settle and avoid high current when starting bridge
         delay(500);
+        playOpenAlarm();
+        delay(4000);
         startBridgeOpen();
         stateStartTime = millis();
         state = BRIDGE_OPENING;
@@ -721,6 +728,7 @@ void controlBridge() {
 
     case BRIDGE_OPENING:
       // Timed open (limits disabled)
+      playMovingAlarm();
       if (!bridgeMoving) startBridgeOpen();
       if (millis() - stateStartTime >= BRIDGE_MOVE_MS) {
         if (bridgeMoving) {
@@ -759,6 +767,8 @@ void controlBridge() {
           if (bridgeConfirmedOpen) {
             Serial.println("Under & approach sensors clear and bridge confirmed open - closing bridge...");
             currentState.waterwayLights = "STOP";
+            playCloseAlarm();
+            delay(4000);
             startBridgeClose();
             stateStartTime = millis();
             state = BRIDGE_CLOSING;
@@ -777,6 +787,7 @@ void controlBridge() {
 
     case BRIDGE_CLOSING:
       // Timed close (limits disabled)
+      playMovingAlarm();
       if (!bridgeMoving) startBridgeClose();
       if (millis() - stateStartTime >= BRIDGE_MOVE_MS) {
         if (bridgeMoving) {
