@@ -658,7 +658,7 @@ void controlBridge() {
   switch (state) {
     case WAIT_FOR_SHIPS:
     Serial.println("waiting to detect Ship");
-
+    currentState.waterwayLights = "STOP";
       if (checkForShips()) {
         Serial.println("Ship detected - waiting for cars to clear...");
         state = WAIT_FOR_CARS_CLEAR;
@@ -670,14 +670,28 @@ void controlBridge() {
     case WAIT_FOR_CARS_CLEAR:
       // Wait a fixed grace period for cars to clear before closing gates
       if (millis() - stateStartTime >= 5000) {
-        Serial.println("Grace period elapsed - closing gates...");
-        // start closing gates and wait for limit switch
-        startGateClose();
+        Serial.println("Grace period elapsed - preparing to close gates...");
+        // set lights to stop
         currentState.roadLights = "STOP";
         currentState.waterwayLights = "STOP";
-        stateStartTime = millis();
-        state = GATES_CLOSING;
+
+        // check load mass BEFORE closing gates so cars can still drive off
+        float mass = readLoadMass();
+        if (isnan(mass)) mass = 0;
+        if (mass > LOAD_THRESHOLD_GRAMS) {
+          Serial.println("Weight detected on bridge (" + String(mass,1) + " g) - delaying gate close");
+          currentState.roadLoad = "LOAD";
+          // reset timer to wait and recheck
+          stateStartTime = millis();
+        } else {
+          currentState.roadLoad = "NONE";
+          Serial.println("No weight detected - closing gates...");
+          // start closing gates and wait for limit switch
+          startGateClose();
+          stateStartTime = millis();
+          state = GATES_CLOSING;
         currentstate.stateCode = 1;
+        }
       }
       break;
 
@@ -689,26 +703,14 @@ void controlBridge() {
           currentState.gateStatus = "CLOS";
           Serial.println("Gates closed (limit/time)");
         }
-        // before opening the bridge ensure no weight sits on the bridge
-        float mass = readLoadMass();
-        if (isnan(mass)) mass = 0;
-        if (mass > LOAD_THRESHOLD_GRAMS) {
-          Serial.println("Weight detected on bridge (" + String(mass,1) + " g) - delaying open");
-          currentState.roadLoad = "LOAD";
-          // go back to waiting for cars to clear so operator can react
-          state = WAIT_FOR_CARS_CLEAR;
-          currentstate.stateCode = 0;
-          stateStartTime = millis();
-        } else {
-          Serial.println("Gates closed - starting bridge open (limit-driven)...");
-          currentState.waterwayLights = "GOGO";
-          // small pause to allow gate motor to settle and avoid high current when starting bridge
-          delay(500);
-          startBridgeOpen();
-          stateStartTime = millis();
-          state = BRIDGE_OPENING;
-          currentstate.stateCode = 2;
-        }
+        // proceed to open the bridge (load was already checked before closing gates)
+        Serial.println("Gates closed - starting bridge open (limit-driven)...");
+        currentState.waterwayLights = "GOGO";
+        // small pause to allow gate motor to settle and avoid high current when starting bridge
+        delay(500);
+        startBridgeOpen();
+        stateStartTime = millis();
+        state = BRIDGE_OPENING;
       } else {
         // still moving or waiting for limit/time
         if (!gateMoving) startGateClose();
