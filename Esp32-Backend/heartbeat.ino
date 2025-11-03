@@ -317,6 +317,7 @@ void readMssg(String mssg) {
     emergencyStop();
   } else if (extract == "PUSH") {
     currentMode = MANUAL_MODE;
+    currentState.stateCode = 6;
     // Immediately stop any automatic movements when switching to MANUAL
     stopBridge();
     stopGate();
@@ -628,8 +629,7 @@ void sendHeartbeat() {
 String buildStatusMessage() {
   return "STAT " + currentState.bridgeStatus + " " + currentState.gateStatus + " " + 
          currentState.northUS + " " + currentState.underUS + " " + currentState.southUS + " " +
-         currentState.roadLoad + " " + currentState.roadUS + " " + currentState.bridgeSwitchUp + " " +
-         currentState.bridgeSwitchDown + " " + currentState.gateSwitchUp + " " + currentState.gateSwitchDown + " " +
+         currentState.roadLoad + " " + currentState.roadUS + " " +
          currentState.roadLights + " " + currentState.waterwayLights + " " + currentState.speaker + " " +
          String(currentState.stateCode);
 }
@@ -871,7 +871,7 @@ void emergencyStop() {
   currentState.roadLights = "EMER";
   currentState.waterwayLights = "EMER";
   currentState.speaker = "EMER";
-  currentState.errorCode = 7; // Emergency error code
+  currentState.stateCode = 7; // Emergency error code
 
   // Update LEDs to reflect emergency state
   updateLEDs();
