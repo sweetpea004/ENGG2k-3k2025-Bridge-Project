@@ -690,7 +690,7 @@ void controlBridge() {
           startGateClose();
           stateStartTime = millis();
           state = GATES_CLOSING;
-        currentstate.stateCode = 1;
+          currentstate.stateCode = 1;
         }
       }
       break;
