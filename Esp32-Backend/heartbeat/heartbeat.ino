@@ -14,20 +14,20 @@ HX710 scale;
 #define ECHO_PIN_NORTH    35 // echo 4
 #define TRIGGER_PIN_SOUTH 14 // trig 5
 #define ECHO_PIN_SOUTH    32 // echo 5
-#define TRIGGER_PIN_ROAD  26 // trig 3
-#define ECHO_PIN_ROAD     34 // echo 3
-#define TRIGGER_PIN_UNDER -1 // trig 1 (disabled)
-#define ECHO_PIN_UNDER    -1 // echo 1 (disabled)
+//#define TRIGGER_PIN_ROAD  26 // trig 3
+//#define ECHO_PIN_ROAD     34 // echo 3
+#define TRIGGER_PIN_UNDER 25 // trig 1 (disabled)
+#define ECHO_PIN_UNDER    39 // echo 1 (disabled)
 
 // double check implimentation
 // (second under-bridge sensor removed)
 
 // Bridge-top sensor (set to -1 to disable)
 #ifndef TRIGGER_PIN_BRIDGE_TOP
-#define TRIGGER_PIN_BRIDGE_TOP -1
+#define TRIGGER_PIN_BRIDGE_TOP 26
 #endif
 #ifndef ECHO_PIN_BRIDGE_TOP
-#define ECHO_PIN_BRIDGE_TOP -1
+#define ECHO_PIN_BRIDGE_TOP 34
 #endif
 
 // Pointers for optional sensors (created in setup if pins valid)
@@ -91,7 +91,7 @@ const float LOAD_THRESHOLD_GRAMS = 20.0; // anything above this and it counts as
 // Servo & Ultrasonic sensor setup
 NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
 NewPing sonarSouth(TRIGGER_PIN_SOUTH, ECHO_PIN_SOUTH, MAX_DISTANCE);
-NewPing sonarRoad(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
+NewPing sonarRoad(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
 //NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
@@ -567,7 +567,7 @@ void loop() {
   }
 
   //      ~tests~      //
-  //test(); // runs all tests
+  test(); // runs all tests
   //  ~end of tests~  //
 
   //updateLimitSwitches();
@@ -857,7 +857,7 @@ void closeGates(){
   // Timed gate close (2 seconds)
   currentState.gateStatus = "CLOS";
   gateServo.write(60);
-  delay(2000);
+  delay(1000);
   gateServo.write(90);
   Serial.println("Gates closed");
 }
@@ -866,7 +866,7 @@ void openGates(){
   // Timed gate open (2 seconds)
   currentState.gateStatus = "OPEN";
   gateServo.write(120);
-  delay(2000);
+  delay(1000);
   gateServo.write(90);
   Serial.println("Gates opened");
 }
@@ -1361,7 +1361,7 @@ void testMotors(){
 // Run all tests in sequence
 void runAllTests() {
   //testSpeaker();
-  //testUltrasonics();
+  testUltrasonics();
   //testLimitSwitches();
   //testActuators(); // motors with limit switches
   //testLEDs();
@@ -1379,5 +1379,5 @@ void test() {
   runAllTests();
   Serial.println("---------- END TEST SUITE ----------");
   // Pause long so routine is not re-run unless user triggers
-  delay(20000);
+  delay(2000);
 }
