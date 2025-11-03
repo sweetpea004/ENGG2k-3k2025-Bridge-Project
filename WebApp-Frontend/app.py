@@ -78,7 +78,7 @@ def redirect_dashboard():
                 push.append(request.form['audio'])
 
                 # determine Error code selected 
-                push.append(request.form['state-code'])
+                push.append("6")
                 
                 # convert "push" array to Status Obj
                 to_status = commProg.Status(push)

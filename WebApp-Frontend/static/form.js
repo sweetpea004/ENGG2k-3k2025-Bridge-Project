@@ -29,7 +29,6 @@ const loadCell = document.querySelector("#loadcell");
 const audioError = document.querySelector("#audio-error-text");
 const audio = document.getElementsByName('audio');
 const gates = document.getElementsByName('gates');
-const stateCode = document.querySelector("#state-code");
 const gatesError = document.querySelector("#gate-error-text");
 const bridge = document.getElementsByName('bridge');
 const bridgeError = document.querySelector("#bridge-error-text");
@@ -499,10 +498,6 @@ function disableInputs() {
         input.checked = false;
     });
 
-    // disable error code inputs
-    stateCode.disabled = true;
-    
-
     // disable gate inputs
     gates.forEach(input => {
         input.disabled = true;
@@ -547,9 +542,6 @@ function enableInputs() {
             input.checked = true;
         }
     });
-
-    // enable error code inputs
-    stateCode.disabled = false;
 
     // enable gate inputs
     gates.forEach(input => {

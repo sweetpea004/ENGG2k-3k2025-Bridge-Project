@@ -63,6 +63,7 @@ TEST_PORT = 5005
 
 ESP_IP = "172.20.10.2" #Dragans hotspot
 #ESP_IP = "10.236.167.40" #Persephone's hotspot
+#ESP_IP = "10.220.101.40" #Lena's hotspot
 ESP_PORT = 5003
 
 # Globals
@@ -82,8 +83,9 @@ def read_to_be_sent() -> str:
 def parse_message(message: str):
     split_message = message.split(" ")
     if(split_message[0] == "STAT"):
+        strip_message = message[:57] # ensure only one line 
         with open("WebApp-Frontend\\files/status.txt", "w") as f:
-            f.write(message)
+            f.write(strip_message)
 
 def read_status() -> Status:
     message = ""
