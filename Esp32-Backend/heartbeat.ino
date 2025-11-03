@@ -91,7 +91,7 @@ const float LOAD_THRESHOLD_GRAMS = 5.0; // anything above this and it counts as 
 // Servo & Ultrasonic sensor setup
 NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
 NewPing sonarSouth(TRIGGER_PIN_SOUTH, ECHO_PIN_SOUTH, MAX_DISTANCE);
-NewPing sonarRoad(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
+//NewPing sonarRoad(TRIGGER_PIN_ROAD, ECHO_PIN_ROAD, MAX_DISTANCE);
 //NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
@@ -558,8 +558,8 @@ void stopBridge() {
 
 // Main Loop
 void loop() {
-
-  //      ~tests~      //
+  Serial.println(sonarRoad.ping_cm());
+  //      ~tests~      //  <--- This is a test
   //test(); // runs all tests
   //  ~end of tests~  //
 
@@ -1192,20 +1192,42 @@ void testSpeaker() {
 void testUltrasonics(int samples = 3, int delayMs = 200) {
   Serial.println("[TEST] Ultrasonics: reading sensors...");
   for (int s = 0; s < samples; s++) {
+    unsigned long ts = millis();
     int n = sonarNorth.ping_cm();
     int so = sonarSouth.ping_cm();
     int r = sonarRoad.ping_cm();
     int u = (sonarUnder != nullptr) ? sonarUnder->ping_cm() : -1;
     int t = (sonarBridgeTop != nullptr) ? sonarBridgeTop->ping_cm() : -1;
-    Serial.print("North:" + String(n) + " cm, South:" + String(so) + " cm, Road:" + String(r) + " cm, Under:" + String(u) + " cm");
-    if (t != -1) Serial.print(", Top:" + String(t) + " cm");
+
+    Serial.print("["); Serial.print(ts); Serial.print("] ");
+
+    Serial.print("North:");
+    if (n <= 0) Serial.print("OOR"); else Serial.print(n);
+    Serial.print(" cm  ");
+
+    Serial.print("South:");
+    if (so <= 0) Serial.print("OOR"); else Serial.print(so);
+    Serial.print(" cm  ");
+
+    Serial.print("Road:");
+    if (r <= 0) Serial.print("OOR"); else Serial.print(r);
+    Serial.print(" cm  ");
+
+    Serial.print("Under:");
+    if (u == -1) Serial.print("NONE"); else if (u <= 0) Serial.print("OOR"); else Serial.print(u);
+    Serial.print(" cm  ");
+
+    Serial.print("Top:");
+    if (t == -1) Serial.print("NONE"); else if (t <= 0) Serial.print("OOR"); else Serial.print(t);
+    Serial.print(" cm");
+
     Serial.println();
     delay(delayMs);
   }
   Serial.println("[TEST] Ultrasonics done.");
 }
 
-// Test limit switches: read and print states
+// Test limit switches: read and print states (removed)
 void testLimitSwitches(int iterations = 1, int delayMs = 200) {
   Serial.println("[TEST] Limit switches: polling states (digital)...");
   for (int i = 0; i < iterations; i++) {
