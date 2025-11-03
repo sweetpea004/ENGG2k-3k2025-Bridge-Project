@@ -286,8 +286,8 @@ void setup() {
   }
   // removed sonarUnder2 initialization
   if (TRIGGER_PIN_BRIDGE_TOP != -1 && ECHO_PIN_BRIDGE_TOP != -1) {
-    sonarBridgeTop = new NewPing(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
-    Serial.println("Initialized bridge-top ultrasonic sensor");
+    // sonarBridgeTop declared as a global NewPing object; no dynamic init required
+    Serial.println("Bridge-top ultrasonic sensor configured");
   }
 
   delay(1000);
@@ -980,7 +980,7 @@ bool checkForShips() {
 bool checkForCars() {
   if (currentMode == MANUAL_MODE) return false;
 
-  int distanceRoad = sonarRoad.ping_cm();
+  int distanceRoad = sonarBridgeTop.ping_cm();
   if (distanceRoad > 0 && distanceRoad < CAR_DETECT_CM) {
     currentState.roadUS = "CAR";
     return true;
@@ -1013,30 +1013,26 @@ bool checkUnderBridge() {
 // Check bridge-top sensor to determine bridge height (OPEN/CLOSED/PART/NONE)
 bool checkBridgeTop() {
   if (currentMode == MANUAL_MODE) return false;
-  if (sonarBridgeTop == nullptr) {
-    currentState.bridgeTopUS = "NONE";
-    return false;
-  }
+  // Use the global bridge-top sensor object
+  int distanceTop = sonarBridgeTop.ping_cm();
+   // distanceTop == 0 means no echo (out of range) — treat as OPEN (bridge high)
+   if (distanceTop == 0) {
+     currentState.bridgeTopUS = "OPEN";
+     return true;
+   }
 
-  int distanceTop = sonarBridgeTop->ping_cm();
-  // distanceTop == 0 means no echo (out of range) — treat as OPEN (bridge high)
-  if (distanceTop == 0) {
-    currentState.bridgeTopUS = "OPEN";
-    return true;
-  }
+   if (distanceTop <= BRIDGE_TOP_CLOSED_THRESHOLD_CM) {
+     currentState.bridgeTopUS = "CLOSED";
+     return false;
+   }
 
-  if (distanceTop <= BRIDGE_TOP_CLOSED_THRESHOLD_CM) {
-    currentState.bridgeTopUS = "CLOSED";
-    return false;
-  }
+   if (distanceTop >= BRIDGE_TOP_OPEN_THRESHOLD_CM) {
+     currentState.bridgeTopUS = "OPEN";
+     return true;
+   }
 
-  if (distanceTop >= BRIDGE_TOP_OPEN_THRESHOLD_CM) {
-    currentState.bridgeTopUS = "OPEN";
-    return true;
-  }
-
-  currentState.bridgeTopUS = "PART"; // partial
-  return false;
+   currentState.bridgeTopUS = "PART"; // partial
+   return false;
 }
 
 /////// LED functions ///////
@@ -1187,26 +1183,26 @@ void updateLEDs() {
     if ((millis()/1000) % 2 == 0) {
       roadLights = LEDS_RED; 
     } else roadLights = LEDS_OFF;
-  } else if (currentstate.roadLights == "EMER") {
-    if ((millis()/1000) % 2 == 0) {
-      roadLights = LEDS_ON;
-    } else roadLights = LEDS_OFF;
-  }
+  } else if (currentState.roadLights == "EMER") {
+     if ((millis()/1000) % 2 == 0) {
+       roadLights = LEDS_ON;
+     } else roadLights = LEDS_OFF;
+   }
 
-  if (currentState.waterwayLights == "GOGO") {
-    waterwayLights = LEDS_GREEN;
-  } else if (currentState.waterwayLights == "STOP") {
-    waterwayLights = LEDS_RED;
-  } else if (currentState.waterwayLights == "SLOW") {
-    if ((millis()/1000) % 2 == 0) {
-      waterwayLights = LEDS_RED; 
-    } else waterwayLights = LEDS_OFF;
-  } else if (currentstate.roadLights == "EMER") {
-    if ((millis()/1000) % 2 == 0) {
-      waterwayLights = LEDS_ON;
-    } else waterwayLights = LEDS_OFF;
-  }
-  setLEDs(waterwayLights,waterwayLights,roadLights,roadLights,currentState.stateCode);
+   if (currentState.waterwayLights == "GOGO") {
+     waterwayLights = LEDS_GREEN;
+   } else if (currentState.waterwayLights == "STOP") {
+     waterwayLights = LEDS_RED;
+   } else if (currentState.waterwayLights == "SLOW") {
+     if ((millis()/1000) % 2 == 0) {
+       waterwayLights = LEDS_RED; 
+     } else waterwayLights = LEDS_OFF;
+   } else if (currentState.roadLights == "EMER") {
+     if ((millis()/1000) % 2 == 0) {
+       waterwayLights = LEDS_ON;
+     } else waterwayLights = LEDS_OFF;
+   }
+   setLEDs(waterwayLights,waterwayLights,roadLights,roadLights,currentState.stateCode);
 }
 
 // Read mass from loadcell in grams (uses calibration_factor and tare)
@@ -1262,11 +1258,9 @@ void testUltrasonics(int samples = 3, int delayMs = 200) {
   for (int s = 0; s < samples; s++) {
     int n = sonarNorth.ping_cm();
     int so = sonarSouth.ping_cm();
-    int r = sonarRoad.ping_cm();
+    int r = sonarBridgeTop.ping_cm();
     int u = (sonarUnder != nullptr) ? sonarUnder->ping_cm() : -1;
-    int t = (sonarBridgeTop != nullptr) ? sonarBridgeTop->ping_cm() : -1;
-    Serial.print("North:" + String(n) + " cm, South:" + String(so) + " cm, Road:" + String(r) + " cm, Under:" + String(u) + " cm");
-    if (t != -1) Serial.print(", Top:" + String(t) + " cm");
+    Serial.print("North:" + String(n) + " cm, South:" + String(so) + " cm, Top:" + String(r) + " cm, Under:" + String(u) + " cm");
     Serial.println();
     delay(delayMs);
   }
