@@ -35,7 +35,7 @@
         <h3>Connection Status: <span id="text-conn-status"></span></h3>
         
         <!-- Error Code -->
-        <h3>Error Code: <span id="text-error-code"></span></h3>
+        <h3>State Code: <span id="text-state-code"></span></h3>
 
         <!-- INSERT BRIDGE IMAGE/GRAPHIC -->
 
@@ -59,14 +59,6 @@
 
         <!-- LIMIT SWITCHES STATUS -->
         <h3>Roadway Ultrasonic: <span id="text-road-us"></span></h3>
-
-        <h3>Bridge Top Limit Switch: <span id="text-bridge-top-limit"></span></h3>
-
-        <h3>Bridge Bottom Limit Switch: <span id="text-bridge-bottom-limit"></span></h3>
-
-        <h3>Gate Top Limit Switch: <span id="text-gate-top-limit"></span></h3>
-
-        <h3>Gate Bottom Limit Switch: <span id="text-gate-bottom-limit"></span></h3>
 
         <!-- AUDIO STATUS -->
         <h3>Audio Announcement: <span id="text-audio"></span></h3>
@@ -171,36 +163,13 @@
                 </label>
             </div>
 
-            <!-- Limit Switch Override -->
+            <!-- Limit Override -->
             <div>
-                <p>Bridge and Gate Limit Switch Detection Override</p>
+                <p>Bridge Lift Limit Detection Override</p>
                 <label class="switch">
-                    <input type="checkbox" id="road-us" name="limit-switch" value="road-us">
+                    <input type="checkbox" id="road-us" name="bridge-limit" value="road-us">
                     <span class="slider"></span>
                     Road Ultrasonic 
-                </label>
-                <label class="switch">
-                    <input type="checkbox" id="bridge-top" name="limit-switch" value="bridge-top">
-                    <span class="slider"></span>
-                    Bridge Top
-                </label>
-
-                <label class="switch">
-                    <input type="checkbox" id="bridge-bottom" name="limit-switch" value="bridge-bottom">
-                    <span class="slider"></span>
-                    Bridge Bottom
-                </label>
-
-                <label class="switch">
-                    <input type="checkbox" id="gate-top" name="limit-switch" value="gate-top">
-                    <span class="slider"></span>
-                    Gate Top
-                </label>
-
-                <label class="switch">
-                    <input type="checkbox" id="gate-bottom" name="limit-switch" value="gate-bottom">
-                    <span class="slider"></span>
-                    Gate Bottom
                 </label>
             </div>
 
@@ -208,15 +177,27 @@
             <div>
                 <p>Audio Announcement Override * <span class="hidden error" id="audio-error-text">Please Select an Instruction for the Audio.</span></p>
                 <label class="switch">
-                    <input type="radio" id="start-complete-audio" name="audio" value="DONE">
+                    <input type="radio" id="start-complete-audio" name="audio" value="OPEN">
                     <span class="slider round"></span>
-                    <br><br>Terminus
+                    <br><br>Openning
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="start-complete-audio" name="audio" value="CLOS">
+                    <span class="slider round"></span>
+                    <br><br>Closing
                 </label>
 
                 <label class="switch">
                     <input type="radio" id="moving-audio" name="audio" value="MOVN">
                     <span class="slider round"></span>
                     <br><br>Moving
+                </label>
+
+                <label class="switch">
+                    <input type="radio" id="moving-audio" name="audio" value="DONE">
+                    <span class="slider round"></span>
+                    <br><br>Terminated
                 </label>
 
                 <label class="switch">
@@ -258,17 +239,17 @@
 
             <!-- Error Code Override -->
             <div>
-                <p>Error Code Override *</p>
+                <p>State Code Override *</p>
                 
-                <select name="error-code" id="error-code">
-                    <option value="0" selected>0: No Error</option>
-                    <option value="1">1: Bridge Servo position misaligned with limit switch</option>
-                    <option value="2">2: Gate Servo position misaligned with limit switch</option>
-                    <option value="3">3: Bridge and Gate Servo position misaligned with limit switch</option>
-                    <option value="4">4: Road traffic detection error</option>
-                    <option value="5">5: Road traffic detection error and Bridge Servo position misaligned with limit switch</option>
-                    <option value="6">6: Road traffic detection error and Gate Servo position misaligned with limit switch</option>
-                    <option value="7">7: All errors</option>
+                <select name="state-code" id="state-code">
+                    <option value="0" selected>0: Bridge Operating Roadway Traffic</option>
+                    <option value="1">1: Detects Ship, Stop Roadway Traffic and Wait Until Cleared</option>
+                    <option value="2">2: Closing Gates then Openning Bridge</option>
+                    <option value="3">3: Bridge Operating Waterway Traffic</option>
+                    <option value="4">4: Waterway Traffic Cleared, Stop Waterway Traffic</option>
+                    <option value="5">5: Closing Bridge then Openning Gates</option>
+                    <option value="6">6: Manual Mode</option>
+                    <option value="7">7: EMERGENCY</option>
                 </select>
             </div>
         </div>

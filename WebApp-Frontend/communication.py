@@ -14,18 +14,14 @@ class Status:
         self.south_us = array[5].upper()
         self.road_load = array[6].upper()
         self.road_us = array[7].upper()
-        self.bridge_top_limit = array[8].upper()
-        self.bridge_bottom_limit = array[9].upper()
-        self.gate_top_limit = array[10].upper()
-        self.gate_bottom_limit = array[11].upper()
-        self.road_lights = array[12].upper()
-        self.waterway_lights = array[13].upper()
-        self.audio = array[14].upper()
-        self.error_code = array[15].upper()
+        self.road_lights = array[8].upper()
+        self.waterway_lights = array[9].upper()
+        self.audio = array[10].upper()
+        self.state_code = array[11].upper()
     
     def toString(self):
 
-        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_us} {self.bridge_top_limit} {self.bridge_bottom_limit} {self.gate_top_limit} {self.gate_bottom_limit} {self.road_lights} {self.waterway_lights} {self.audio} {self.error_code}"
+        message = f"{self.message_code} {self.bridge_status} {self.gate_status} {self.north_us} {self.under_us} {self.south_us} {self.road_load} {self.road_us} {self.road_lights} {self.waterway_lights} {self.audio} {self.state_code}"
 
         return message
     
@@ -39,14 +35,10 @@ class Status:
             "south_us": self.south_us,
             "road_load": self.road_load,
             "road_us": self.road_us,
-            "bridge_top_limit": self.bridge_top_limit,
-            "bridge_bottom_limit": self.bridge_bottom_limit,
-            "gate_top_limit": self.gate_top_limit,
-            "gate_bottom_limit": self.gate_bottom_limit,
             "road_lights": self.road_lights,
             "waterway_lights": self.waterway_lights,
             "audio": self.audio,
-            "error_code": self.error_code
+            "state_code": self.state_code
         }
     
     def resetTime(self):
@@ -69,21 +61,36 @@ VERBOSE = True # Controls whether messages are printed to console
 TEST_IP = "10.126.242.252"
 TEST_PORT = 5005
 
-ESP_IP = "172.20.10.2"
+ESP_IP = "172.20.10.2" #Dragans hotspot
+#ESP_IP = "10.236.167.40" #Persephone's hotspot
 ESP_PORT = 5003
-
-STATUS_FREQUENCY = 2000000000
 
 # Globals
 sock = socket.socket()
-to_be_sent = ""
-default_status = "STAT CLOS OPEN NONE NONE NONE TRAF TRIG TRIG NONE TRIG NONE EMER EMER NONE 0"
-status = Status(default_status.split(" "))
 conn = Connection()
 
-def newMessage(message: str):
-    global to_be_sent
-    to_be_sent = message
+def save_to_be_sent(message: str):
+    with open("WebApp-Frontend\\files/to_be_sent.txt", "w") as f:
+        f.write(message)
+
+def read_to_be_sent() -> str:
+    message = ""
+    with open("WebApp-Frontend\\files/to_be_sent.txt", "r") as f:
+        message = f.read()
+    return message
+
+def parse_message(message: str):
+    split_message = message.split(" ")
+    if(split_message[0] == "STAT"):
+        with open("WebApp-Frontend\\files/status.txt", "w") as f:
+            f.write(message)
+
+def read_status() -> Status:
+    message = ""
+    with open("WebApp-Frontend\\files/status.txt", "r") as f:
+        message = f.read()
+    
+    return Status(message.split(" "))
 
 def send(message: str):
 
@@ -92,12 +99,12 @@ def send(message: str):
         print("Sent:", message)
     sock.sendall(bytes(f"{message}\n", encoding="utf-8"))
 
-def receive(s: Status) -> str:
+def receive() -> str:
 
     # recieve string message 
     data = b''
 
-    while time.time_ns() - s.recieved_status < STATUS_FREQUENCY:
+    while True:
         part = sock.recv(BUF_SIZE)
         data += part
         if len(part) < BUF_SIZE: # Check if reached end of message
@@ -107,21 +114,13 @@ def receive(s: Status) -> str:
     if VERBOSE:
         print("Received:", message)
     return message
-
-def parse_message(message: str) -> Status:
-
-    message = message.split(" ")
-    if(message[0] == "STAT"):
-        status = Status(message)
-    return status
     
 def communication():
-    global status
     global conn
-    global to_be_sent
     global sock
 
     print("Starting connection")
+    save_to_be_sent("") # reset to empty
 
     # Connection with ESP32
     sock.connect((ESP_IP, ESP_PORT))
@@ -134,39 +133,28 @@ def communication():
 
     send("REDY")
 
-    m = receive(status)
-    if (m == "OKOK"):
-        status.resetTime()
+    receive() #OKOK
 
     time.sleep(1) # small delay
-    print(conn.value)
 
     while conn.value:
-        received_string = receive(status)
+        received_string = receive()
         if (received_string != ""):
-            received_string = received_string.split(" ")
-            match received_string[0]:
-                case "STAT":
-                    status = Status(received_string) # auto resets time
+            parse_message(received_string)
 
-                    if (to_be_sent != ""):
-                        send(to_be_sent)
-                        to_be_sent = "" # reset to empty
-                    else: 
-                        send("OKOK")
-        else:
-            # recieved empty = assume connection
-            sock.close()
-            conn.toFalse()
+            # response
+            to_be_sent = read_to_be_sent()
+            if (to_be_sent != ""):
+                send(to_be_sent)
+                save_to_be_sent("") # reset to empty
+            else: 
+                send("OKOK")
 
 def test_status_change():
-    global status
-    global default_status
     while True:
-        time.sleep(2)
-        message = "STAT EMER EMER SHIP NONE NONE NONE NONE NONE NONE NONE NONE EMER EMER EMER 7"
-        status = Status(message.split(" "))
-        time.sleep(2)
-        status = Status(default_status.split(" "))
+        time.sleep(1)
+        parse_message("STAT CLOS OPEN NONE NONE NONE NONE NONE STOP GOGO NONE 0")
+        time.sleep(1)
+        parse_message("STAT EMER EMER SHIP NONE NONE NONE NONE EMER EMER EMER 7")
 
 

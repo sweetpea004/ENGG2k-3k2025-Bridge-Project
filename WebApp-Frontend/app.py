@@ -64,24 +64,8 @@ def redirect_dashboard():
                     push.append("NONE")
 
                 # determine Limit Switch Inputs
-                limit_switches = request.form.getlist('limit-switch')
+                limit_switches = request.form.getlist('bridge-limit')
                 if "road-us" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "bridge-top" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "bridge-bottom" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "gate-top" in limit_switches:
-                    push.append("TRIG")
-                else:
-                    push.append("NONE")
-                if "gate-bottom" in limit_switches:
                     push.append("TRIG")
                 else:
                     push.append("NONE")
@@ -94,7 +78,7 @@ def redirect_dashboard():
                 push.append(request.form['audio'])
 
                 # determine Error code selected 
-                push.append(request.form['error-code'])
+                push.append(request.form['state-code'])
                 
                 # convert "push" array to Status Obj
                 to_status = commProg.Status(push)
@@ -113,14 +97,15 @@ def redirect_dashboard():
                 flash('Changed To Automatic Mode', 'info')
 
         print(new_message)
-        commProg.newMessage(new_message) # sets to_be_sent global to new message to respond with
+        commProg.save_to_be_sent(new_message) # sets to_be_sent global to new message to respond with
 
     # Load page
     return render_template("dashboard.html")
 
 @socketio.on("retrieve_stat_data")
 def handle_update():
-    emit('update_stat_data', (commProg.status.toSerializable(), commProg.conn.value), broadcast=True)
+    status = commProg.read_status()
+    emit('update_stat_data', (status.toSerializable(), commProg.conn.value), broadcast=True)
 
 if __name__ == "__main__":
     comm_thread = threading.Thread(target=commProg.communication, daemon=True)

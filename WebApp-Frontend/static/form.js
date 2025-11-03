@@ -3,7 +3,7 @@ const textBridgeStat = document.getElementById("text-bridge-status");
 const bridgeImage = document.getElementById("bridge-img");
 const textGateStat = document.getElementById("text-gate-status");
 const textConnectionStat = document.getElementById("text-conn-status");
-const textErrorCode = document.getElementById("text-error-code");
+const textStateCode = document.getElementById("text-state-code");
 const textRoadTrafficLights = document.getElementById("text-road-traf");
 const textWaterwayTrafficLights = document.getElementById("text-waterway-traf");
 const textNorthUS = document.getElementById("text-north-us");
@@ -11,10 +11,6 @@ const textUnderUS = document.getElementById("text-under-us");
 const textSouthUS = document.getElementById("text-south-us");
 const textRoadUS = document.getElementById("text-road-us");
 const textLoadCell = document.getElementById("text-load-cell");
-const textBridgeTopLimitSwitch = document.getElementById("text-bridge-top-limit");
-const textBridgeBottomLimitSwitch = document.getElementById("text-bridge-bottom-limit");
-const textGateTopLimitSwitch = document.getElementById("text-gate-top-limit");
-const textGateBottomLimitSwitch = document.getElementById("text-gate-bottom-limit");
 const textAudio = document.getElementById("text-audio");
 
 // set global querie variables for form
@@ -30,14 +26,10 @@ const underUS = document.querySelector("#under-us");
 const southUS = document.querySelector("#south-us");
 const roadUS = document.querySelector("#road-us");
 const loadCell = document.querySelector("#loadcell");
-const bTopLimit = document.querySelector("#bridge-top");
-const bBottomLimit = document.querySelector("#bridge-bottom");
-const gTopLimit = document.querySelector("#gate-top");
-const gBottomLimit = document.querySelector("#gate-bottom");
 const audioError = document.querySelector("#audio-error-text");
 const audio = document.getElementsByName('audio');
 const gates = document.getElementsByName('gates');
-const errorCode = document.querySelector("#error-code");
+const stateCode = document.querySelector("#state-code");
 const gatesError = document.querySelector("#gate-error-text");
 const bridge = document.getElementsByName('bridge');
 const bridgeError = document.querySelector("#bridge-error-text");
@@ -95,6 +87,11 @@ socket.on('update_stat_data', function(status, conn) {
             // bridge image
             bridgeImage.src = "/static/Images/emergency.gif";
             break;
+        default: 
+            textBridgeStat.innerText = "ERR: " + status.bridge_status;
+            textBridgeStat.classList = "black-text";
+            break;
+
     }
 
     // gate Status text
@@ -115,6 +112,10 @@ socket.on('update_stat_data', function(status, conn) {
             textGateStat.innerText = "EMERGENCY";
             textGateStat.classList = "yellow-text";
             break;
+        default:
+            textGateStat.innerText = "ERR: " + status.gate_status;
+            textGateStat.classList = "black-text";
+            break;
     }
 
     // connection status text
@@ -130,38 +131,42 @@ socket.on('update_stat_data', function(status, conn) {
     }
 
     // error code text
-    switch (status.error_code) {
+    switch (status.state_code) {
         case "0":
-            textErrorCode.innerText = "0 - NO ERROR";
-            textErrorCode.classList = "green-text";
+            textStateCode.innerText = "0 - Bridge Operating Roadway Traffic";
+            textStateCode.classList = "green-text";
             break;
         case "1":
-            textErrorCode.innerText = "1 - Bridge Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "1 - Detects Ship, Stop Roadway Traffic and Wait until Cleared";
+            textStateCode.classList = "yellow-text";
             break;
         case "2":
-            textErrorCode.innerText = "2 - Gate Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "2 - Closing Gates then Openning Bridge";
+            textStateCode.classList = "yellow-text";
             break;
         case "3":
-            textErrorCode.innerText = "3 - Bridge and Gate Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "3 - Bridge Operating Waterway Traffic";
+            textStateCode.classList = "yellow-text";
             break;
         case "4":
-            textErrorCode.innerText = "4 - Road traffic detection error";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "4 - Waterway Traffic Cleared, Stop Waterway Traffic";
+            textStateCode.classList = "yellow-text";
             break;
         case "5":
-            textErrorCode.innerText = "5 - Road traffic detection error and Bridge Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "5 - Closing Bridge then Openning Gates";
+            textStateCode.classList = "yellow-text";
             break;
         case "6":
-            textErrorCode.innerText = "6 - Road traffic detection error and Gate Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "6 - Manual Mode";
+            textStateCode.classList = "yellow-text";
             break;
         case "7":
-            textErrorCode.innerText = "7 - All errors";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "7 - EMERGENCY";
+            textStateCode.classList = "red-text";
+            break;
+        default:
+            textStateCode.innerText = "ERR: " + status.state_code;
+            textStateCode.classList = "black-text";
             break;
     }
 
@@ -173,7 +178,7 @@ socket.on('update_stat_data', function(status, conn) {
             break;
         case "SLOW":
             textRoadTrafficLights.innerText = "SLOW";
-            textRoadTrafficLights.classList = "oramge-text";
+            textRoadTrafficLights.classList = "orange-text";
             break;
         case "STOP":
             textRoadTrafficLights.innerText = "STOP";
@@ -182,6 +187,10 @@ socket.on('update_stat_data', function(status, conn) {
         case "EMER":
             textRoadTrafficLights.innerText = "EMERGENCY";
             textRoadTrafficLights.classList = "yellow-text";
+            break;
+        default:
+            textRoadTrafficLights.innerText = "ERR: " + status.road_lights;
+            textRoadTrafficLights.classList = "black-text";
             break;
     }
 
@@ -203,6 +212,10 @@ socket.on('update_stat_data', function(status, conn) {
             textWaterwayTrafficLights.innerText = "EMERGENCY";
             textWaterwayTrafficLights.classList = "yellow-text";
             break;
+        default:
+            textWaterwayTrafficLights.innerText = "ERR: " + status.waterway_lights;
+            textWaterwayTrafficLights.classList = "black-text";
+            break;
     }
 
     // ultrasonics text
@@ -215,6 +228,10 @@ socket.on('update_stat_data', function(status, conn) {
             textNorthUS.innerText = "NOTHING DETECTED";
             textNorthUS.classList = "green-text";
             break;
+        default:
+            textNorthUS.innerText = "ERR: " + status.north_us;
+            textNorthUS.classList = "black-text";
+            break;
     }
 
     switch (status.under_us) {
@@ -226,6 +243,10 @@ socket.on('update_stat_data', function(status, conn) {
             textUnderUS.innerText = "NOTHING DETECTED";
             textUnderUS.classList = "green-text";
             break;
+        default:
+            textUnderUS.innerText = "ERR: " + status.under_us;
+            textUnderUS.classList = "black-text";
+            break;
     }
 
     switch (status.south_us) {
@@ -236,6 +257,10 @@ socket.on('update_stat_data', function(status, conn) {
         case "NONE":
             textSouthUS.innerText = "NOTHING DETECTED";
             textSouthUS.classList = "green-text";
+            break;
+        default:
+            textSouthUS.innerText = "ERR: " + status.south_us;
+            textSouthUS.classList = "black-text";
             break;
     }
 
@@ -249,9 +274,13 @@ socket.on('update_stat_data', function(status, conn) {
             textLoadCell.innerText = "NOTHING DETECTED";
             textLoadCell.classList = "green-text";
             break;
+        default:
+            textLoadCell.innerText = "ERR: " + status.road_load;
+            textLoadCell.classList = "black-text";
+            break;
     }
 
-    // limit switches
+    // Road Ultrasonic
     switch(status.road_us) {
         case "TRIG":
             textRoadUS.innerText = "MAXIMUM REACHED";
@@ -261,61 +290,29 @@ socket.on('update_stat_data', function(status, conn) {
             textRoadUS.innerText = "NOTHING DETECTED";
             textRoadUS.classList = "green-text";
             break;
-    }
-
-    switch (status.bridge_top_limit) {
-        case "TRIG":
-            textBridgeTopLimitSwitch.innerText = "TRIGGERED";
-            textBridgeTopLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textBridgeTopLimitSwitch.innerText = "NOTHING DETECTED";
-            textBridgeTopLimitSwitch.classList = "green-text";
-            break;
-    }
-
-    switch (status.bridge_bottom_limit) {
-        case "TRIG":
-            textBridgeBottomLimitSwitch.innerText = "TRIGGERED";
-            textBridgeBottomLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textBridgeBottomLimitSwitch.innerText = "NOTHING DETECTED";
-            textBridgeBottomLimitSwitch.classList = "green-text";
-            break;
-    }
-
-    switch (status.gate_top_limit) {
-        case "TRIG":
-            textGateTopLimitSwitch.innerText = "TRIGGERED";
-            textGateTopLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textGateTopLimitSwitch.innerText = "NOTHING DETECTED";
-            textGateTopLimitSwitch.classList = "green-text";
-            break;
-    }
-
-    switch (status.gate_bottom_limit) {
-        case "TRIG":
-            textGateBottomLimitSwitch.innerText = "TRIGGERED";
-            textGateBottomLimitSwitch.classList = "orange-text";
-            break;
-        case "NONE":
-            textGateBottomLimitSwitch.innerText = "NOTHING DETECTED";
-            textGateBottomLimitSwitch.classList = "green-text";
+        default:
+            textRoadUS.innerText = "ERR: " + status.road_us;
+            textRoadUS.classList = "black-text";
             break;
     }
 
     // audio text
     switch (status.audio) {
-        case "DONE":
-            textAudio.innerText = "BRIDGE STARTING OR COMPLETING MOVEMENT";
+        case "OPEN":
+            textAudio.innerText = "BRIDGE WILL BEGIN OPENNING";
+            textAudio.classList = "orange-text";
+            break;
+        case "CLOS":
+            textAudio.innerText = "BRIDGE WILL BEGIN CLOSING";
             textAudio.classList = "orange-text";
             break;
         case "MOVN":
             textAudio.innerText = "BRIDGE MOVING";
             textAudio.classList = "orange-text";
+            break;
+        case "DONE":
+            textAudio.innerText = "BRIDGE HAS TERMINATED PROCESS";
+            textAudio.classList = "green-text";
             break;
         case "EMER":
             textAudio.innerText = "EMERGENCY WITH BRIDGE";
@@ -324,6 +321,10 @@ socket.on('update_stat_data', function(status, conn) {
         case "NONE":
             textAudio.innerText = "NO AUDIO";
             textAudio.classList = "green-text";
+            break;
+        default:
+            textAudio.innerText = "ERR: " + status.audio;
+            textAudio.classList = "black-text";
             break;
     }
 });
@@ -492,19 +493,6 @@ function disableInputs() {
     loadCell.disabled = true;
     loadCell.checked = false;
 
-    // disable Limit Switches inputs
-    bTopLimit.disabled = true;
-    bTopLimit.checked = false;
-
-    bBottomLimit.disabled = true;
-    bBottomLimit.checked = false;
-
-    gTopLimit.disabled = true;
-    gTopLimit.checked = false;
-    
-    gBottomLimit.disabled = true;
-    gBottomLimit.checked = false;
-
     // disable audio inputs
     audio.forEach(input => {
         input.disabled = true;
@@ -512,7 +500,7 @@ function disableInputs() {
     });
 
     // disable error code inputs
-    errorCode.disabled = true;
+    stateCode.disabled = true;
     
 
     // disable gate inputs
@@ -551,12 +539,6 @@ function enableInputs() {
     roadUS.disabled = false;
     loadCell.disabled = false;
 
-    // enable Limit Switches inputs
-    bTopLimit.disabled = false;
-    bBottomLimit.disabled = false;
-    gTopLimit.disabled = false;
-    gBottomLimit.disabled = false;
-
     // enable audio inputs
     audio.forEach(input => {
         input.disabled = false;
@@ -567,7 +549,7 @@ function enableInputs() {
     });
 
     // enable error code inputs
-    errorCode.disabled = false;
+    stateCode.disabled = false;
 
     // enable gate inputs
     gates.forEach(input => {
