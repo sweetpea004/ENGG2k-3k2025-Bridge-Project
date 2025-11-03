@@ -1066,24 +1066,27 @@ bool checkBridgeTop() {
   if (currentMode == MANUAL_MODE) return false;
   // Use the global bridge-top sensor object
   int distanceTop = sonarBridgeTop.ping_cm();
-   // distanceTop == 0 means no echo (out of range) — treat as OPEN (bridge high)
-   if (distanceTop == 0) {
-     currentState.bridgeTopUS = "OPEN";
-     return true;
-   }
+  // distanceTop == 0 means no echo (out of range) — treat as OPEN (bridge high)
+  if (distanceTop == 0) {
+    currentState.bridgeTopUS = "OPEN";
+    return true;
+  }
 
-   if (distanceTop <= BRIDGE_TOP_CLOSED_THRESHOLD_CM) {
-     currentState.bridgeTopUS = "CLOSED";
-     return false;
-   }
+  // Small distance => bridge is UP/OPEN
+  if (distanceTop > 0 && distanceTop <= BRIDGE_TOP_OPEN_THRESHOLD_CM) {
+    currentState.bridgeTopUS = "OPEN";
+    return true;
+  }
 
-   if (distanceTop >= BRIDGE_TOP_OPEN_THRESHOLD_CM) {
-     currentState.bridgeTopUS = "OPEN";
-     return true;
-   }
+  // Large distance => bridge is DOWN/CLOSED
+  if (distanceTop >= BRIDGE_TOP_CLOSED_THRESHOLD_CM) {
+    currentState.bridgeTopUS = "CLOSED";
+    return false;
+  }
 
-   currentState.bridgeTopUS = "PART"; // partial
-   return false;
+  // Intermediate readings
+  currentState.bridgeTopUS = "PART"; // partial
+  return false;
 }
 
 /////// LED functions ///////
