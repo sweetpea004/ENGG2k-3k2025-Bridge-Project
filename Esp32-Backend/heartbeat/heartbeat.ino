@@ -32,7 +32,8 @@ HX710 scale;
 
 // Pointers for optional sensors (created in setup if pins valid)
 // NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor (removed)
-NewPing* sonarBridgeTop = nullptr; // top-looking sensor
+// replace pointer with comment to avoid duplicate declarations
+// NewPing* sonarBridgeTop = nullptr; // top-looking sensor (removed, declared below)
 NewPing* sonarUnder = nullptr;     // primary under-bridge sensor
 
 // Servos
@@ -92,7 +93,7 @@ const float LOAD_THRESHOLD_GRAMS = 20.0; // anything above this and it counts as
 // Servo & Ultrasonic sensor setup
 NewPing sonarNorth(TRIGGER_PIN_NORTH, ECHO_PIN_NORTH, MAX_DISTANCE);
 NewPing sonarSouth(TRIGGER_PIN_SOUTH, ECHO_PIN_SOUTH, MAX_DISTANCE);
-NewPing sonarRoad(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
+NewPing sonarBridgeTop(TRIGGER_PIN_BRIDGE_TOP, ECHO_PIN_BRIDGE_TOP, MAX_DISTANCE);
 //NewPing sonarUnder(TRIGGER_PIN_UNDER, ECHO_PIN_UNDER, MAX_DISTANCE);
 Servo bridgeServo; // Servo object
 Servo gateServo; // Servo object
@@ -568,7 +569,7 @@ void loop() {
   }
 
   //      ~tests~      //
-  test(); // runs all tests
+  //test(); // runs all tests
   //  ~end of tests~  //
 
   //updateLimitSwitches();
@@ -773,13 +774,13 @@ void controlBridge() {
 
           // If sensors remain clear for configured interval, proceed
           if (millis() - clearConfirmStart >= CLEAR_CONFIRM_MS) {
-            // confirm bridge is fully open before attempting to close
-            bool bridgeConfirmedOpen = (currentState.bridgeStatus == "OPEN");
-            if (!bridgeConfirmedOpen) {
-              bridgeConfirmedOpen = checkBridgeTop(); // check bridge-top sensor if present
-            }
+          // confirm bridge is fully open before attempting to close
+          bool bridgeConfirmedOpen = (currentState.bridgeStatus == "OPEN");
+          if (!bridgeConfirmedOpen) {
+            bridgeConfirmedOpen = checkBridgeTop(); // check bridge-top sensor if present
+          }
 
-            if (bridgeConfirmedOpen) {
+          if (bridgeConfirmedOpen) {
               Serial.println("Under & approach sensors confirmed clear - closing bridge...");
               currentState.waterwayLights = "STOP";
               startBridgeClose();
@@ -788,9 +789,9 @@ void controlBridge() {
               currentState.stateCode = 4;
               // reset confirmation timer
               clearConfirmStart = 0;
-            } else {
+          } else {
               // Bridge not confirmed open yet; keep waiting but keep the confirmation timer running
-              Serial.println("Bridge not yet confirmed open; waiting before close...");
+            Serial.println("Bridge not yet confirmed open; waiting before close...");
               // leave clearConfirmStart as-is so it continues counting
             }
           }
