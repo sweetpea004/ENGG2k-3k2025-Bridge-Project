@@ -1340,7 +1340,7 @@ void runAllTests() {
   //testLimitSwitches();
   //testActuators(); // motors with limit switches
   //testLEDs();
-  testMotors();
+  //testMotors();
 }
 
 
