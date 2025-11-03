@@ -149,15 +149,16 @@ void test();
 void testMotors();
 void testLEDs();
 void testSpeaker();
-// error codes:
-// 0: No Error
-// 1: Bridge limit switch not detecting bridge
-// 2: Gates limit switch not detecting gates
-// 3: Gates & Bridge
-// 4: Road traffic detection error
-// 5: Road traffic & Bridge
-// 6: Gates & Road Traffic 
-// 7: All errors
+
+// state codes:
+// 0: Bridge lowered and road operating
+// 1: Ship detected, stop roadway traffic
+// 2: Gates closing, bridge opening
+// 3: Bridge operating waterway traffic
+// 4: Waterway clear, stop waterway traffic
+// 5: Bridge closing, gates opening
+// 6: Manual Mode
+// 7: Emergency Mode
 
 // Bridge State Structure
 struct BridgeState {
@@ -175,7 +176,7 @@ struct BridgeState {
   String bridgeSwitchUp = "NONE";
   String bridgeSwitchDown = "NONE";
   String speaker = "NONE";
-  int errorCode = 0;
+  int stateCode = 0;
 
   // Additional fields for optional sensors
   String underUS2 = "NONE";
@@ -599,7 +600,7 @@ String buildStatusMessage() {
          currentState.roadLoad + " " + currentState.roadUS + " " + currentState.bridgeSwitchUp + " " +
          currentState.bridgeSwitchDown + " " + currentState.gateSwitchUp + " " + currentState.gateSwitchDown + " " +
          currentState.roadLights + " " + currentState.waterwayLights + " " + currentState.speaker + " " +
-         String(currentState.errorCode);
+         String(currentState.stateCode);
 }
 
 
@@ -678,7 +679,7 @@ void controlBridge() {
           stopBridge();
         }
         Serial.println("ERROR: Bridge closed limit active while opening - emergency stop");
-        currentState.errorCode = 1; // bridge limit error
+        currentState.stateCode = 1; // bridge limit error
         emergencyStop();
         state = WAIT_FOR_SHIPS; // reset state until manual/auto cleared
       } else if (limitBridgeOpen) {
@@ -895,7 +896,7 @@ void emergencyStop() {
   currentState.roadLights = "EMER";
   currentState.waterwayLights = "EMER";
   currentState.speaker = "EMER";
-  currentState.errorCode = 7; // Emergency error code
+  currentState.stateCode = 7; // Emergency error code
   
   // Reset any ongoing operations
   resetBridgeControlState();
@@ -926,7 +927,7 @@ void updateShiftRegister() {
 }
 
 // sets LED bytes and pushes to set LED colours
-void setLEDs(char north, char south, char west, char east, char errorCode) {
+void setLEDs(char north, char south, char west, char east, char stateCode) {
   leds1 = 0;
   leds2 = 0;
   switch (north) {
@@ -978,7 +979,7 @@ void setLEDs(char north, char south, char west, char east, char errorCode) {
       bitSet(leds1, 1);
       break;
   }
-  switch (errorCode) {
+  switch (stateCode) {
     case 0:
       break;
     
@@ -1058,7 +1059,7 @@ void updateLEDs() {
      waterwayLights = LEDS_RED; 
     } else waterwayLights = LEDS_OFF;
   }
-  setLEDs(waterwayLights,waterwayLights,roadLights,roadLights,currentState.errorCode);
+  setLEDs(waterwayLights,waterwayLights,roadLights,roadLights,currentState.stateCode);
 }
 
 // Read mass from loadcell in grams (uses calibration_factor and tare)
