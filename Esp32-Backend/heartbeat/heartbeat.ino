@@ -80,6 +80,7 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define LEDS_OFF 0
 #define LEDS_RED 1
 #define LEDS_GREEN 2
+#define LEDS_ON 3
 byte leds1 = 0;
 byte leds2 = 0;
 
@@ -669,7 +670,7 @@ void controlBridge() {
       if (checkForShips()) {
         Serial.println("Ship detected - waiting for cars to clear...");
         state = WAIT_FOR_CARS_CLEAR;
-        currentState.stateCode = 0;
+        currentState.stateCode = 1;
         stateStartTime = millis();
       }
       break;
@@ -678,9 +679,8 @@ void controlBridge() {
       // Wait a fixed grace period for cars to clear before closing gates
       if (millis() - stateStartTime >= 5000) {
         Serial.println("Grace period elapsed - preparing to close gates...");
-        // set lights to stop
-        currentState.roadLights = "STOP";
-        currentState.waterwayLights = "STOP";
+        // set road lights to slow
+        currentState.roadLights = "SLOW";
 
         // check load mass BEFORE closing gates so cars can still drive off
         float mass = readLoadMass();
@@ -697,7 +697,7 @@ void controlBridge() {
           startGateClose();
           stateStartTime = millis();
           state = GATES_CLOSING;
-        currentState.stateCode = 1;
+          currentState.stateCode = 1;
         }
       }
       break;
@@ -707,6 +707,7 @@ void controlBridge() {
       if (limitGateClosed || (millis() - stateStartTime) > 2000) {
         if (gateMoving) {
           stopGate();
+          currentState.roadLights = "STOP";
           currentState.gateStatus = "CLOS";
           Serial.println("Gates closed (limit/time)");
         }
@@ -714,12 +715,14 @@ void controlBridge() {
         Serial.println("Gates closed - starting bridge open (limit-driven)...");
         currentState.waterwayLights = "GOGO";
         // small pause to allow gate motor to settle and avoid high current when starting bridge
-        delay(500);
-        playOpenAlarm();
-        delay(4000);
-        startBridgeOpen();
-        stateStartTime = millis();
-        state = BRIDGE_OPENING;
+        if ((millis() - stateStartTime) > 2500) {
+          playOpenAlarm();
+          if ((millis() - stateStartTime) > 6500) {
+            startBridgeOpen();
+            stateStartTime = millis();
+            state = BRIDGE_OPENING;
+          }
+        } 
       } else {
         // still moving or waiting for limit/time
         if (!gateMoving) startGateClose();
@@ -745,6 +748,8 @@ void controlBridge() {
     case BRIDGE_OPEN:
       if (millis() - stateStartTime > 10000) {
         Serial.println("Waiting for ship under bridge to clear...");
+        currentState.waterwayLights = "GOGO";
+        stateStartTime = millis();
         state = WAIT_FOR_UNDER_CLEAR;
         currentState.stateCode = 3;
       }
@@ -766,13 +771,13 @@ void controlBridge() {
 
           if (bridgeConfirmedOpen) {
             Serial.println("Under & approach sensors clear and bridge confirmed open - closing bridge...");
-            currentState.waterwayLights = "STOP";
+            currentState.waterwayLights = "SLOW";
             playCloseAlarm();
-            delay(4000);
-            startBridgeClose();
-            stateStartTime = millis();
-            state = BRIDGE_CLOSING;
-            currentState.stateCode = 4;
+            if ((millis() - stateStartTime) > 4000 )
+              startBridgeClose();
+              stateStartTime = millis();
+              state = BRIDGE_CLOSING;
+              currentState.stateCode = 4;
           } else {
             // Bridge not confirmed open yet; keep waiting
             Serial.println("Bridge not yet confirmed open; waiting before close...");
@@ -796,13 +801,14 @@ void controlBridge() {
         }
         currentState.bridgeStatus = "CLOS";
         // small pause to allow bridge motor to settle before starting gate movement
-        delay(500);
-        // open gates after bridge fully closed
-        startGateOpen();
-        currentState.roadLights = "GOGO";
-        stateStartTime = millis();
-        state = GATES_OPENING;
-        currentState.stateCode = 5;
+        if ((millis() - stateStartTime) > 500 + BRIDGE_MOVE_MS) {
+          // open gates after bridge fully closed
+          startGateOpen();
+          currentState.waterwayLights = "STOP";
+          stateStartTime = millis();
+          state = GATES_OPENING;
+          currentState.stateCode = 5;
+        }
       }
       break;
 
@@ -812,9 +818,10 @@ void controlBridge() {
           stopGate();
           currentState.gateStatus = "OPEN";
           Serial.println("Gates opened");
+          currentState.roadLights = "GOGO";
         }
         state = WAIT_FOR_SHIPS;
-        currentState.stateCode = 1;
+        currentState.stateCode = 0;
       } else {
         if (!gateMoving) startGateOpen();
       }
@@ -1041,6 +1048,11 @@ void setLEDs(char north, char south, char west, char east, char stateCode) {
     case LEDS_GREEN:
       bitSet(leds1, 7);
       break;
+    
+    case LEDS_ON:
+      bitSet(leds1, 6);
+      bitSet(leds1, 7);
+      break;
   }
   switch (west) {
     case LEDS_OFF:
@@ -1051,6 +1063,11 @@ void setLEDs(char north, char south, char west, char east, char stateCode) {
       break;
 
     case LEDS_GREEN:
+      bitSet(leds1, 5);
+      break;
+
+    case LEDS_ON:
+      bitSet(leds1, 4);
       bitSet(leds1, 5);
       break;
   }
@@ -1065,6 +1082,11 @@ void setLEDs(char north, char south, char west, char east, char stateCode) {
     case LEDS_GREEN:
       bitSet(leds1, 3);
       break;
+
+    case LEDS_ON:
+      bitSet(leds1, 2);
+      bitSet(leds1, 3);
+      break;
   }
   switch (east) {
     case LEDS_OFF:
@@ -1075,6 +1097,11 @@ void setLEDs(char north, char south, char west, char east, char stateCode) {
       break;
 
     case LEDS_GREEN:
+      bitSet(leds1, 1);
+      break;
+
+    case LEDS_ON:
+      bitSet(leds1, 0);
       bitSet(leds1, 1);
       break;
   }
@@ -1131,10 +1158,6 @@ void testLEDs(){
   currentState.roadLights = "SLOW";
 }
 
-void ErrorDisplay(){
-
-}
-
 void updateLEDs() {
   char roadLights = LEDS_OFF;
   char waterwayLights = LEDS_OFF;
@@ -1147,6 +1170,10 @@ void updateLEDs() {
     if ((millis()/1000) % 2 == 0) {
       roadLights = LEDS_RED; 
     } else roadLights = LEDS_OFF;
+  } else if (currentstate.roadLights == "EMER") {
+    if ((millis()/1000) % 2 == 0) {
+      roadLights = LEDS_ON;
+    } else roadLights = LEDS_OFF;
   }
 
   if (currentState.waterwayLights == "GOGO") {
@@ -1156,6 +1183,10 @@ void updateLEDs() {
   } else if (currentState.waterwayLights == "SLOW") {
     if ((millis()/1000) % 2 == 0) {
       waterwayLights = LEDS_RED; 
+    } else waterwayLights = LEDS_OFF;
+  } else if (currentstate.roadLights == "EMER") {
+    if ((millis()/1000) % 2 == 0) {
+      waterwayLights = LEDS_ON;
     } else waterwayLights = LEDS_OFF;
   }
   setLEDs(waterwayLights,waterwayLights,roadLights,roadLights,currentState.stateCode);
