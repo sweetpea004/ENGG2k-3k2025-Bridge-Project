@@ -3,7 +3,7 @@ const textBridgeStat = document.getElementById("text-bridge-status");
 const bridgeImage = document.getElementById("bridge-img");
 const textGateStat = document.getElementById("text-gate-status");
 const textConnectionStat = document.getElementById("text-conn-status");
-const textErrorCode = document.getElementById("text-error-code");
+const textStateCode = document.getElementById("text-state-code");
 const textRoadTrafficLights = document.getElementById("text-road-traf");
 const textWaterwayTrafficLights = document.getElementById("text-waterway-traf");
 const textNorthUS = document.getElementById("text-north-us");
@@ -29,7 +29,7 @@ const loadCell = document.querySelector("#loadcell");
 const audioError = document.querySelector("#audio-error-text");
 const audio = document.getElementsByName('audio');
 const gates = document.getElementsByName('gates');
-const errorCode = document.querySelector("#error-code");
+const stateCode = document.querySelector("#state-code");
 const gatesError = document.querySelector("#gate-error-text");
 const bridge = document.getElementsByName('bridge');
 const bridgeError = document.querySelector("#bridge-error-text");
@@ -131,42 +131,42 @@ socket.on('update_stat_data', function(status, conn) {
     }
 
     // error code text
-    switch (status.error_code) {
+    switch (status.state_code) {
         case "0":
-            textErrorCode.innerText = "0 - NO ERROR";
-            textErrorCode.classList = "green-text";
+            textStateCode.innerText = "0 - Bridge Operating Roadway Traffic";
+            textStateCode.classList = "green-text";
             break;
         case "1":
-            textErrorCode.innerText = "1 - Bridge Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "1 - Detects Ship, Stop Roadway Traffic and Wait until Cleared";
+            textStateCode.classList = "yellow-text";
             break;
         case "2":
-            textErrorCode.innerText = "2 - Gate Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "2 - Closing Gates then Openning Bridge";
+            textStateCode.classList = "yellow-text";
             break;
         case "3":
-            textErrorCode.innerText = "3 - Bridge and Gate Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "3 - Bridge Operating Waterway Traffic";
+            textStateCode.classList = "yellow-text";
             break;
         case "4":
-            textErrorCode.innerText = "4 - Road traffic detection error";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "4 - Waterway Traffic Cleared, Stop Waterway Traffic";
+            textStateCode.classList = "yellow-text";
             break;
         case "5":
-            textErrorCode.innerText = "5 - Road traffic detection error and Bridge Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "5 - Closing Bridge then Openning Gates";
+            textStateCode.classList = "yellow-text";
             break;
         case "6":
-            textErrorCode.innerText = "6 - Road traffic detection error and Gate Servo position misaligned with limit switch";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "6 - Manual Mode";
+            textStateCode.classList = "yellow-text";
             break;
         case "7":
-            textErrorCode.innerText = "7 - All errors";
-            textErrorCode.classList = "red-text";
+            textStateCode.innerText = "7 - EMERGENCY";
+            textStateCode.classList = "red-text";
             break;
         default:
-            textErrorCode.innerText = "ERR: " + status.error_code;
-            textErrorCode.classList = "black-text";
+            textStateCode.innerText = "ERR: " + status.state_code;
+            textStateCode.classList = "black-text";
             break;
     }
 
@@ -500,7 +500,7 @@ function disableInputs() {
     });
 
     // disable error code inputs
-    errorCode.disabled = true;
+    stateCode.disabled = true;
     
 
     // disable gate inputs
@@ -549,7 +549,7 @@ function enableInputs() {
     });
 
     // enable error code inputs
-    errorCode.disabled = false;
+    stateCode.disabled = false;
 
     // enable gate inputs
     gates.forEach(input => {
