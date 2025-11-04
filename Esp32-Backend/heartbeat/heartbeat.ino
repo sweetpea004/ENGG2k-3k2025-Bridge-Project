@@ -70,8 +70,8 @@ NewPing* sonarUnder = nullptr;     // primary under-bridge sensor
 #define LOADCELL_DOUT_PIN 36
 
 // Network Configuration
-const char* ssid = "Lena's phone";
-const char* password = "hothotspot";
+const char* ssid = "OPPO A16s";
+const char* password = "f6tznt3z";
 const int serverPort = 5003;
 
 // Communication
@@ -543,7 +543,7 @@ void loop() {
   }
 
   //      ~tests~      //
-  test(); // runs all tests
+  //test(); // runs all tests
   //  ~end of tests~  //
 
   //updateLimitSwitches();
