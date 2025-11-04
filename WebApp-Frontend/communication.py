@@ -1,5 +1,6 @@
 import socket
 import time
+import os
 
 class Status:
     def __init__(self, array):
@@ -58,6 +59,14 @@ class Connection:
 BUF_SIZE = 4000
 VERBOSE = True # Controls whether messages are printed to console
 
+FRONTEND_PATH = "WebApp-Frontend"
+FILES_PATH = "files"
+TO_BE_SENT_FILE = "to_be_sent.txt"
+STATUS_FILE = "status.txt"
+
+TO_BE_SENT_PATH = os.path.join(FRONTEND_PATH, FILES_PATH, TO_BE_SENT_FILE)
+STATUS_PATH = os.path.join(FRONTEND_PATH, FILES_PATH, STATUS_FILE)
+
 TEST_IP = "10.126.242.252"
 TEST_PORT = 5005
 
@@ -72,12 +81,12 @@ sock = socket.socket()
 conn = Connection()
 
 def save_to_be_sent(message: str):
-    with open("WebApp-Frontend\\files/to_be_sent.txt", "w") as f:
+    with open(TO_BE_SENT_PATH, "w") as f:
         f.write(message)
 
 def read_to_be_sent() -> str:
     message = ""
-    with open("WebApp-Frontend\\files/to_be_sent.txt", "r") as f:
+    with open(TO_BE_SENT_PATH, "r") as f:
         message = f.read()
     return message
 
@@ -85,12 +94,12 @@ def parse_message(message: str):
     split_message = message.split(" ")
     if(split_message[0] == "STAT"):
         strip_message = message[:57] # ensure only one line 
-        with open("WebApp-Frontend\\files/status.txt", "w") as f:
+        with open(STATUS_PATH, "w") as f:
             f.write(strip_message)
 
 def read_status() -> Status:
     message = ""
-    with open("WebApp-Frontend\\files/status.txt", "r") as f:
+    with open(STATUS_PATH, "r") as f:
         message = f.read()
     
     return Status(message.split(" "))
@@ -114,7 +123,7 @@ def receive() -> str:
             break
 
     message = data.decode().strip()
-    if VERBOSE:
+    if VERBOSE and message != "":
         print("Received:", message)
     return message
     
