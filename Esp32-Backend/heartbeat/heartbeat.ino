@@ -93,13 +93,17 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 // Manual confirmation timings
 #define MANUAL_CONFIRM_MS 200
 
-/// add led stuff below1 here
+/// add led stuff below here
 #define LEDS_OFF 0
 #define LEDS_RED 1
 #define LEDS_GREEN 2
 #define LEDS_ON 3
 byte leds1 = 0;
 byte leds2 = 0;
+
+// manual global variables
+String bridgeTgt;
+String gateTgt;
 
 //HX710 scale;
 long loadcellTare = 0;
@@ -347,12 +351,12 @@ void readMssg(String mssg) {
       if (loop == "OPEN") {
         switch (i){ 
           case 1:
-            openBridge();
+            bridgeTgt = "OPEN";
             Serial.println("MANUAL MODE: Opening Bridge");
             break;
 
           case 2:
-            openGates();
+            gateTgt = "OPEN";
             Serial.println("MANUAL MODE: Opening Gates");
             break;
 
@@ -360,12 +364,12 @@ void readMssg(String mssg) {
       } else if (loop == "CLOS"){
         switch (i){
           case 1:
-            closeBridge();
+            bridgeTgt = "CLOS";
             Serial.println("MANUAL MODE: Closing Bridge");
             break;
 
           case 2:
-            closeGates();
+            gateTgt = "CLOS";
             Serial.println("MANUAL MODE: Closing Gates");
             break;
         }
@@ -554,6 +558,7 @@ void loop() {
   handleClient();
   controlBridge();
   updateLEDs();
+  if (currentMode == MANUAL_MODE) updateManual();
   if(initializationComplete == true){
     sendHeartbeat();
   }
@@ -897,33 +902,33 @@ void openBridge() {
 
   // start movement and sound
   startBridgeOpen();
-  unsigned long t0 = millis();
-  unsigned long confirmStart = 0;
+  static unsigned long manualOpenBridgeT0 = 0;
+  static unsigned long manualOpenConfirmStart = 0;
   playMovingAlarm();
 
-  while (millis() - t0 < timeoutMs) {
+  if (millis() - manualOpenBridgeT0 < timeoutMs) {
     int topDist = sonarBridgeTop.ping_cm();
     bool topOpen = (topDist == 0) || (topDist > 0 && topDist <= BRIDGE_TOP_OPEN_THRESHOLD_CM);
     if (topOpen) {
-      if (confirmStart == 0) confirmStart = millis();
-      if (millis() - confirmStart >= MANUAL_CONFIRM_MS) {
+      if (manualOpenConfirmStart == 0) manualOpenConfirmStart = millis();
+      if (millis() - manualOpenConfirmStart >= MANUAL_CONFIRM_MS) {
         stopBridge();
         playOpenAlarm();
         currentState.bridgeStatus = "OPEN";
         Serial.println("Manual: Bridge opened (sensor)");
+        manualOpenBridgeT0 = 0;
         return;
       }
     } else {
-      confirmStart = 0;
+      manualOpenConfirmStart = 0;
+      manualOpenBridgeT0 = 0;
     }
-    delay(50);
+  } else if (bridgeMoving) {
+    stopBridge(); // timeout fallback
+    playOpenAlarm();
+    currentState.bridgeStatus = "OPEN";
+    Serial.println("Manual: Bridge opened (timed fallback)");
   }
-
-  // timeout fallback
-  if (bridgeMoving) stopBridge();
-  playOpenAlarm();
-  currentState.bridgeStatus = "OPEN";
-  Serial.println("Manual: Bridge opened (timed fallback)");
 }
 
 void closeBridge() {
@@ -937,56 +942,75 @@ void closeBridge() {
 
   // start movement and sound
   startBridgeClose();
-  unsigned long t0 = millis();
-  unsigned long confirmStart = 0;
+  static unsigned long manualCloseBridgeT0 = 0;
+  static unsigned long manualCloseConfirmStart = 0;
   playMovingAlarm();
-
-  while (millis() - t0 < timeoutMs) {
+  if (manualCloseBridgeT0 == 0) manualCloseBridgeT0 = millis();
+  if (millis() - manualCloseBridgeT0 < timeoutMs) {
     int topDist = sonarBridgeTop.ping_cm();
     bool topClosed = (topDist > 0 && topDist >= BRIDGE_TOP_CLOSED_THRESHOLD_CM);
     if (topClosed) {
-      if (confirmStart == 0) confirmStart = millis();
-      if (millis() - confirmStart >= MANUAL_CONFIRM_MS) {
+      if (manualCloseConfirmStart == 0) manualCloseConfirmStart = millis();
+      if (millis() - manualCloseConfirmStart >= MANUAL_CONFIRM_MS) {
         stopBridge();
         playCloseAlarm();
         currentState.bridgeStatus = "CLOS";
         Serial.println("Manual: Bridge closed (sensor)");
+        manualCloseBridgeT0 = 0;
         // open gates after close in manual as in automatic
-        startGateOpen();
+        //startGateOpen();
         return;
       }
     } else {
-      confirmStart = 0;
+      manualCloseConfirmStart = 0;
+      manualCloseBridgeT0 = 0;
     }
-    delay(50);
+  } else if (bridgeMoving) {
+    stopBridge(); // timeout fallback
+    playCloseAlarm();
+    currentState.bridgeStatus = "CLOS";
+    //startGateOpen();
+    Serial.println("Manual: Bridge closed (timed fallback)");
+    manualCloseBridgeT0 = 0;
   }
-
-  // timeout fallback
-  if (bridgeMoving) stopBridge();
-  playCloseAlarm();
-  currentState.bridgeStatus = "CLOS";
-  startGateOpen();
-  Serial.println("Manual: Bridge closed (timed fallback)");
 }
 
 void openGates(){
-  currentState.gateStatus = "OPEN";
+  static unsigned long manualOpenGatesT0 = 0;
   gateServo.write(120);
-  delay(GATE_GOUP_MS);
-  gateServo.write(90);
-  Serial.println("Gates opened");
+  if (manualOpenGatesT0 == 0) manualOpenGatesT0 = millis();
+  if (millis() - manualOpenGatesT0 > GATE_GOUP_MS) {
+    gateServo.write(90);
+    currentState.gateStatus = "OPEN";
+    Serial.println("Gates opened");
+    manualOpenGatesT0 = 0;
+  }
 }
 
 void closeGates(){ 
-  currentState.gateStatus = "CLOS";
+  static unsigned long manualCloseGatesT0 = 0;
   gateServo.write(60);
-  delay(GATE_GODOWN_MS);
-  gateServo.write(90);
-  Serial.println("Gates closed");
+  if (manualCloseGatesT0 == 0) manualCloseGatesT0 = millis();
+  if (millis() - manualCloseGatesT0 > GATE_GODOWN_MS) {
+    gateServo.write(90);
+    currentState.gateStatus = "CLOS";
+    Serial.println("Gates closed");
+    manualCloseGatesT0 = 0;
+  }
 }
 
 void updateManual() {
-  
+  if (currentState.bridgeStatus == "CLOS" && bridgeTgt == "OPEN") {
+    openBridge();
+  } else if (currentState.bridgeStatus == "OPEN" && bridgeTgt == "CLOS") {
+    closeBridge();
+  }
+  if (currentState.gateStatus == "CLOS" && gateTgt == "OPEN") {
+    openGates();
+  } else if (currentState.gateStatus == "OPEN" && gateTgt == "CLOS") {
+    closeGates();
+  }
+
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
