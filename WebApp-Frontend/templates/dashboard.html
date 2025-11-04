@@ -81,7 +81,31 @@
         </div>
 
         <div class="disabled-box" id="disabled-box">
-        <!-- traffic light controls -->
+            <!-- control gates-->
+            <div>
+                <p>Roadway Gate Control Override *<span class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</span></p>
+
+                <div class="radio-container">
+                    <input type="radio" id="open-gates" name="gates" value="OPEN">
+                    <label for="open-gates" class="radio">Open Gates</label>
+                    <input type="radio" id="close-gates" name="gates" value="CLOS">
+                    <label for="close-gates" class="radio">Close Gates</label>
+                </div>
+            </div>
+
+            <!-- control bridge -->
+            <div>
+                <p>Bridge Control Override * <span class="hidden error" id="bridge-error-text">Please Select an Instruction for the Bridge.</span></p>
+
+                <div class="radio-container">
+                    <input type="radio" id="open-bridge" name="bridge" value="OPEN">
+                    <label for="open-bridge" class="radio">Open Bridge</label>
+                    <input type="radio" id="close-bridge" name="bridge" value="CLOS">
+                    <label for="close-bridge" class="radio">Close Bridge</label>
+                </div>
+            </div>
+
+            <!-- traffic light controls -->
             <div>
                 <p>Traffic Light Override * 
                     <span class="hidden error" id="traf-lights-error-text">Please Select Override: </span>
@@ -94,6 +118,12 @@
                             <input type="radio" id="road-go" name="road-lights" value="GOGO">
                             <span class="slider round"></span>
                             <br><br>Start Roadway
+                        </label>
+
+                        <label class="switch">
+                            <input type="radio" id="road-go" name="road-lights" value="SLOW">
+                            <span class="slider round"></span>
+                            <br><br>Slow Roadway
                         </label>
 
                         <label class="switch">
@@ -114,6 +144,12 @@
                             <input type="radio" id="waterway-go" name="waterway-lights" value="GOGO">
                             <span class="slider round"></span>
                             <br><br>Start Waterway
+                        </label>
+
+                        <label class="switch">
+                            <input type="radio" id="waterway-go" name="waterway-lights" value="SLOW">
+                            <span class="slider round"></span>
+                            <br><br>Slow Waterway
                         </label>
 
                         <label class="switch">
@@ -211,30 +247,6 @@
                     <span class="slider round"></span>
                     <br><br>None
                 </label>
-            </div>
-
-            <!-- control gates-->
-            <div>
-                <p>Roadway Gate Control Override *<span class="hidden error" id="gate-error-text">Please Select an Instruction for the Gates.</span></p>
-
-                <div class="radio-container">
-                    <input type="radio" id="open-gates" name="gates" value="OPEN">
-                    <label for="open-gates" class="radio">Open Gates</label>
-                    <input type="radio" id="close-gates" name="gates" value="CLOS">
-                    <label for="close-gates" class="radio">Close Gates</label>
-                </div>
-            </div>
-
-            <!-- control bridge -->
-            <div>
-                <p>Bridge Control Override * <span class="hidden error" id="bridge-error-text">Please Select an Instruction for the Bridge.</span></p>
-
-                <div class="radio-container">
-                    <input type="radio" id="open-bridge" name="bridge" value="OPEN">
-                    <label for="open-bridge" class="radio">Open Bridge</label>
-                    <input type="radio" id="close-bridge" name="bridge" value="CLOS">
-                    <label for="close-bridge" class="radio">Close Bridge</label>
-                </div>
             </div>
         </div>
 
