@@ -388,40 +388,17 @@ void readMssg(String mssg) {
         break;
         
       } else if (loop == "TRIG"){
-        switch (i){ 
-          case 7:
-            currentState.roadUS = "TRIG";
-            Serial.println("MANUAL MODE: Sensor Override Road US");
-            break;
-
-          case 8:
-            currentState.bridgeSwitchUp = "TRIG";
-            Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Up");
-            break;
-
-          case 9:
-            currentState.bridgeSwitchDown = "TRIG";
-            Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Down");
-            break;
-
-          case 10:
-            currentState.gateSwitchUp = "TRIG";
-            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Up");
-            break;
-
-          case 11:
-            currentState.gateSwitchDown = "TRIG";
-            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Down");
-            break;
-        }
+        currentState.roadUS = "TRIG";
+        Serial.println("MANUAL MODE: Sensor Override Road US");
+        break;
         
       } else if (loop == "GOGO"){
         switch (i){ 
-          case 12:
+          case 8:
             currentState.roadLights = "GOGO";
             Serial.println("MANUAL MODE: Road Lights Green");
             break;
-          case 13:
+          case 9:
             currentState.waterwayLights = "GOGO";
             Serial.println("MANUAL MODE: Water Lights Green");
             break;
@@ -430,11 +407,11 @@ void readMssg(String mssg) {
         
       } else if (loop == "STOP"){
         switch (i){ 
-          case 12:
+          case 8:
             currentState.roadLights = "STOP";
             break;
 
-          case 13:
+          case 9:
             currentState.waterwayLights = "STOP";
             Serial.println("MANUAL MODE: Water Lights Red");
             break;
@@ -443,12 +420,12 @@ void readMssg(String mssg) {
         
       } else if (loop == "SLOW"){
         switch (i){ 
-          case 12:
+          case 8:
             currentState.roadLights = "SLOW";
             Serial.println("MANUAL MODE: Road Lights Slow");
             break;
 
-          case 13:
+          case 9:
             currentState.waterwayLights = "SLOW";
             Serial.println("MANUAL MODE: Water Lights Slow");
             break;
@@ -487,22 +464,7 @@ void readMssg(String mssg) {
             Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Up OFF");
             break;
 
-          case 9:
-            currentState.bridgeSwitchDown = "NONE";
-            Serial.println("MANUAL MODE: Sensor Override Bridge Limit Switch Down OFF");
-            break;
-
           case 10:
-            currentState.gateSwitchUp = "NONE";
-            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Up OFF");
-            break;
-          
-          case 11:
-            currentState.gateSwitchDown = "NONE";
-            Serial.println("MANUAL MODE: Sensor Override Gate Limit Switch Down OFF");
-            break;
-
-          case 14:
             currentState.speaker = "NONE";
             Serial.println("MANUAL MODE: Speaker OFF");
             break;
@@ -513,16 +475,20 @@ void readMssg(String mssg) {
         Serial.println("MANUAL MODE: Speaker playing DONE");
         
       } else if (loop == "MOVN"){
-        if (i = 14) currentState.speaker = "MOVN";
+        if (i = 10) currentState.speaker = "MOVN";
         Serial.println("MANUAL MODE: Speaker playing MOVN");
         
       } else if (loop == "EMER"){
-        if (i = 14) currentState.speaker = "EMER";
+        if (i = 8) currentState.roadLights = "EMER";
+        else if (i = 9) currentState.waterwayLights = "EMER";
+        else if (i = 10) currentState.speaker = "EMER";
         Serial.println("MANUAL MODE: Speaker playing EMER");
+      } else if (loop == "SLOW") {
+        if (i = 8) currentState.roadLights = "SLOW";
+        if (i = 9) currentState.waterwayLights = "SLOW";
       }
     }
   }
-  // TNK Update lights & sensors, etc currentState based stuff.
 }
 
 // Read and update limit switch states (DISABLED - board issue)
