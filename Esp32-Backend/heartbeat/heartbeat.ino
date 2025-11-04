@@ -38,7 +38,7 @@ HX710 scale;
 
 // Bridge-top thresholds (moved here so available before controlBridge uses them)
 #define BRIDGE_TOP_CLOSED_THRESHOLD_CM 15  // reading >= this -> bridge closed (near)
-#define BRIDGE_TOP_OPEN_THRESHOLD_CM 6  // reading <= this or out-of-range -> bridge open (raised)
+#define BRIDGE_TOP_OPEN_THRESHOLD_CM 7  // reading <= this or out-of-range -> bridge open (raised)
 
 // Pointers for optional sensors (created in setup if pins valid)
 // NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor (removed)
@@ -70,8 +70,8 @@ NewPing* sonarUnder = nullptr;     // primary under-bridge sensor
 #define LOADCELL_DOUT_PIN 36
 
 // Network Configuration
-const char* ssid = "OPPO A16s";
-const char* password = "f6tznt3z";
+const char* ssid = "OPPO RX17 Neo";
+const char* password = "12345678";
 const int serverPort = 5003;
 
 // Communication
@@ -85,7 +85,10 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define MAX_DISTANCE 500
 
 // Timed bridge movement
-#define BRIDGE_MOVE_MS 3000
+#define BRIDGE_MOVE_MS 2500
+
+#define GATE_GOUP_MS 1400
+#define GATE_GODOWN_MS 1200
 
 // Manual confirmation timings
 #define MANUAL_CONFIRM_MS 200
@@ -687,7 +690,7 @@ void controlBridge() {
 
     case GATES_CLOSING:
       // if gate reached closed limit or timed out, stop and proceed
-      if (limitGateClosed || (millis() - stateStartTime) > 2000) {
+      if (limitGateClosed || (millis() - stateStartTime) > GATE_GODOWN_MS ){
         if (gateMoving) {
           stopGate();
           currentState.roadLights = "STOP";
@@ -698,13 +701,16 @@ void controlBridge() {
         Serial.println("Gates closed - starting bridge open (limit-driven)...");
         currentState.waterwayLights = "GOGO";
         // small pause to allow gate motor to settle and avoid high current when starting bridge
-        if ((millis() - stateStartTime) > 2500) {
+        if ((millis() - stateStartTime) > 6500) {
+          startBridgeOpen();
+          stateStartTime = millis();
+          state = BRIDGE_OPENING;
+          currentState.stateCode = 2;
+        }else if((millis() - stateStartTime) > 3000){
+
+        } else if((millis() - stateStartTime) > 2500){
           playOpenAlarm();
-          if ((millis() - stateStartTime) > 6500) {
-            startBridgeOpen();
-            stateStartTime = millis();
-            state = BRIDGE_OPENING;
-          }
+        
         } 
       } else {
         // still moving or waiting for limit/time
@@ -863,7 +869,7 @@ void controlBridge() {
     break;
 
     case GATES_OPENING:
-      if (limitGateOpen || (millis() - stateStartTime) > 2000) {
+      if (limitGateOpen || (millis() - stateStartTime) > GATE_GOUP_MS) {
         if (gateMoving) {
           stopGate();
           currentState.gateStatus = "OPEN";
@@ -966,7 +972,7 @@ void closeBridge() {
 void openGates(){
   currentState.gateStatus = "OPEN";
   gateServo.write(120);
-  delay(1000);
+  delay(GATE_GOUP_MS);
   gateServo.write(90);
   Serial.println("Gates opened");
 }
@@ -974,7 +980,7 @@ void openGates(){
 void closeGates(){ 
   currentState.gateStatus = "CLOS";
   gateServo.write(60);
-  delay(1000);
+  delay(GATE_GODOWN_MS);
   gateServo.write(90);
   Serial.println("Gates closed");
 }
