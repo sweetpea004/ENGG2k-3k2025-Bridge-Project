@@ -85,7 +85,7 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define MAX_DISTANCE 500
 
 // Timed bridge movement
-#define BRIDGE_MOVE_MS 2000
+#define BRIDGE_MOVE_MS 3000
 
 // Manual confirmation timings
 #define MANUAL_CONFIRM_MS 200
