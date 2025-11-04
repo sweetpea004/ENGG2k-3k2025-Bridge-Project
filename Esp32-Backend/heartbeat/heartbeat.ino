@@ -85,7 +85,7 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define MAX_DISTANCE 500
 
 // Timed bridge movement
-#define BRIDGE_MOVE_MS 2000
+#define BRIDGE_MOVE_MS 3000
 
 // Manual confirmation timings
 #define MANUAL_CONFIRM_MS 200
@@ -1126,7 +1126,7 @@ void updateShiftRegister() {
 void setLEDs(char north, char south, char west, char east, char stateCode) {
   leds1 = 0;
   leds2 = 0;
-  switch (north) {
+  switch (west) {
     case LEDS_OFF:
       break;
     
@@ -1144,7 +1144,7 @@ void setLEDs(char north, char south, char west, char east, char stateCode) {
       bitSet(leds1, 7);
       break;
   }
-  switch (west) {
+  switch (north) {
     case LEDS_OFF:
       break;
     
@@ -1159,26 +1159,26 @@ void setLEDs(char north, char south, char west, char east, char stateCode) {
     case LEDS_ON:
       bitSet(leds1, 4);
       bitSet(leds1, 5);
-      break;
-  }
-  switch (south) {
-    case LEDS_OFF:
-      break;
-    
-    case LEDS_RED:
-      bitSet(leds1, 2);
-      break;
-
-    case LEDS_GREEN:
-      bitSet(leds1, 3);
-      break;
-
-    case LEDS_ON:
-      bitSet(leds1, 2);
-      bitSet(leds1, 3);
       break;
   }
   switch (east) {
+    case LEDS_OFF:
+      break;
+    
+    case LEDS_RED:
+      bitSet(leds1, 2);
+      break;
+
+    case LEDS_GREEN:
+      bitSet(leds1, 3);
+      break;
+
+    case LEDS_ON:
+      bitSet(leds1, 2);
+      bitSet(leds1, 3);
+      break;
+  }
+  switch (south) {
     case LEDS_OFF:
       break;
     
