@@ -746,6 +746,7 @@ void controlBridge() {
 
     case BRIDGE_OPENING: {
       // Attempt to detect bridge fully open using top sensor (with quick confirmation)
+      delay(2000);
       playMovingAlarm();
       if (!bridgeMoving) startBridgeOpen();
 
@@ -803,6 +804,7 @@ void controlBridge() {
 
         if (underClear && approachesClear) {
           // start or continue confirmation timer
+          currentState.roadLights = "SLOW";
           if (clearConfirmStart == 0) {
             clearConfirmStart = millis();
             Serial.println("Clear detected - confirming for " + String(CLEAR_CONFIRM_MS/1000) + "s before closing...");
