@@ -571,7 +571,7 @@ void handleClient() {
     String command = client.readStringUntil('\n');
     command.trim();
     // v update heartbeat timer
-    lastHeartbeat = 0;
+    lastHeartbeat = millis();
     Serial.println(command);
     readMssg(command);
   }
@@ -600,8 +600,6 @@ void sendHeartbeat() {
 
     // Send heartbeat at the configured interval
     if (millis() - lastHeartbeat >= heartbeatInterval) {
-      Serial.println("HEARTBEAT DIAGNOSTIC");
-      Serial.println(millis() - lastHeartbeat + ", " + heartbeatInterval);
       String status = buildStatusMessage();
       client.println(status); // send to client
       Serial.println("Heartbeat sent: " + status);
