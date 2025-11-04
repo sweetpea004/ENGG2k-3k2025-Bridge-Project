@@ -70,10 +70,7 @@ STATUS_PATH = os.path.join(FRONTEND_PATH, FILES_PATH, STATUS_FILE)
 TEST_IP = "10.126.242.252"
 TEST_PORT = 5005
 
-#ESP_IP = "172.20.10.2" #Dragans hotspot
-#ESP_IP = "10.236.167.40" #Persephone's hotspot
-#ESP_IP = "10.220.101.40" #Lena's hotspot
-ESP_IP = "10.252.99.214" #Nikola's hotspot
+ESP_IP = "10.56.128.40" #Deniz Hotspot
 ESP_PORT = 5003
 
 # Globals
@@ -136,9 +133,6 @@ def communication():
 
     # Connection with ESP32
     sock.connect((ESP_IP, ESP_PORT))
-
-    # Connection with Tester
-    #sock.connect((TEST_IP, TEST_PORT))
 
     conn.toTrue()
     time.sleep(1) # small delay

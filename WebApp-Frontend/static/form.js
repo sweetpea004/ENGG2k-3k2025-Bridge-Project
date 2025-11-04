@@ -201,7 +201,7 @@ socket.on('update_stat_data', function(status, conn) {
             break;
         case "SLOW":
             textWaterwayTrafficLights.innerText = "SLOW";
-            textWaterwayTrafficLights.classList = "oramge-text";
+            textWaterwayTrafficLights.classList = "orange-text";
             break;
         case "STOP":
             textWaterwayTrafficLights.innerText = "STOP";
