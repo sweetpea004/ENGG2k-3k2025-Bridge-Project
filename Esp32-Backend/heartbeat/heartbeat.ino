@@ -38,7 +38,7 @@ HX710 scale;
 
 // Bridge-top thresholds (moved here so available before controlBridge uses them)
 #define BRIDGE_TOP_CLOSED_THRESHOLD_CM 15  // reading >= this -> bridge closed (near)
-#define BRIDGE_TOP_OPEN_THRESHOLD_CM 7  // reading <= this or out-of-range -> bridge open (raised)
+#define BRIDGE_TOP_OPEN_THRESHOLD_CM 4  // reading <= this or out-of-range -> bridge open (raised)
 
 // Pointers for optional sensors (created in setup if pins valid)
 // NewPing* sonarUnder2 = nullptr;    // second under-bridge sensor (removed)
@@ -85,7 +85,7 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 #define MAX_DISTANCE 500
 
 // Timed bridge movement
-#define BRIDGE_MOVE_MS 2500
+#define BRIDGE_MOVE_MS 4000
 
 #define GATE_GOUP_MS 1400
 #define GATE_GODOWN_MS 1200
@@ -93,13 +93,17 @@ const unsigned long heartbeatInterval = 1000; // 1 second
 // Manual confirmation timings
 #define MANUAL_CONFIRM_MS 200
 
-/// add led stuff below1 here
+/// add led stuff below here
 #define LEDS_OFF 0
 #define LEDS_RED 1
 #define LEDS_GREEN 2
 #define LEDS_ON 3
 byte leds1 = 0;
 byte leds2 = 0;
+
+// manual global variables
+String bridgeTgt;
+String gateTgt;
 
 //HX710 scale;
 long loadcellTare = 0;
@@ -167,6 +171,7 @@ void emergencyStop();
 void openGates();
 void closeGates();
 void updateLEDs();
+void updateManual();
 // forward declaration for load mass reader
 float readLoadMass();
 
@@ -346,12 +351,12 @@ void readMssg(String mssg) {
       if (loop == "OPEN") {
         switch (i){ 
           case 1:
-            openBridge();
+            bridgeTgt = "OPEN";
             Serial.println("MANUAL MODE: Opening Bridge");
             break;
 
           case 2:
-            openGates();
+            gateTgt = "OPEN";
             Serial.println("MANUAL MODE: Opening Gates");
             break;
 
@@ -359,12 +364,12 @@ void readMssg(String mssg) {
       } else if (loop == "CLOS"){
         switch (i){
           case 1:
-            closeBridge();
+            bridgeTgt = "CLOS";
             Serial.println("MANUAL MODE: Closing Bridge");
             break;
 
           case 2:
-            closeGates();
+            gateTgt = "CLOS";
             Serial.println("MANUAL MODE: Closing Gates");
             break;
         }
@@ -553,6 +558,7 @@ void loop() {
   handleClient();
   controlBridge();
   updateLEDs();
+  if (currentMode == MANUAL_MODE) updateManual();
   if(initializationComplete == true){
     sendHeartbeat();
   }
@@ -631,11 +637,13 @@ void controlBridge() {
 
   static enum {
     WAIT_FOR_SHIPS,
+    GRACE_PERIOD,
     WAIT_FOR_CARS_CLEAR,
     GATES_CLOSING,
     BRIDGE_OPENING,
     BRIDGE_OPEN,
     WAIT_FOR_UNDER_CLEAR,
+    DELAY_BRIDGE_CLOSE,
     BRIDGE_CLOSING,
     GATES_OPENING
   } state = WAIT_FOR_SHIPS;
@@ -645,7 +653,7 @@ void controlBridge() {
   static unsigned long closeConfirmStart = 0; // confirm bridge-closed reading
   const unsigned long OPEN_CONFIRM_MS = 200;  // require 200ms stable
   const unsigned long CLOSE_CONFIRM_MS = 200; // require 200ms stable
-  const unsigned long CLEAR_CONFIRM_MS = 3000;
+  const unsigned long CLEAR_CONFIRM_MS = 5500;
 
   switch (state) {
     case WAIT_FOR_SHIPS:
@@ -653,9 +661,19 @@ void controlBridge() {
     currentState.waterwayLights = "STOP";
       if (checkForShips()) {
         Serial.println("Ship detected - waiting for cars to clear...");
-        state = WAIT_FOR_CARS_CLEAR;
         currentState.stateCode = 1;
         stateStartTime = millis();
+        currentState.roadLights = "SLOW";
+        playOpenAlarm();
+        state = GRACE_PERIOD;
+      }
+      break;
+
+    case GRACE_PERIOD:
+      if (millis() - stateStartTime >= 10000) {
+        Serial.println("Grace period elapsed - preparing to close gates...");
+        stateStartTime = millis();
+        state = WAIT_FOR_CARS_CLEAR;
       }
       break;
 
@@ -697,17 +715,17 @@ void controlBridge() {
         }
         // proceed to open the bridge (load was already checked before closing gates)
         Serial.println("Gates closed - starting bridge open (limit-driven)...");
-        currentState.waterwayLights = "GOGO";
+        currentState.waterwayLights = "STOP";
         // small pause to allow gate motor to settle and avoid high current when starting bridge
         if ((millis() - stateStartTime) > 6500) {
           startBridgeOpen();
           stateStartTime = millis();
           state = BRIDGE_OPENING;
           currentState.stateCode = 2;
-        }else if((millis() - stateStartTime) > 3000){
+        }else if((millis() - stateStartTime) > 5500){
 
-        } else if((millis() - stateStartTime) > 2500){
-          playOpenAlarm();
+        } else if((millis() - stateStartTime) > 5000){
+          playMovingAlarm();
         
         } 
       } else {
@@ -718,8 +736,6 @@ void controlBridge() {
 
     case BRIDGE_OPENING: {
       // Attempt to detect bridge fully open using top sensor (with quick confirmation)
-      delay(2000);
-      playMovingAlarm();
       if (!bridgeMoving) startBridgeOpen();
 
       int topOpenDist = sonarBridgeTop.ping_cm();
@@ -732,6 +748,7 @@ void controlBridge() {
             Serial.println("Bridge open (sensor)");
           }
           currentState.bridgeStatus = "OPEN";
+          currentState.waterwayLights = "GOGO";
           stateStartTime = millis();
           state = BRIDGE_OPEN;
           currentState.stateCode = 3;
@@ -776,7 +793,7 @@ void controlBridge() {
 
         if (underClear && approachesClear) {
           // start or continue confirmation timer
-          currentState.roadLights = "SLOW";
+          currentState.roadLights = "STOP";
           if (clearConfirmStart == 0) {
             clearConfirmStart = millis();
             Serial.println("Clear detected - confirming for " + String(CLEAR_CONFIRM_MS/1000) + "s before closing...");
@@ -791,14 +808,16 @@ void controlBridge() {
           }
 
           if (bridgeConfirmedOpen) {
+              playCloseAlarm();
               Serial.println("Under & approach sensors confirmed clear - closing bridge...");
               currentState.waterwayLights = "STOP";
-              startBridgeClose();
+              //startBridgeClose();
               stateStartTime = millis();
-              state = BRIDGE_CLOSING;
+              state = DELAY_BRIDGE_CLOSE;
               currentState.stateCode = 4;
               // reset confirmation timer
               clearConfirmStart = 0;
+              
           } else {
               // Bridge not confirmed open yet; keep waiting but keep the confirmation timer running
             Serial.println("Bridge not yet confirmed open; waiting before close...");
@@ -817,9 +836,19 @@ void controlBridge() {
       }
       break;
 
+    case DELAY_BRIDGE_CLOSE:
+      if (millis() - stateStartTime > 5000) {
+        playMovingAlarm();
+        startBridgeClose();
+        state = BRIDGE_CLOSING;
+        stateStartTime = millis();
+      } else if (millis() - stateStartTime > 4000) {
+        playCloseAlarm();
+      }
+      break;
+
     case BRIDGE_CLOSING: {
       // Try to stop when top sensor indicates closed (with confirmation), else use timed fallback
-      playMovingAlarm();
       if (!bridgeMoving) startBridgeClose();
 
       int topCloseDist = sonarBridgeTop.ping_cm();
@@ -895,33 +924,33 @@ void openBridge() {
 
   // start movement and sound
   startBridgeOpen();
-  unsigned long t0 = millis();
-  unsigned long confirmStart = 0;
+  static unsigned long manualOpenBridgeT0 = 0;
+  static unsigned long manualOpenConfirmStart = 0;
   playMovingAlarm();
 
-  while (millis() - t0 < timeoutMs) {
+  if (millis() - manualOpenBridgeT0 < timeoutMs) {
     int topDist = sonarBridgeTop.ping_cm();
     bool topOpen = (topDist == 0) || (topDist > 0 && topDist <= BRIDGE_TOP_OPEN_THRESHOLD_CM);
     if (topOpen) {
-      if (confirmStart == 0) confirmStart = millis();
-      if (millis() - confirmStart >= MANUAL_CONFIRM_MS) {
+      if (manualOpenConfirmStart == 0) manualOpenConfirmStart = millis();
+      if (millis() - manualOpenConfirmStart >= MANUAL_CONFIRM_MS) {
         stopBridge();
         playOpenAlarm();
         currentState.bridgeStatus = "OPEN";
         Serial.println("Manual: Bridge opened (sensor)");
+        manualOpenBridgeT0 = 0;
         return;
       }
     } else {
-      confirmStart = 0;
+      manualOpenConfirmStart = 0;
+      manualOpenBridgeT0 = 0;
     }
-    delay(50);
+  } else if (bridgeMoving) {
+    stopBridge(); // timeout fallback
+    playOpenAlarm();
+    currentState.bridgeStatus = "OPEN";
+    Serial.println("Manual: Bridge opened (timed fallback)");
   }
-
-  // timeout fallback
-  if (bridgeMoving) stopBridge();
-  playOpenAlarm();
-  currentState.bridgeStatus = "OPEN";
-  Serial.println("Manual: Bridge opened (timed fallback)");
 }
 
 void closeBridge() {
@@ -935,52 +964,75 @@ void closeBridge() {
 
   // start movement and sound
   startBridgeClose();
-  unsigned long t0 = millis();
-  unsigned long confirmStart = 0;
+  static unsigned long manualCloseBridgeT0 = 0;
+  static unsigned long manualCloseConfirmStart = 0;
   playMovingAlarm();
-
-  while (millis() - t0 < timeoutMs) {
+  if (manualCloseBridgeT0 == 0) manualCloseBridgeT0 = millis();
+  if (millis() - manualCloseBridgeT0 < timeoutMs) {
     int topDist = sonarBridgeTop.ping_cm();
     bool topClosed = (topDist > 0 && topDist >= BRIDGE_TOP_CLOSED_THRESHOLD_CM);
     if (topClosed) {
-      if (confirmStart == 0) confirmStart = millis();
-      if (millis() - confirmStart >= MANUAL_CONFIRM_MS) {
+      if (manualCloseConfirmStart == 0) manualCloseConfirmStart = millis();
+      if (millis() - manualCloseConfirmStart >= MANUAL_CONFIRM_MS) {
         stopBridge();
         playCloseAlarm();
         currentState.bridgeStatus = "CLOS";
         Serial.println("Manual: Bridge closed (sensor)");
+        manualCloseBridgeT0 = 0;
         // open gates after close in manual as in automatic
-        startGateOpen();
+        //startGateOpen();
         return;
       }
     } else {
-      confirmStart = 0;
+      manualCloseConfirmStart = 0;
+      manualCloseBridgeT0 = 0;
     }
-    delay(50);
+  } else if (bridgeMoving) {
+    stopBridge(); // timeout fallback
+    playCloseAlarm();
+    currentState.bridgeStatus = "CLOS";
+    //startGateOpen();
+    Serial.println("Manual: Bridge closed (timed fallback)");
+    manualCloseBridgeT0 = 0;
   }
-
-  // timeout fallback
-  if (bridgeMoving) stopBridge();
-  playCloseAlarm();
-  currentState.bridgeStatus = "CLOS";
-  startGateOpen();
-  Serial.println("Manual: Bridge closed (timed fallback)");
 }
 
 void openGates(){
-  currentState.gateStatus = "OPEN";
+  static unsigned long manualOpenGatesT0 = 0;
   gateServo.write(120);
-  delay(GATE_GOUP_MS);
-  gateServo.write(90);
-  Serial.println("Gates opened");
+  if (manualOpenGatesT0 == 0) manualOpenGatesT0 = millis();
+  if (millis() - manualOpenGatesT0 > GATE_GOUP_MS) {
+    gateServo.write(90);
+    currentState.gateStatus = "OPEN";
+    Serial.println("Gates opened");
+    manualOpenGatesT0 = 0;
+  }
 }
 
 void closeGates(){ 
-  currentState.gateStatus = "CLOS";
+  static unsigned long manualCloseGatesT0 = 0;
   gateServo.write(60);
-  delay(GATE_GODOWN_MS);
-  gateServo.write(90);
-  Serial.println("Gates closed");
+  if (manualCloseGatesT0 == 0) manualCloseGatesT0 = millis();
+  if (millis() - manualCloseGatesT0 > GATE_GODOWN_MS) {
+    gateServo.write(90);
+    currentState.gateStatus = "CLOS";
+    Serial.println("Gates closed");
+    manualCloseGatesT0 = 0;
+  }
+}
+
+void updateManual() {
+  if (currentState.bridgeStatus == "CLOS" && bridgeTgt == "OPEN") {
+    openBridge();
+  } else if (currentState.bridgeStatus == "OPEN" && bridgeTgt == "CLOS") {
+    closeBridge();
+  }
+  if (currentState.gateStatus == "CLOS" && gateTgt == "OPEN") {
+    openGates();
+  } else if (currentState.gateStatus == "OPEN" && gateTgt == "CLOS") {
+    closeGates();
+  }
+
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
