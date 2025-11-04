@@ -167,6 +167,7 @@ void emergencyStop();
 void openGates();
 void closeGates();
 void updateLEDs();
+void updateManual();
 // forward declaration for load mass reader
 float readLoadMass();
 
@@ -718,8 +719,9 @@ void controlBridge() {
 
     case BRIDGE_OPENING: {
       // Attempt to detect bridge fully open using top sensor (with quick confirmation)
-      delay(2000);
-      playMovingAlarm();
+      if ((millis()- stateStartTime) > 2000) {
+        playMovingAlarm();
+      } else break;
       if (!bridgeMoving) startBridgeOpen();
 
       int topOpenDist = sonarBridgeTop.ping_cm();
@@ -981,6 +983,10 @@ void closeGates(){
   delay(GATE_GODOWN_MS);
   gateServo.write(90);
   Serial.println("Gates closed");
+}
+
+void updateManual() {
+  
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
