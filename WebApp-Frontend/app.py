@@ -15,6 +15,11 @@ socketio = SocketIO(app)
 def run_app():
     socketio.run(app, debug=True, port=APP_PORT)
 
+@socketio.on("retrieve_stat_data")
+def handle_update():
+    status = commProg.read_status()
+    emit('update_stat_data', (status.toSerializable(), commProg.conn.value), broadcast=True)
+
 @app.route("/", methods=['GET', 'POST'])
 def redirect_dashboard():
 
@@ -101,11 +106,6 @@ def redirect_dashboard():
 
     # Load page
     return render_template("dashboard.html")
-
-@socketio.on("retrieve_stat_data")
-def handle_update():
-    status = commProg.read_status()
-    emit('update_stat_data', (status.toSerializable(), commProg.conn.value), broadcast=True)
 
 if __name__ == "__main__":
     comm_thread = threading.Thread(target=commProg.communication, daemon=True)
